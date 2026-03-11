@@ -10,7 +10,17 @@
     rotten: 'state-rotten'
   };
 
+  const EXPRESSION_CLASS = ['expression-tired', 'expression-sick', 'expression-zombified', 'expression-true-zombie'];
+  const EXPRESSION_SEQUENCE = {
+    awakened: [],
+    overgrown: ['expression-tired'],
+    corrupted: ['expression-tired', 'expression-sick', 'expression-zombified'],
+    rotten: ['expression-sick', 'expression-zombified', 'expression-true-zombie']
+  };
+
   let corruptionScore = 0;
+  let expressionTimer = null;
+  let expressionIndex = 0;
 
   const chatSim = document.getElementById('chat-sim');
   const chatFeed = document.getElementById('chat-feed');
@@ -38,11 +48,40 @@
     chatState.textContent = `${stateName[0].toUpperCase()}${stateName.slice(1)} • ${corruptionScore}`;
   };
 
+  const clearExpressions = () => {
+    EXPRESSION_CLASS.forEach((name) => shell.classList.remove(name));
+  };
+
+  const applyExpressionCycle = (state) => {
+    if (expressionTimer) {
+      clearInterval(expressionTimer);
+      expressionTimer = null;
+    }
+
+    clearExpressions();
+    expressionIndex = 0;
+    const sequence = EXPRESSION_SEQUENCE[state] || [];
+
+    if (!sequence.length) {
+      return;
+    }
+
+    const paint = () => {
+      clearExpressions();
+      shell.classList.add(sequence[expressionIndex % sequence.length]);
+      expressionIndex += 1;
+    };
+
+    paint();
+    expressionTimer = setInterval(paint, state === 'rotten' ? 1100 : 1600);
+  };
+
   const setVisualState = (state) => {
     const resolvedState = STATE_CLASS[state] ? state : 'awakened';
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[resolvedState]);
     if (overlayRoot) overlayRoot.dataset.petState = resolvedState;
+    applyExpressionCycle(resolvedState);
   };
 
   const syncStateFromScore = () => {
@@ -129,8 +168,8 @@
     const script = [
       { user: 'ivyvoid', message: 'poison ivy is closing in 😵', action: 'corrupt', tone: 'corrupt' },
       { user: 'moonmoss', message: 'good dog, breathe slow', action: 'heal', tone: 'heal' },
-      { user: 'nightowl', message: 'thorns are tightening', action: 'corrupt', tone: 'corrupt' },
-      { user: 'fernfriend', message: 'happy ghost pup!! 💚', action: 'heal', tone: 'heal' },
+      { user: 'nightowl', message: 'it looks tired now...', action: 'corrupt', tone: 'corrupt' },
+      { user: 'fernfriend', message: 'zombie pup incoming!', action: 'corrupt', tone: 'corrupt' },
       { user: 'modbot', message: 'revive pup', action: 'reset', tone: 'reset' }
     ];
 
@@ -148,7 +187,8 @@
     alert: 'overgrown',
     zombified: 'rotten',
     happy: 'awakened',
-    suffocating: 'rotten'
+    suffocating: 'rotten',
+    truezombie: 'rotten'
   };
 
   const receive = (payload) => {

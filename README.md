@@ -3,8 +3,8 @@
 This repo contains a lightweight web overlay for OBS Browser Source and a simple message protocol so Streamer.bot can push stream pet actions/states from Twitch chat events.
 
 The stream pet is now a ghost dog:
-- **best condition**: happy, bright, energetic wagging
-- **worst condition**: poisoned by ivy, choking/suffocating animations
+- **best condition**: happy, ghostly-yellow glow with energetic wagging
+- **worst condition**: poisoned by ivy, cycles through sick-on-ground, zombified, and true-zombie expressions with choking/suffocating motion
 
 ## Quick start
 
@@ -51,7 +51,7 @@ window.ChatEye.receive({ type: 'setScore', value: 8 });
 - `0-1`: Awakened (happy ghost dog)
 - `2-3`: Overgrown
 - `4-5`: Corrupted
-- `6+`: Rotten (ivy poison suffocation)
+- `6+`: Rotten (ivy poison suffocation + zombified/true-zombie expression cycle)
 
 ## Streamer.bot integration outline
 
