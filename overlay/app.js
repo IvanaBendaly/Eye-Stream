@@ -1,6 +1,6 @@
 (function () {
-  const shell = document.getElementById('eye-shell');
-  const pupil = document.getElementById('pupil');
+  const shell = document.getElementById('pet-shell');
+  const dogFace = document.getElementById('dog-face');
   const overlayRoot = document.getElementById('overlay-root');
 
   const STATE_CLASS = {
@@ -10,7 +10,28 @@
     rotten: 'state-rotten'
   };
 
+  const EXPRESSION_CLASS = [
+    'expression-happy',
+    'expression-playful',
+    'expression-surprised',
+    'expression-scared',
+    'expression-angry',
+    'expression-tired',
+    'expression-sick',
+    'expression-zombified',
+    'expression-true-zombie'
+  ];
+
+  const EXPRESSION_SEQUENCE = {
+    awakened: ['expression-happy', 'expression-playful', 'expression-surprised'],
+    overgrown: ['expression-playful', 'expression-scared', 'expression-tired'],
+    corrupted: ['expression-angry', 'expression-tired', 'expression-sick', 'expression-zombified'],
+    rotten: ['expression-sick', 'expression-zombified', 'expression-scared', 'expression-true-zombie']
+  };
+
   let corruptionScore = 0;
+  let expressionTimer = null;
+  let expressionIndex = 0;
 
   const chatSim = document.getElementById('chat-sim');
   const chatFeed = document.getElementById('chat-feed');
@@ -38,11 +59,40 @@
     chatState.textContent = `${stateName[0].toUpperCase()}${stateName.slice(1)} • ${corruptionScore}`;
   };
 
+  const clearExpressions = () => {
+    EXPRESSION_CLASS.forEach((name) => shell.classList.remove(name));
+  };
+
+  const applyExpressionCycle = (state) => {
+    if (expressionTimer) {
+      clearInterval(expressionTimer);
+      expressionTimer = null;
+    }
+
+    clearExpressions();
+    expressionIndex = 0;
+    const sequence = EXPRESSION_SEQUENCE[state] || [];
+
+    if (!sequence.length) {
+      return;
+    }
+
+    const paint = () => {
+      clearExpressions();
+      shell.classList.add(sequence[expressionIndex % sequence.length]);
+      expressionIndex += 1;
+    };
+
+    paint();
+    expressionTimer = setInterval(paint, state === 'rotten' ? 1000 : 1400);
+  };
+
   const setVisualState = (state) => {
     const resolvedState = STATE_CLASS[state] ? state : 'awakened';
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[resolvedState]);
-    if (overlayRoot) overlayRoot.dataset.eyeState = resolvedState;
+    if (overlayRoot) overlayRoot.dataset.petState = resolvedState;
+    applyExpressionCycle(resolvedState);
   };
 
   const syncStateFromScore = () => {
@@ -59,27 +109,34 @@
   const twitch = () => {
     shell.classList.remove('twitch');
     shell.classList.add('twitch');
-    setTimeout(() => shell.classList.remove('twitch'), 320);
+    setTimeout(() => shell.classList.remove('twitch'), 280);
   };
 
   const bloom = () => {
     shell.classList.remove('bloom');
     shell.classList.add('bloom');
-    setTimeout(() => shell.classList.remove('bloom'), 440);
+    setTimeout(() => shell.classList.remove('bloom'), 420);
   };
 
-  const movePupil = (x, y) => {
-    pupil.style.transform = `translate(${x}px, ${y}px)`;
+  const turnOnTwoLegs = () => {
+    shell.classList.remove('turning');
+    shell.classList.add('turning');
+    setTimeout(() => shell.classList.remove('turning'), 1250);
   };
 
-  const randomPupilDrift = () => {
-    const dx = (Math.random() - 0.5) * 10;
-    const dy = (Math.random() - 0.5) * 6;
-    movePupil(dx, dy);
+  const look = (x, y) => {
+    dogFace.style.setProperty('--look-x', `${x}px`);
+    dogFace.style.setProperty('--look-y', `${y}px`);
   };
 
-  const lookLeft = () => movePupil(-7, 0);
-  const lookRight = () => movePupil(7, 0);
+  const randomHeadDrift = () => {
+    const dx = (Math.random() - 0.5) * 6;
+    const dy = (Math.random() - 0.5) * 3;
+    look(dx, dy);
+  };
+
+  const lookLeft = () => look(-5, 0);
+  const lookRight = () => look(5, 0);
 
   const applyAction = (action) => {
     switch (action) {
@@ -92,6 +149,9 @@
       case 'lookRight':
         lookRight();
         break;
+      case 'turn':
+        turnOnTwoLegs();
+        break;
       case 'corrupt':
         corruptionScore = clampScore(corruptionScore + 1);
         syncStateFromScore();
@@ -100,7 +160,7 @@
       case 'heal':
         corruptionScore = clampScore(corruptionScore - 1);
         syncStateFromScore();
-        if (Math.random() > 0.35) bloom();
+        bloom();
         break;
       case 'reset':
         corruptionScore = 0;
@@ -127,12 +187,11 @@
 
   const simulateChat = () => {
     const script = [
-      { user: 'spookylurker', message: 'ghost in the vines 👻', action: 'corrupt', tone: 'corrupt' },
-      { user: 'moonmoss', message: 'you got this eye, stay calm', action: 'heal', tone: 'heal' },
-      { user: 'nightowl', message: 'run run run', action: 'corrupt', tone: 'corrupt' },
-      { user: 'fernfriend', message: 'cute little watcher 🌿', action: 'heal', tone: 'heal' },
-      { user: 'modbot', message: 'revive', action: 'reset', tone: 'reset' },
-      { user: 'hauntchat', message: 'cursed gaze', action: 'corrupt', tone: 'corrupt' }
+      { user: 'ivyvoid', message: 'poison ivy is closing in 😵', action: 'corrupt', tone: 'corrupt' },
+      { user: 'moonmoss', message: 'good dog, breathe slow', action: 'heal', tone: 'heal' },
+      { user: 'nightowl', message: 'it turned and stood up!', action: 'turn', tone: 'reset' },
+      { user: 'fernfriend', message: 'zombie pup incoming!', action: 'corrupt', tone: 'corrupt' },
+      { user: 'modbot', message: 'revive pup', action: 'reset', tone: 'reset' }
     ];
 
     let idx = 0;
@@ -141,13 +200,16 @@
       idx += 1;
       addChatLine(`${evt.user}: ${evt.message}`, evt.tone);
       applyAction(evt.action);
-    }, 1800);
+    }, 1900);
   };
 
   const stateAliases = {
     alive: 'awakened',
     alert: 'overgrown',
-    zombified: 'rotten'
+    zombified: 'rotten',
+    happy: 'awakened',
+    suffocating: 'rotten',
+    truezombie: 'rotten'
   };
 
   const receive = (payload) => {
@@ -213,20 +275,20 @@
   }
 
   const scheduleBlink = () => {
-    const nextBlinkIn = 2500 + Math.random() * 3700;
+    const nextBlinkIn = 2400 + Math.random() * 3200;
     setTimeout(() => {
       blink();
       scheduleBlink();
     }, nextBlinkIn);
   };
 
-  setInterval(randomPupilDrift, 1500);
+  setInterval(randomHeadDrift, 1400);
   scheduleBlink();
   connectWebSocketBridge();
 
   setInterval(() => {
-    if (Math.random() < 0.15) {
+    if (Math.random() < 0.18) {
       twitch();
     }
-  }, 3000);
+  }, 2800);
 })();
