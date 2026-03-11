@@ -24,6 +24,13 @@
     return 'awakened';
   };
 
+  const stateToScore = {
+    awakened: 0,
+    overgrown: 2,
+    corrupted: 4,
+    rotten: 6
+  };
+
   const updateStateLabel = () => {
     if (!chatState) return;
     const stateName = scoreToState(corruptionScore);
@@ -158,7 +165,12 @@
 
     if (payload.type === 'setState' && typeof payload.state === 'string') {
       const normalized = payload.state.toLowerCase();
-      setVisualState(stateAliases[normalized] || normalized);
+      const resolvedState = stateAliases[normalized] || normalized;
+      setVisualState(resolvedState);
+      if (Object.prototype.hasOwnProperty.call(stateToScore, resolvedState)) {
+        corruptionScore = stateToScore[resolvedState];
+      }
+      updateStateLabel();
     }
   };
 
