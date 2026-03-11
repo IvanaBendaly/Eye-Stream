@@ -9,21 +9,24 @@
   <body>
     <div id="overlay-root" class="overlay" data-mode="overlay">
       <div id="eye-shell" class="eye-shell state-awake" aria-label="Watcher familiar eye">
-        <div class="halo"></div>
-        <div class="veil"></div>
+        <div class="aura"></div>
+        <div class="shadow-veil"></div>
 
         <div id="eye" class="eye">
+          <div class="lash-line"></div>
           <div class="upper-lid"></div>
           <div class="lower-lid"></div>
 
           <div id="iris" class="iris">
+            <div class="iris-ring"></div>
             <div class="pupil"></div>
+            <div class="pupil-core"></div>
             <span class="iris-glint iris-glint-main"></span>
             <span class="iris-glint iris-glint-small"></span>
           </div>
 
-          <span class="spark spark-a"></span>
-          <span class="spark spark-b"></span>
+          <span class="spark spark-left"></span>
+          <span class="spark spark-right"></span>
         </div>
       </div>
 
@@ -37,10 +40,11 @@
         </div>
         <div class="test-ui__row">
           <button data-act="action" data-value="blink">blink</button>
+          <button data-act="action" data-value="softBlink">soft blink</button>
           <button data-act="action" data-value="glance">glance</button>
           <button data-act="action" data-value="pulse">pulse</button>
           <button data-act="action" data-value="possess">possess burst</button>
-          <button data-act="action" data-value="calm">calm reset</button>
+          <button data-act="action" data-value="recover">recover</button>
         </div>
       </aside>
     </div>
