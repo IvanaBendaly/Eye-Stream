@@ -20,16 +20,16 @@ body {
   position: fixed;
   top: 18px;
   right: 22px;
-  width: 220px;
-  height: 180px;
+  width: 208px;
+  height: 190px;
   pointer-events: none;
 }
 
 .eye-shell {
   position: relative;
-  width: 160px;
-  height: 110px;
-  margin: 28px auto;
+  width: 136px;
+  height: 94px;
+  margin: 16px auto 0;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.58));
   animation: hover 4.2s ease-in-out infinite;
 }
@@ -326,4 +326,60 @@ body {
   100% {
     transform: scale(1.15) rotate(-10deg);
   }
+}
+
+
+.chat-sim {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 208px;
+  max-height: 98px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(105, 142, 112, 0.4);
+  background: rgba(8, 16, 11, 0.75);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  color: rgba(224, 246, 230, 0.9);
+}
+
+.chat-sim__header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.chat-sim__state {
+  color: rgba(150, 230, 173, 0.95);
+}
+
+.chat-sim__feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.chat-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
+.chat-line--corrupt {
+  color: #f6ae8a;
+}
+
+.chat-line--heal {
+  color: #9eeab0;
+}
+
+.chat-line--reset {
+  color: #b8d8ff;
 }

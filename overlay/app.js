@@ -11,6 +11,10 @@
 
   let corruptionScore = 0;
 
+  const chatSim = document.getElementById('chat-sim');
+  const chatFeed = document.getElementById('chat-feed');
+  const chatState = document.getElementById('chat-state');
+
   const clampScore = (value) => Math.max(0, Math.min(10, value));
 
   const scoreToState = (score) => {
@@ -20,6 +24,12 @@
     return 'awakened';
   };
 
+  const updateStateLabel = () => {
+    if (!chatState) return;
+    const stateName = scoreToState(corruptionScore);
+    chatState.textContent = `${stateName[0].toUpperCase()}${stateName.slice(1)} • ${corruptionScore}`;
+  };
+
   const setVisualState = (state) => {
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[state] || STATE_CLASS.awakened);
@@ -27,6 +37,7 @@
 
   const syncStateFromScore = () => {
     setVisualState(scoreToState(corruptionScore));
+    updateStateLabel();
   };
 
   const blink = () => {
@@ -92,6 +103,37 @@
     }
   };
 
+  const addChatLine = (text, tone = 'neutral') => {
+    if (!chatFeed) return;
+    const line = document.createElement('div');
+    line.className = `chat-line${tone !== 'neutral' ? ` chat-line--${tone}` : ''}`;
+    line.textContent = text;
+    chatFeed.prepend(line);
+
+    while (chatFeed.children.length > 4) {
+      chatFeed.removeChild(chatFeed.lastElementChild);
+    }
+  };
+
+  const simulateChat = () => {
+    const script = [
+      { user: 'spookylurker', message: 'ghost in the vines 👻', action: 'corrupt', tone: 'corrupt' },
+      { user: 'moonmoss', message: 'you got this eye, stay calm', action: 'heal', tone: 'heal' },
+      { user: 'nightowl', message: 'run run run', action: 'corrupt', tone: 'corrupt' },
+      { user: 'fernfriend', message: 'cute little watcher 🌿', action: 'heal', tone: 'heal' },
+      { user: 'modbot', message: 'revive', action: 'reset', tone: 'reset' },
+      { user: 'hauntchat', message: 'cursed gaze', action: 'corrupt', tone: 'corrupt' }
+    ];
+
+    let idx = 0;
+    setInterval(() => {
+      const evt = script[idx % script.length];
+      idx += 1;
+      addChatLine(`${evt.user}: ${evt.message}`, evt.tone);
+      applyAction(evt.action);
+    }, 1800);
+  };
+
   const stateAliases = {
     alive: 'awakened',
     alert: 'overgrown',
@@ -149,6 +191,11 @@
   };
 
   syncStateFromScore();
+
+  if (chatSim) {
+    chatSim.hidden = false;
+    simulateChat();
+  }
 
   const scheduleBlink = () => {
     const nextBlinkIn = 2500 + Math.random() * 3700;
