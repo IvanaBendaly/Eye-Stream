@@ -211,6 +211,18 @@ body {
   opacity: var(--socket-opacity);
 }
 
+
+.eye::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 0 74%, color-mix(in srgb, var(--bleed-color) 84%, transparent) 74% 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bleed-color) 78%, transparent) 0 100%);
+  clip-path: polygon(6% 72%, 12% 76%, 14% 94%, 9% 100%, 4% 92%, 4% 82%, 86% 74%, 92% 78%, 95% 95%, 91% 100%, 85% 96%, 84% 84%);
+  opacity: var(--bleed-opacity, 0);
+}
+
 .vein-layer {
   position: absolute;
   inset: 0;
@@ -486,6 +498,33 @@ body {
 .eye-shell.shudder { animation: shudderDead 900ms steps(8, end) 1; }
 .eye-shell.bloom .aura { animation: auraBloom 440ms steps(5, end) 1; }
 
+
+.eye-shell.variant-bloodshot {
+  --vein-opacity: min(0.95, calc(var(--vein-opacity) + 0.18));
+  --vein: #87453a;
+}
+
+.eye-shell.variant-bleeding {
+  --bleed-opacity: 0.9;
+}
+
+.eye-shell.variant-zombified {
+  --eye-scale-y: calc(var(--eye-scale-y) * 0.93);
+  --shell-droop: calc(var(--shell-droop) + 2px);
+  --highlight-opacity: calc(var(--highlight-opacity) * 0.55);
+}
+
+.eye-shell.variant-heavy-decay {
+  --decay-opacity: min(0.9, calc(var(--decay-opacity) + 0.2));
+  --mist-opacity: min(0.5, calc(var(--mist-opacity) + 0.1));
+  --spore-opacity: min(0.7, calc(var(--spore-opacity) + 0.12));
+}
+
+.eye-shell.variant-soft-glow {
+  --aura-opacity: calc(var(--aura-opacity) + 0.12);
+  --highlight-opacity: min(1, calc(var(--highlight-opacity) + 0.15));
+}
+
 .eye-shell.ambient-off .aura,
 .eye-shell.ambient-off .vines,
 .eye-shell.ambient-off .leaf,
@@ -522,6 +561,8 @@ body {
 
   --vein: #7f6f62;
   --vein-opacity: 0.2;
+  --bleed-color: #7a3028;
+  --bleed-opacity: 0;
   --decay: #6d6a59;
   --decay-opacity: 0.05;
 
@@ -580,6 +621,8 @@ body {
 
   --vein: #7d6f63;
   --vein-opacity: 0.23;
+  --bleed-color: #7b322b;
+  --bleed-opacity: 0;
   --decay: #5f6d54;
   --decay-opacity: 0.08;
 
@@ -639,13 +682,15 @@ body {
   --lid-2: #473d2b;
   --lid-rim: #7c6849;
 
-  --vein: #8f5343;
-  --vein-opacity: 0.6;
+  --vein: #98483d;
+  --vein-opacity: 0.64;
+  --bleed-color: #7d2f2a;
+  --bleed-opacity: 0.2;
   --decay: #625739;
   --decay-opacity: 0.3;
 
-  --aura: #8e8a63;
-  --aura-opacity: 0.45;
+  --aura: #9a8f55;
+  --aura-opacity: 0.4;
   --vine: #76704d;
   --vine-opacity: 1;
   --vine-curl: 14deg;
@@ -679,8 +724,8 @@ body {
   --socket: #4f4732;
   --socket-opacity: 0.45;
 
-  --sclera-1: #d8d3a5;
-  --sclera-2: #c0b686;
+  --sclera-1: #ddd8a8;
+  --sclera-2: #c8be82;
   --sclera-3: #9a9162;
   --sclera-4: #696342;
 
@@ -699,13 +744,15 @@ body {
   --lid-2: #4a3f2e;
   --lid-rim: #837251;
 
-  --vein: #734437;
-  --vein-opacity: 0.72;
+  --vein: #7d3f35;
+  --vein-opacity: 0.78;
+  --bleed-color: #6d2822;
+  --bleed-opacity: 0.28;
   --decay: #5e5439;
   --decay-opacity: 0.5;
 
-  --aura: #74744f;
-  --aura-opacity: 0.34;
+  --aura: #6a6642;
+  --aura-opacity: 0.28;
   --vine: #5d5b3f;
   --vine-opacity: 0.92;
   --vine-curl: 20deg;
@@ -742,9 +789,10 @@ body {
 
 .chat-sim {
   position: absolute;
-  right: -4px;
-  bottom: 0;
-  width: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -2px;
+  width: 132px;
   padding: 6px;
   border: var(--px) solid #3f4e44;
   background: rgba(7, 10, 8, 0.35);
@@ -770,23 +818,32 @@ body {
 
 /* test mode */
 .overlay-corner[data-mode='test'] {
-  width: 550px;
-  height: 360px;
+  pointer-events: auto;
+  width: 620px;
+  height: 390px;
+  display: grid;
+  grid-template-columns: 250px 350px;
+  grid-template-rows: 250px auto;
+  column-gap: 16px;
 }
 
 .overlay-corner[data-mode='test'] .eye-shell {
-  width: 220px;
-  height: 156px;
-  margin-top: 30px;
+  grid-column: 1;
+  grid-row: 1;
+  width: 224px;
+  height: 160px;
+  margin: 52px auto 0;
 }
 
 .overlay-corner[data-mode='test'] .chat-sim { display: none; }
 
 .test-label {
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  max-width: 520px;
+  grid-column: 1 / span 2;
+  grid-row: 2;
+  position: relative;
+  left: 0;
+  top: 0;
+  max-width: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -798,10 +855,12 @@ body {
 }
 
 .test-ui {
-  position: absolute;
-  right: 0;
-  top: 8px;
-  width: 320px;
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  right: auto;
+  top: 12px;
+  width: 338px;
   padding: 6px;
   border: var(--px) solid #4b5f53;
   background: rgba(7, 11, 8, 0.72);
@@ -815,8 +874,8 @@ body {
   background: #1c2620;
   color: #d2ddd0;
   font: inherit;
-  font-size: 8px;
-  padding: 3px 4px;
+  font-size: 7px;
+  padding: 2px 4px;
   text-transform: lowercase;
   cursor: pointer;
 }

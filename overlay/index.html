@@ -51,11 +51,11 @@
       </aside>
 
       <div id="test-label" class="test-label" hidden>
-        <span id="label-phase">phase: awakened</span>
-        <span id="label-emotion">emotion: neutral</span>
-        <span id="label-blink">blink: normal</span>
-        <span id="label-shape">shape: awakened-neutral</span>
-        <span id="label-ambient">ambient: on</span>
+        <span id="label-phase">phase:awakened</span>
+        <span id="label-emotion">emo:neutral</span>
+        <span id="label-blink">blink:normal</span>
+        <span id="label-shape">shape:awakened-neutral</span>
+        <span id="label-ambient">amb:on • glow</span>
       </div>
 
       <aside id="test-ui" class="test-ui" hidden>
@@ -84,6 +84,14 @@
           <button data-act="action" data-value="twitch">twitch</button>
           <button data-act="action" data-value="shudder">shudder</button>
           <button data-act="ambient" data-value="toggle">ambient on/off</button>
+        </div>
+
+        <div class="test-ui__row">
+          <button data-act="variant" data-value="bloodshot">bloodshot</button>
+          <button data-act="variant" data-value="bleeding">bleeding</button>
+          <button data-act="variant" data-value="zombified">zombified</button>
+          <button data-act="variant" data-value="decay">heavy decay</button>
+          <button data-act="variant" data-value="glow">soft glow</button>
         </div>
         <div class="test-ui__row">
           <button data-act="demo" data-value="toggle">start/stop auto demo</button>
