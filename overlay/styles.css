@@ -63,6 +63,8 @@ body {
   --mist-speed: 8.2s;
   --spore-speed: 5.1s;
   --thorn-speed: 3.6s;
+  --frame-opacity: 1;
+  --phase-lid-bias: 0deg;
 }
 
 .aura,
@@ -80,7 +82,7 @@ body {
 .aura {
   position: absolute;
   inset: -12px;
-  opacity: var(--aura-opacity);
+  opacity: calc(var(--aura-opacity) * var(--frame-opacity));
   animation: auraPulse var(--aura-speed) steps(6, end) infinite;
   background:
     repeating-linear-gradient(90deg,
@@ -118,7 +120,7 @@ body {
       transparent 0 calc(var(--px) * 4),
       color-mix(in srgb, var(--vine) 75%, transparent) calc(var(--px) * 4) calc(var(--px) * 5),
       transparent calc(var(--px) * 5) calc(var(--px) * 7));
-  opacity: var(--vine-opacity);
+  opacity: calc(var(--vine-opacity) * var(--frame-opacity));
   clip-path: polygon(
     2% 50%, 10% 30%, 20% 22%, 30% 26%, 42% 40%, 55% 58%, 70% 66%, 84% 62%, 95% 44%,
     97% 54%, 90% 72%, 72% 82%, 52% 76%, 36% 58%, 24% 43%, 12% 44%, 6% 54%
@@ -131,7 +133,7 @@ body {
     repeating-radial-gradient(circle at 15% 70%, color-mix(in srgb, var(--thorn) 80%, transparent) 0 2px, transparent 2px 8px),
     repeating-radial-gradient(circle at 85% 25%, color-mix(in srgb, var(--thorn) 80%, transparent) 0 2px, transparent 2px 8px),
     repeating-radial-gradient(circle at 50% 5%, color-mix(in srgb, var(--thorn) 70%, transparent) 0 2px, transparent 2px 9px);
-  opacity: var(--thorn-opacity);
+  opacity: calc(var(--thorn-opacity) * var(--frame-opacity));
 }
 
 .vine {
@@ -307,7 +309,7 @@ body {
   right: -6%;
   top: -48px;
   height: calc(74px + var(--squint) + var(--blink-peek));
-  transform: rotate(var(--lid-angle));
+  transform: rotate(calc(var(--lid-angle) + var(--phase-lid-bias)));
   background:
     linear-gradient(180deg,
       var(--lid-1) 0 35%,
@@ -384,16 +386,32 @@ body {
 .melt-right { left: 74%; animation-delay: 0.9s; }
 
 /* PHASE BASE SHAPES (silhouette-first) */
+.eye-shell.phase-awakened {
+  --phase-lid-bias: 0deg;
+}
+
 .eye-shell.phase-awakened .eye {
   clip-path: polygon(6% 52%, 12% 36%, 23% 27%, 37% 21%, 50% 19%, 64% 21%, 77% 27%, 88% 36%, 94% 51%, 89% 64%, 78% 73%, 64% 79%, 50% 81%, 36% 78%, 23% 73%, 12% 63%);
+}
+
+.eye-shell.phase-overgrown {
+  --phase-lid-bias: -1deg;
 }
 
 .eye-shell.phase-overgrown .eye {
   clip-path: polygon(3% 52%, 8% 31%, 20% 21%, 36% 15%, 50% 14%, 67% 16%, 82% 22%, 93% 33%, 97% 51%, 93% 68%, 82% 80%, 67% 86%, 50% 88%, 33% 85%, 18% 78%, 7% 67%);
 }
 
+.eye-shell.phase-corrupted {
+  --phase-lid-bias: -4deg;
+}
+
 .eye-shell.phase-corrupted .eye {
   clip-path: polygon(8% 60%, 12% 39%, 26% 26%, 42% 20%, 58% 21%, 72% 26%, 84% 34%, 95% 46%, 95% 56%, 89% 68%, 76% 76%, 60% 80%, 45% 79%, 30% 73%, 17% 66%, 10% 63%);
+}
+
+.eye-shell.phase-rotten {
+  --phase-lid-bias: -6deg;
 }
 
 .eye-shell.phase-rotten .eye {
@@ -548,18 +566,18 @@ body {
   --socket: #2e4538;
   --socket-opacity: 0.12;
 
-  --sclera-1: #e6eadc;
-  --sclera-2: #cad3c0;
-  --sclera-3: #9eaf98;
-  --sclera-4: #65796a;
+  --sclera-1: #f3f0dd;
+  --sclera-2: #e4dec2;
+  --sclera-3: #b3b18e;
+  --sclera-4: #6c7359;
 
-  --iris-1: #bdd6c4;
-  --iris-2: #74a185;
-  --iris-3: #3f7257;
-  --iris-4: #1f3d2f;
-  --iris-border: #304e3d;
-  --iris-ring: #88ba9b;
-  --iris-speck: #c4decf;
+  --iris-1: #ece29e;
+  --iris-2: #c8b85b;
+  --iris-3: #8b7d35;
+  --iris-4: #41371c;
+  --iris-border: #635526;
+  --iris-ring: #e0cf6d;
+  --iris-speck: #f3e89f;
   --pupil-core: #050705;
   --pupil-core-w: 10px;
   --pupil-core-h: 19px;
@@ -602,6 +620,7 @@ body {
   --mist-speed: 8.5s;
   --spore-speed: 5.8s;
   --blink-duration-base: 210ms;
+  --frame-opacity: 0.72;
 }
 
 /* overgrown */
@@ -610,18 +629,18 @@ body {
   --socket: #34503e;
   --socket-opacity: 0.16;
 
-  --sclera-1: #ecf0e2;
-  --sclera-2: #d2dccd;
-  --sclera-3: #a8bca6;
-  --sclera-4: #6a816e;
+  --sclera-1: #f4f1dd;
+  --sclera-2: #e8e3c4;
+  --sclera-3: #c0c195;
+  --sclera-4: #717953;
 
-  --iris-1: #d2e7d6;
-  --iris-2: #89b996;
-  --iris-3: #4a875f;
-  --iris-4: #244f35;
-  --iris-border: #2f5d42;
-  --iris-ring: #9cd8b0;
-  --iris-speck: #d8efd8;
+  --iris-1: #f1dc7a;
+  --iris-2: #d5b448;
+  --iris-3: #9f842f;
+  --iris-4: #4b3d1d;
+  --iris-border: #775f24;
+  --iris-ring: #efd16a;
+  --iris-speck: #f7e79a;
   --pupil-core: #040604;
   --pupil-core-w: 11px;
   --pupil-core-h: 21px;
@@ -667,6 +686,7 @@ body {
   --mist-speed: 7.1s;
   --spore-speed: 5.2s;
   --blink-duration-base: 185ms;
+  --frame-opacity: 0.8;
 }
 
 /* corrupted */
@@ -675,30 +695,30 @@ body {
   --socket: #4c4430;
   --socket-opacity: 0.36;
 
-  --sclera-1: #d3ccb3;
-  --sclera-2: #b7ab8a;
-  --sclera-3: #8f8468;
-  --sclera-4: #5e5b44;
+  --sclera-1: #d8cfaf;
+  --sclera-2: #b6a582;
+  --sclera-3: #8f7c5e;
+  --sclera-4: #58523b;
 
-  --iris-1: #b8b57f;
-  --iris-2: #8c8a56;
-  --iris-3: #5f6338;
-  --iris-4: #2a2e1c;
-  --iris-border: #4b5130;
-  --iris-ring: #989058;
-  --iris-speck: #c2b67e;
+  --iris-1: #d9c35d;
+  --iris-2: #af8f33;
+  --iris-3: #79611f;
+  --iris-4: #342812;
+  --iris-border: #6a4f1d;
+  --iris-ring: #cfac42;
+  --iris-speck: #e0c05f;
   --pupil-core: #070806;
   --pupil-core-w: 9px;
   --pupil-core-h: 23px;
 
   --shine: #d7d2b0;
   --wetline: #b8b18a;
-  --lid-1: #65563d;
-  --lid-2: #473d2b;
+  --lid-1: #6d5538;
+  --lid-2: #4a3723;
   --lid-rim: #7c6849;
 
   --vein: #98483d;
-  --vein-opacity: 0.64;
+  --vein-opacity: 0.74;
   --bleed-color: #7d2f2a;
   --bleed-opacity: 0.2;
   --decay: #625739;
@@ -731,6 +751,7 @@ body {
   --mist-speed: 4.6s;
   --spore-speed: 3.9s;
   --blink-duration-base: 145ms;
+  --frame-opacity: 0.95;
 }
 
 /* rotten */
@@ -739,18 +760,18 @@ body {
   --socket: #4f4732;
   --socket-opacity: 0.5;
 
-  --sclera-1: #ddd8a8;
-  --sclera-2: #c8be82;
-  --sclera-3: #9a9162;
-  --sclera-4: #696342;
+  --sclera-1: #d9d19c;
+  --sclera-2: #c2b272;
+  --sclera-3: #938454;
+  --sclera-4: #5e5635;
 
-  --iris-1: #aba66d;
-  --iris-2: #878255;
-  --iris-3: #5b5a39;
-  --iris-4: #292b1a;
-  --iris-border: #4e4f33;
-  --iris-ring: #7f7646;
-  --iris-speck: #9d935c;
+  --iris-1: #c7b15f;
+  --iris-2: #9a7d32;
+  --iris-3: #695321;
+  --iris-4: #312611;
+  --iris-border: #654b1b;
+  --iris-ring: #b2903c;
+  --iris-speck: #b7a063;
   --pupil-core: #080907;
   --pupil-core-w: 7px;
   --pupil-core-h: 26px;
@@ -796,6 +817,7 @@ body {
   --mist-speed: 10.8s;
   --spore-speed: 6.4s;
   --blink-duration-base: 340ms;
+  --frame-opacity: 1;
 }
 
 /* phase motion signatures */
@@ -857,7 +879,7 @@ body {
   height: 390px;
   display: grid;
   grid-template-columns: 250px 350px;
-  grid-template-rows: 250px auto;
+  grid-template-rows: 250px 22px;
   column-gap: 16px;
 }
 
