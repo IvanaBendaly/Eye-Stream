@@ -1,10 +1,9 @@
 :root {
   color-scheme: dark;
+  --px: 3px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html,
 body {
@@ -13,223 +12,191 @@ body {
   margin: 0;
   overflow: hidden;
   background: transparent;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'Press Start 2P', 'VT323', monospace;
+  image-rendering: pixelated;
 }
 
 .overlay-corner {
   position: fixed;
-  top: 12px;
-  right: 14px;
-  width: 230px;
-  height: 190px;
+  top: 8px;
+  right: 10px;
+  width: 250px;
+  height: 210px;
   pointer-events: none;
-}
-
-.overlay-hint {
-  display: none;
 }
 
 .eye-shell {
   position: relative;
-  width: 164px;
-  height: 112px;
-  margin: 10px auto 0;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.75));
-  animation: hover var(--hover-speed, 5.4s) ease-in-out infinite;
-  transition: filter 0.6s ease, transform 0.7s ease;
+  width: 176px;
+  height: 126px;
+  margin: 12px auto 0;
+  animation: shellFloat var(--hover-speed, 6s) steps(6, end) infinite;
+  filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0.6)) drop-shadow(0 9px 0 rgba(0, 0, 0, 0.55));
+
   --look-x: 0px;
   --look-y: 0px;
+  --eye-scale-x: 1;
+  --eye-scale-y: 1;
   --eye-tilt: 0deg;
-  --squint: 0;
-  --lower-lift: 0;
+
+  --squint: 0px;
+  --lower-lift: 0px;
+  --lid-angle: 0deg;
+
+  --iris-size: 48px;
   --pupil-size: 1;
   --pupil-height: 1;
-  --highlight-strength: 0.8;
-  --mist-opacity: 0.08;
-  --film-opacity: 0;
-  --shell-scale: 1;
+  --highlight-opacity: 1;
+
   --shell-lean: 0deg;
   --shell-droop: 0px;
-  --iris-size: 58px;
-  --vine-sway-speed: 6.4s;
-  --vine-sway-amp: 2deg;
-  --leaf-flutter-speed: 5.2s;
-  --leaf-flutter-amp: 4deg;
-  --aura-pulse-speed: 4.8s;
-  --mist-drift-speed: 7.8s;
-  --spore-float-speed: 4.8s;
-  --blink-duration: 220ms;
-  --blink-travel: 34px;
-  --blink-lower-travel: 4px;
+  --hover-amp: 2px;
+
+  --blink-duration-base: 220ms;
+  --blink-duration: var(--blink-duration-base);
+  --blink-travel: 42px;
+  --blink-lower-travel: 6px;
   --blink-peek: 0px;
+
+  --aura-speed: 6.2s;
+  --vines-speed: 7.2s;
+  --mist-speed: 8.2s;
+  --spore-speed: 5.1s;
+  --thorn-speed: 3.6s;
+}
+
+.aura,
+.vines,
+.eye,
+.pupil,
+.eyelid,
+.lower-lid,
+.mist,
+.spores,
+.melt {
+  image-rendering: pixelated;
 }
 
 .aura {
   position: absolute;
-  inset: -20px;
-  border-radius: 55% 45% 58% 42% / 56% 50% 50% 44%;
-  background:
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--aura) 20%, transparent), transparent 66%),
-    conic-gradient(from 40deg, transparent 0deg, color-mix(in srgb, var(--aura) 45%, transparent) 35deg, transparent 120deg, color-mix(in srgb, var(--aura) 40%, transparent) 190deg, transparent 280deg);
+  inset: -12px;
   opacity: var(--aura-opacity);
-  filter: blur(3px);
-  animation: auraPulse var(--aura-pulse-speed) ease-in-out infinite;
-  transform: rotate(var(--aura-tilt));
-  transition: opacity 0.7s ease, transform 0.7s ease, background 0.7s ease;
+  animation: auraPulse var(--aura-speed) steps(6, end) infinite;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0 calc(var(--px) * 3),
+      color-mix(in srgb, var(--aura) 70%, transparent) calc(var(--px) * 3) calc(var(--px) * 4),
+      transparent calc(var(--px) * 4) calc(var(--px) * 6)),
+    repeating-linear-gradient(0deg,
+      transparent 0 calc(var(--px) * 2),
+      color-mix(in srgb, var(--aura) 55%, transparent) calc(var(--px) * 2) calc(var(--px) * 3),
+      transparent calc(var(--px) * 3) calc(var(--px) * 5));
+  clip-path: polygon(
+    14% 12%, 34% 7%, 66% 7%, 87% 14%,
+    96% 35%, 98% 49%, 95% 67%, 84% 85%,
+    64% 94%, 37% 95%, 17% 87%, 6% 70%,
+    2% 49%, 5% 29%
+  );
 }
 
 .vines {
   position: absolute;
-  inset: -16px;
-  animation: vineSway var(--vine-sway-speed) ease-in-out infinite;
-  transform-origin: 50% 50%;
+  inset: -10px;
+  animation: vinePulse var(--vines-speed) steps(5, end) infinite;
 }
 
 .vines::before,
 .vines::after {
   content: '';
   position: absolute;
-  pointer-events: none;
 }
 
 .vines::before {
-  inset: 8px 2px;
-  border-radius: 46% 54% 58% 42% / 48% 58% 42% 52%;
-  border: 1px solid color-mix(in srgb, var(--vine) 72%, transparent);
-  border-top-color: transparent;
-  border-bottom-color: color-mix(in srgb, var(--thorn) 65%, transparent);
-  transform: rotate(var(--vine-tilt));
+  inset: 4px;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0 calc(var(--px) * 4),
+      color-mix(in srgb, var(--vine) 75%, transparent) calc(var(--px) * 4) calc(var(--px) * 5),
+      transparent calc(var(--px) * 5) calc(var(--px) * 7));
   opacity: var(--vine-opacity);
+  clip-path: polygon(
+    2% 50%, 10% 30%, 20% 22%, 30% 26%, 42% 40%, 55% 58%, 70% 66%, 84% 62%, 95% 44%,
+    97% 54%, 90% 72%, 72% 82%, 52% 76%, 36% 58%, 24% 43%, 12% 44%, 6% 54%
+  );
 }
 
 .vines::after {
-  inset: -3px;
-  border-radius: 50%;
+  inset: 0;
   background:
-    radial-gradient(circle at 12% 45%, color-mix(in srgb, var(--thorn) 45%, transparent) 0 2px, transparent 3px),
-    radial-gradient(circle at 88% 52%, color-mix(in srgb, var(--thorn) 50%, transparent) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--thorn) 40%, transparent) 0 2px, transparent 3px),
-    radial-gradient(circle at 58% 88%, color-mix(in srgb, var(--thorn) 50%, transparent) 0 2px, transparent 3px);
+    repeating-radial-gradient(circle at 15% 70%, color-mix(in srgb, var(--thorn) 80%, transparent) 0 2px, transparent 2px 8px),
+    repeating-radial-gradient(circle at 85% 25%, color-mix(in srgb, var(--thorn) 80%, transparent) 0 2px, transparent 2px 8px),
+    repeating-radial-gradient(circle at 50% 5%, color-mix(in srgb, var(--thorn) 70%, transparent) 0 2px, transparent 2px 9px);
   opacity: var(--thorn-opacity);
 }
 
 .vine {
   position: absolute;
-  width: 74px;
-  height: 94px;
-  border: 2px solid transparent;
-  border-top-color: var(--vine);
-  border-left-color: color-mix(in srgb, var(--vine) 62%, transparent);
-  border-radius: 62% 38% 56% 44% / 60% 58% 42% 40%;
+  width: 56px;
+  height: 96px;
+  background:
+    repeating-linear-gradient(0deg,
+      color-mix(in srgb, var(--vine) 95%, #0a0b09) 0 calc(var(--px) * 1),
+      color-mix(in srgb, var(--vine) 70%, #0a0b09) calc(var(--px) * 1) calc(var(--px) * 2));
   opacity: var(--vine-opacity);
-  transition: border-color 0.8s ease, transform 0.8s ease, opacity 0.7s ease;
+  clip-path: polygon(36% 0, 55% 0, 66% 12%, 64% 24%, 54% 35%, 52% 48%, 62% 62%, 64% 76%, 56% 90%, 42% 100%, 30% 92%, 32% 72%, 42% 57%, 44% 42%, 34% 28%, 30% 12%);
 }
 
-.vine-left {
-  left: -30px;
-  top: 2px;
-  transform: rotate(calc(-38deg + var(--vine-curl)));
-}
-
-.vine-right {
-  right: -30px;
-  top: 8px;
-  transform: scaleX(-1) rotate(calc(-46deg + var(--vine-curl)));
-}
+.vine-left { left: -18px; top: 8px; transform: rotate(calc(-30deg + var(--vine-curl))); }
+.vine-right { right: -18px; top: 12px; transform: scaleX(-1) rotate(calc(-34deg + var(--vine-curl))); }
 
 .leaf {
-  animation: leafFlutter var(--leaf-flutter-speed) ease-in-out infinite;
-
   position: absolute;
-  width: 16px;
-  height: 24px;
-  border-radius: 60% 20% 70% 30%;
+  width: 22px;
+  height: 18px;
   background:
-    radial-gradient(circle at 20% 24%, var(--leaf-high) 0 25%, transparent 40%),
-    linear-gradient(130deg, var(--leaf-high), var(--leaf-mid) 66%, color-mix(in srgb, var(--leaf-mid) 70%, #0d100d));
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+    linear-gradient(180deg, var(--leaf-light) 0 50%, var(--leaf-dark) 50% 100%);
+  clip-path: polygon(0 38%, 25% 0, 72% 8%, 100% 35%, 72% 88%, 30% 100%, 8% 75%);
   opacity: var(--leaf-opacity);
-  filter: saturate(var(--leaf-sat)) brightness(var(--leaf-bright));
-  transition: background 0.7s ease, opacity 0.7s ease, filter 0.7s ease, transform 0.8s ease;
+  animation: leafFlap var(--vines-speed) steps(5, end) infinite;
 }
 
-.leaf-left {
-  left: 0;
-  top: 34px;
-  --leaf-base-rotate: -16deg;
-  transform: rotate(var(--leaf-base-rotate)) scale(var(--leaf-scale));
-}
-
-.leaf-right {
-  right: 1px;
-  top: 51px;
-  --leaf-base-rotate: -8deg;
-  transform: scaleX(-1) rotate(var(--leaf-base-rotate)) scale(var(--leaf-scale));
-  animation-name: leafFlutterMirror;
-  animation-delay: 0.8s;
-}
+.leaf-left { left: 4px; top: 34px; }
+.leaf-right { right: 5px; top: 55px; transform: scaleX(-1); animation-name: leafFlapMirror; animation-delay: 0.6s; }
 
 .thorn {
   position: absolute;
-  width: 2px;
-  height: 13px;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--thorn) 60%, #4c5c52), var(--thorn));
-  border-radius: 2px;
+  width: 9px;
+  height: 16px;
+  background: var(--thorn);
+  clip-path: polygon(50% 0, 100% 62%, 68% 100%, 36% 100%, 0 62%);
   opacity: var(--thorn-opacity);
+  animation: thornTick var(--thorn-speed) steps(3, end) infinite;
 }
 
-.thorn::after {
-  content: '';
-  position: absolute;
-  left: -2px;
-  top: 10px;
-  width: 0;
-  height: 0;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  border-top: 6px solid var(--thorn);
-}
-
-.thorn-left {
-  left: 17px;
-  top: 72px;
-  transform: rotate(24deg);
-}
-
-.thorn-right {
-  right: 18px;
-  top: 30px;
-  transform: rotate(165deg);
-}
-
-.thorn-top {
-  left: 54%;
-  top: 4px;
-  transform: rotate(198deg);
-}
-
-.thorn-bottom {
-  left: 58%;
-  top: 86px;
-  transform: rotate(22deg);
-}
+.thorn-left { left: 13px; top: 82px; }
+.thorn-right { right: 21px; top: 30px; transform: rotate(150deg); animation-delay: 0.5s; }
+.thorn-top { left: 52%; top: 4px; transform: rotate(190deg); animation-delay: 0.2s; }
+.thorn-bottom { left: 59%; top: 98px; transform: rotate(16deg); animation-delay: 0.9s; }
 
 .eye {
   position: absolute;
   inset: 0;
-  border-radius: 50% / 58%;
-  border: 1.5px solid rgba(10, 14, 11, 0.9);
-  clip-path: ellipse(49% 45% at 50% 50%);
+  transform: rotate(var(--eye-tilt)) scale(var(--eye-scale-x), var(--eye-scale-y));
+  clip-path: polygon(
+    4% 51%, 9% 35%, 20% 25%, 34% 19%, 50% 18%, 66% 20%, 79% 26%, 90% 36%, 96% 50%,
+    91% 64%, 80% 74%, 66% 80%, 50% 82%, 33% 79%, 20% 73%, 10% 63%
+  );
+  border: var(--px) solid var(--outline);
   background:
-    radial-gradient(160% 110% at 50% 106%, rgba(14, 15, 13, 0.56), transparent 54%),
-    radial-gradient(circle at 50% 43%, var(--sclera-core) 6%, var(--sclera-mid) 58%, var(--sclera-edge) 100%);
+    linear-gradient(180deg,
+      var(--sclera-1) 0 20%,
+      var(--sclera-2) 20% 50%,
+      var(--sclera-3) 50% 75%,
+      var(--sclera-4) 75% 100%);
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 18px rgba(0, 0, 0, 0.38),
-    inset 0 0 0 1px color-mix(in srgb, var(--glow) 56%, transparent);
+    inset 0 calc(var(--px) * -1) 0 rgba(0, 0, 0, 0.2),
+    inset 0 calc(var(--px) * 2) 0 color-mix(in srgb, var(--outline) 20%, transparent);
   overflow: hidden;
-  transform: rotate(var(--eye-tilt));
-  transition: background 0.7s ease, box-shadow 0.7s ease, transform 0.7s ease;
 }
 
 .eye::before {
@@ -237,58 +204,47 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(110% 42% at 50% 10%, color-mix(in srgb, var(--lid-tint) 94%, transparent) 5%, transparent 60%),
-    radial-gradient(120% 70% at 50% 100%, rgba(8, 10, 9, 0.5) 1%, transparent 58%);
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-.vein-layer,
-.decay-layer,
-.mist {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+    repeating-linear-gradient(45deg,
+      transparent 0 calc(var(--px) * 2),
+      color-mix(in srgb, var(--socket) 40%, transparent) calc(var(--px) * 2) calc(var(--px) * 3),
+      transparent calc(var(--px) * 3) calc(var(--px) * 5));
+  opacity: var(--socket-opacity);
 }
 
 .vein-layer {
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(55% 40% at 18% 56%, color-mix(in srgb, var(--vein) 38%, transparent) 0 35%, transparent 44%),
-    linear-gradient(122deg, transparent 26%, color-mix(in srgb, var(--vein) 44%, transparent) 28%, transparent 34%),
-    linear-gradient(168deg, transparent 56%, color-mix(in srgb, var(--vein) 30%, transparent) 58%, transparent 64%),
-    linear-gradient(23deg, transparent 62%, color-mix(in srgb, var(--vein) 34%, transparent) 63%, transparent 68%);
+    repeating-linear-gradient(18deg,
+      transparent 0 calc(var(--px) * 6),
+      color-mix(in srgb, var(--vein) 82%, transparent) calc(var(--px) * 6) calc(var(--px) * 7),
+      transparent calc(var(--px) * 7) calc(var(--px) * 11)),
+    repeating-linear-gradient(160deg,
+      transparent 0 calc(var(--px) * 7),
+      color-mix(in srgb, var(--vein) 72%, transparent) calc(var(--px) * 7) calc(var(--px) * 8),
+      transparent calc(var(--px) * 8) calc(var(--px) * 13));
   opacity: var(--vein-opacity);
-  mix-blend-mode: multiply;
-  transition: opacity 0.7s ease, background 0.7s ease;
 }
 
 .pupil {
   position: absolute;
   left: 50%;
-  top: 51%;
+  top: 50%;
   width: var(--iris-size);
   height: var(--iris-size);
-  margin-left: calc(var(--iris-size) / -2);
-  margin-top: calc(var(--iris-size) / -2);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 34%, var(--iris-high) 0%, var(--iris-mid) 42%, var(--iris-low) 74%),
-    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.09) 0deg 8deg, rgba(12, 14, 11, 0.18) 10deg 18deg);
-  box-shadow:
-    inset 0 0 8px rgba(0, 0, 0, 0.45),
-    0 0 18px color-mix(in srgb, var(--pupil-glow) 62%, transparent);
+  margin: calc(var(--iris-size) / -2);
   transform: translate(var(--look-x), var(--look-y)) scale(var(--pupil-size), var(--pupil-height));
-  transition: transform 0.45s ease, background 0.7s ease, box-shadow 0.7s ease;
-  overflow: hidden;
-}
-
-.pupil::before {
-  content: '';
-  position: absolute;
-  inset: 15%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 42% 42%, color-mix(in srgb, var(--iris-high) 30%, transparent), transparent 66%);
-  opacity: 0.5;
+  background:
+    linear-gradient(180deg,
+      var(--iris-1) 0 20%,
+      var(--iris-2) 20% 45%,
+      var(--iris-3) 45% 70%,
+      var(--iris-4) 70% 100%);
+  clip-path: polygon(
+    32% 4%, 50% 0, 68% 4%, 82% 16%, 95% 33%, 98% 50%, 94% 68%, 82% 84%, 66% 95%,
+    50% 100%, 33% 95%, 16% 84%, 5% 68%, 2% 50%, 5% 33%, 18% 16%
+  );
+  border: var(--px) solid var(--iris-border);
 }
 
 .pupil::after {
@@ -298,97 +254,84 @@ body {
   top: 50%;
   width: var(--pupil-core-w);
   height: var(--pupil-core-h);
-  margin-left: calc(var(--pupil-core-w) / -2);
-  margin-top: calc(var(--pupil-core-h) / -2);
-  border-radius: 50%;
-  background: radial-gradient(circle at 45% 40%, #202520 0%, #050605 70%);
-  filter: blur(0.2px);
-  transition: width 0.55s ease, height 0.55s ease, border-radius 0.55s ease;
+  transform: translate(-50%, -50%);
+  background: var(--pupil-core);
+  clip-path: polygon(38% 0, 62% 0, 76% 20%, 80% 50%, 74% 80%, 58% 100%, 42% 100%, 26% 80%, 20% 50%, 24% 20%);
 }
 
 .shine {
   position: absolute;
-  left: 37%;
-  top: 27%;
-  width: 16px;
+  left: 34%;
+  top: 26%;
+  width: 12px;
   height: 9px;
-  border-radius: 50%;
-  background: rgba(236, 246, 244, 0.82);
-  opacity: calc(var(--highlight-strength) * 1);
-  filter: blur(0.35px);
-}
-
-.shine::after {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 8px;
-  width: 6px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(234, 241, 236, 0.54);
+  background: var(--shine);
+  clip-path: polygon(0 35%, 30% 0, 100% 5%, 85% 55%, 38% 100%);
+  opacity: var(--highlight-opacity);
 }
 
 .wetline {
   position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 16%;
-  height: 6px;
-  border-radius: 50%;
-  background: linear-gradient(to right, transparent, color-mix(in srgb, var(--wetline) 70%, transparent), transparent);
-  opacity: calc(var(--highlight-strength) * 0.85);
+  left: 10%;
+  right: 10%;
+  bottom: 15%;
+  height: 4px;
+  background: var(--wetline);
+  opacity: calc(var(--highlight-opacity) * 0.8);
 }
 
 .eyelid {
   position: absolute;
   left: -6%;
   right: -6%;
-  top: -42px;
-  height: calc(68px + var(--squint) + var(--blink-peek));
-  border-bottom-left-radius: 56% 70%;
-  border-bottom-right-radius: 54% 70%;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--lid-tint) 85%, #10150f), color-mix(in srgb, var(--lid-tint) 35%, transparent));
-  opacity: 0.92;
+  top: -48px;
+  height: calc(74px + var(--squint) + var(--blink-peek));
   transform: rotate(var(--lid-angle));
-  transition: height 0.55s ease, transform 0.55s ease, background 0.7s ease;
+  background:
+    linear-gradient(180deg,
+      var(--lid-1) 0 35%,
+      var(--lid-2) 35% 72%,
+      transparent 72% 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 85% 84%, 66% 92%, 50% 96%, 33% 92%, 14% 83%, 0 68%);
 }
 
 .lower-lid {
   position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: calc(8px - var(--lower-lift) + calc(var(--blink-peek) * 0.2));
-  height: 13px;
-  border-radius: 50%;
-  border-bottom: 2px solid color-mix(in srgb, var(--lid-rim) 65%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--lid-rim) 35%, transparent);
-  opacity: 0.8;
-  transition: bottom 0.55s ease, border-color 0.7s ease;
+  left: 8%;
+  right: 8%;
+  bottom: calc(10px - var(--lower-lift) + calc(var(--blink-peek) * 0.2));
+  height: 10px;
+  background: var(--lid-rim);
+  clip-path: polygon(0 66%, 18% 40%, 36% 28%, 52% 24%, 67% 30%, 84% 42%, 100% 65%, 100% 100%, 0 100%);
+  opacity: 0.85;
 }
 
 .decay-layer {
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(90% 75% at 52% 52%, color-mix(in srgb, var(--film) 40%, transparent), transparent 60%),
-    radial-gradient(40% 35% at 75% 58%, color-mix(in srgb, var(--bruise) 45%, transparent), transparent 70%),
-    radial-gradient(48% 37% at 24% 44%, color-mix(in srgb, var(--bruise) 32%, transparent), transparent 72%);
-  opacity: var(--film-opacity);
-  mix-blend-mode: multiply;
-  transition: opacity 0.7s ease, background 0.7s ease;
+    repeating-linear-gradient(0deg,
+      transparent 0 calc(var(--px) * 3),
+      color-mix(in srgb, var(--decay) 62%, transparent) calc(var(--px) * 3) calc(var(--px) * 4),
+      transparent calc(var(--px) * 4) calc(var(--px) * 7));
+  opacity: var(--decay-opacity);
 }
 
 .mist {
-  animation: mistDrift var(--mist-drift-speed) ease-in-out infinite;
+  position: absolute;
+  inset: -4px;
   background:
-    radial-gradient(50% 24% at 30% 70%, rgba(207, 214, 199, 0.2), transparent 78%),
-    radial-gradient(58% 25% at 70% 70%, rgba(196, 206, 188, 0.2), transparent 80%);
+    repeating-linear-gradient(90deg,
+      transparent 0 calc(var(--px) * 4),
+      color-mix(in srgb, var(--mist) 72%, transparent) calc(var(--px) * 4) calc(var(--px) * 5),
+      transparent calc(var(--px) * 5) calc(var(--px) * 8));
   opacity: var(--mist-opacity);
-  filter: blur(2px);
+  animation: mistShift var(--mist-speed) steps(6, end) infinite;
 }
 
 .spores {
   position: absolute;
-  inset: -14px;
+  inset: -8px;
   opacity: var(--spore-opacity);
 }
 
@@ -396,632 +339,570 @@ body {
   position: absolute;
   width: 5px;
   height: 5px;
-  border-radius: 50%;
-  background: var(--spore-color);
-  filter: blur(0.4px);
-  animation: sporeFloat var(--spore-float-speed) ease-in-out infinite;
+  background: var(--spore);
+  animation: sporeLift var(--spore-speed) steps(6, end) infinite;
 }
 
-.spore-1 { left: 22%; top: 82%; }
-.spore-2 { left: 59%; top: 78%; animation-delay: 1.2s; }
-.spore-3 { left: 75%; top: 84%; animation-delay: 2s; }
+.spore-1 { left: 25%; top: 82%; }
+.spore-2 { left: 57%; top: 78%; animation-delay: 0.8s; }
+.spore-3 { left: 78%; top: 84%; animation-delay: 1.6s; }
 
 .melt {
   position: absolute;
-  bottom: -24px;
-  width: 10px;
-  height: var(--melt-size);
-  border-radius: 0 0 8px 8px;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--melt-color) 30%, transparent), var(--melt-color));
-  opacity: var(--melt-opacity);
-  animation: drip 2.2s ease-in-out infinite;
+  width: 8px;
+  bottom: -16px;
+  height: var(--drip-size);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--drip) 60%, transparent) 0 30%, var(--drip) 30% 100%);
+  opacity: var(--drip-opacity);
+  animation: dripDrop calc(var(--mist-speed) * 0.6) steps(4, end) infinite;
 }
 
-.melt-left { left: 24%; }
-.melt-center { left: 50%; animation-delay: 0.3s; }
-.melt-right { left: 70%; animation-delay: 0.7s; }
+.melt-left { left: 22%; }
+.melt-center { left: 50%; animation-delay: 0.5s; }
+.melt-right { left: 74%; animation-delay: 0.9s; }
 
-.eye-shell.state-awakened {
-  --aura: rgba(120, 190, 145, 0.9);
-  --aura-opacity: 0.6;
-  --aura-tilt: 8deg;
-  --glow: rgba(205, 236, 218, 0.56);
-  --sclera-core: #ecf7ee;
-  --sclera-mid: #bfd4c4;
-  --sclera-edge: #577a63;
-  --iris-high: #d0f0db;
-  --iris-mid: #3e9168;
-  --iris-low: #1a3f2d;
-  --pupil-glow: rgba(189, 230, 206, 0.6);
-  --pupil-core-w: 14px;
-  --pupil-core-h: 18px;
-  --vine: rgba(43, 113, 76, 0.95);
-  --vine-opacity: 0.86;
-  --vine-tilt: 4deg;
-  --vine-curl: 0deg;
-  --leaf-high: #bee2c4;
-  --leaf-mid: #4f986f;
-  --leaf-sat: 1;
-  --leaf-bright: 1;
-  --leaf-opacity: 0.92;
-  --leaf-scale: 1;
-  --thorn: rgba(50, 73, 58, 0.45);
-  --thorn-opacity: 0.24;
-  --vein: rgba(114, 96, 88, 0.6);
-  --vein-opacity: 0.2;
-  --wetline: rgba(233, 246, 239, 0.9);
-  --lid-tint: rgba(38, 77, 52, 0.54);
-  --lid-rim: rgba(56, 80, 63, 0.72);
-  --film: rgba(130, 150, 131, 0.35);
-  --film-opacity: 0.06;
-  --bruise: rgba(80, 62, 47, 0.2);
-  --spore-opacity: 0;
-  --spore-color: rgba(192, 206, 173, 0.2);
-  --melt-color: rgba(128, 164, 137, 0.36);
-  --melt-opacity: 0;
-  --melt-size: 12px;
-  --mist-opacity: 0.06;
-  --highlight-strength: 0.84;
-  --lid-angle: 1deg;
-  --shell-scale: 1;
-  --shell-lean: 0deg;
-  --shell-droop: 0px;
-  --iris-size: 56px;
-  --hover-speed: 5.1s;
-  --vine-sway-speed: 6.8s;
-  --vine-sway-amp: 1.4deg;
-  --leaf-flutter-speed: 5.4s;
-  --leaf-flutter-amp: 3deg;
-  --aura-pulse-speed: 5.4s;
-  --mist-drift-speed: 8.3s;
-  --spore-float-speed: 5.8s;
-  --blink-duration: 200ms;
-  --blink-travel: 30px;
-  --blink-lower-travel: 3px;
+/* PHASE BASE SHAPES (silhouette-first) */
+.eye-shell.phase-awakened .eye {
+  clip-path: polygon(5% 52%, 11% 36%, 22% 26%, 36% 20%, 50% 18%, 65% 20%, 78% 27%, 89% 37%, 95% 51%, 90% 64%, 79% 74%, 65% 80%, 50% 82%, 35% 79%, 22% 73%, 11% 63%);
 }
 
-.eye-shell.state-overgrown {
-  --aura: rgba(153, 217, 176, 0.96);
-  --aura-opacity: 0.72;
-  --aura-tilt: 2deg;
-  --glow: rgba(223, 250, 230, 0.68);
-  --sclera-core: #eff9ef;
-  --sclera-mid: #ccddcb;
-  --sclera-edge: #5e8567;
-  --iris-high: #e2f8e4;
-  --iris-mid: #46a273;
-  --iris-low: #1b4a32;
-  --pupil-glow: rgba(208, 248, 223, 0.76);
-  --pupil-core-w: 15px;
-  --pupil-core-h: 20px;
-  --vine: rgba(53, 140, 88, 1);
-  --vine-opacity: 1;
-  --vine-tilt: 9deg;
-  --vine-curl: 9deg;
-  --leaf-high: #cff0d4;
-  --leaf-mid: #58af7d;
-  --leaf-sat: 1.24;
-  --leaf-bright: 1.1;
-  --leaf-opacity: 1;
-  --leaf-scale: 1.2;
-  --thorn: rgba(44, 70, 50, 0.54);
-  --thorn-opacity: 0.32;
-  --vein: rgba(122, 104, 95, 0.55);
-  --vein-opacity: 0.22;
-  --wetline: rgba(240, 251, 246, 0.95);
-  --lid-tint: rgba(33, 83, 56, 0.52);
-  --lid-rim: rgba(58, 92, 71, 0.75);
-  --film: rgba(126, 156, 130, 0.3);
-  --film-opacity: 0.1;
-  --bruise: rgba(85, 66, 51, 0.2);
-  --spore-opacity: 0;
-  --spore-color: rgba(176, 210, 179, 0.2);
-  --melt-color: rgba(120, 158, 130, 0.4);
-  --melt-opacity: 0.05;
-  --melt-size: 14px;
-  --mist-opacity: 0.08;
-  --highlight-strength: 0.94;
-  --lid-angle: 0deg;
-  --shell-scale: 1.03;
-  --shell-lean: -1deg;
-  --shell-droop: -1px;
-  --iris-size: 60px;
-  --hover-speed: 4.8s;
-  --vine-sway-speed: 5.1s;
-  --vine-sway-amp: 2.8deg;
-  --leaf-flutter-speed: 4.5s;
-  --leaf-flutter-amp: 5.5deg;
-  --aura-pulse-speed: 4.2s;
-  --mist-drift-speed: 7.1s;
-  --spore-float-speed: 5.2s;
-  --blink-duration: 185ms;
-  --blink-travel: 29px;
-  --blink-lower-travel: 4px;
-  --blink-peek: 0px;
+.eye-shell.phase-overgrown .eye {
+  clip-path: polygon(4% 52%, 9% 33%, 20% 23%, 35% 17%, 50% 15%, 67% 17%, 81% 23%, 92% 34%, 96% 51%, 92% 67%, 81% 78%, 67% 84%, 50% 86%, 33% 83%, 19% 76%, 8% 66%);
 }
 
-.eye-shell.state-corrupted {
-  --aura: rgba(127, 125, 90, 0.82);
-  --aura-opacity: 0.48;
-  --aura-tilt: -7deg;
-  --glow: rgba(131, 128, 92, 0.34);
-  --sclera-core: #d2ceb3;
-  --sclera-mid: #a99f80;
-  --sclera-edge: #615f44;
-  --iris-high: #b2af7d;
-  --iris-mid: #6f7246;
-  --iris-low: #232717;
-  --pupil-glow: rgba(116, 120, 82, 0.45);
-  --pupil-core-w: 11px;
-  --pupil-core-h: 24px;
-  --vine: rgba(92, 98, 68, 0.95);
-  --vine-opacity: 1;
-  --vine-tilt: 13deg;
-  --vine-curl: 14deg;
-  --leaf-high: #8e9870;
-  --leaf-mid: #626a4e;
-  --leaf-sat: 0.56;
-  --leaf-bright: 0.72;
-  --leaf-opacity: 0.86;
-  --leaf-scale: 1.18;
-  --thorn: rgba(25, 29, 20, 0.95);
-  --thorn-opacity: 0.74;
-  --vein: rgba(126, 78, 62, 0.96);
-  --vein-opacity: 0.58;
-  --wetline: rgba(226, 220, 191, 0.64);
-  --lid-tint: rgba(76, 67, 45, 0.74);
-  --lid-rim: rgba(88, 73, 52, 0.8);
-  --film: rgba(121, 113, 85, 0.58);
-  --film-opacity: 0.24;
-  --bruise: rgba(76, 52, 40, 0.6);
-  --spore-opacity: 0.18;
-  --spore-color: rgba(160, 149, 108, 0.7);
-  --melt-color: rgba(98, 93, 71, 0.75);
-  --melt-opacity: 0.22;
-  --melt-size: 18px;
-  --mist-opacity: 0.15;
-  --highlight-strength: 0.58;
-  --lid-angle: -7deg;
-  --shell-scale: 1.01;
-  --shell-lean: -4deg;
-  --shell-droop: 1px;
-  --iris-size: 54px;
-  --hover-speed: 4.2s;
-  --vine-sway-speed: 3.4s;
-  --vine-sway-amp: 4.8deg;
-  --leaf-flutter-speed: 3.1s;
-  --leaf-flutter-amp: 8deg;
-  --aura-pulse-speed: 3.2s;
-  --mist-drift-speed: 4.6s;
-  --spore-float-speed: 3.8s;
-  --blink-duration: 145ms;
-  --blink-travel: 36px;
-  --blink-lower-travel: 6px;
+.eye-shell.phase-corrupted .eye {
+  clip-path: polygon(6% 58%, 10% 37%, 24% 24%, 40% 18%, 57% 19%, 72% 24%, 84% 31%, 95% 44%, 96% 56%, 90% 71%, 76% 79%, 60% 83%, 44% 82%, 28% 76%, 14% 67%, 8% 62%);
 }
 
-.eye-shell.state-rotten {
-  --aura: rgba(98, 101, 70, 0.66);
-  --aura-opacity: 0.38;
-  --aura-tilt: -12deg;
-  --glow: rgba(92, 95, 64, 0.28);
-  --sclera-core: #d7d3a8;
-  --sclera-mid: #b7ae7f;
-  --sclera-edge: #6f6a45;
-  --iris-high: #9b9762;
-  --iris-mid: #68653c;
-  --iris-low: #1d1f13;
-  --pupil-glow: rgba(79, 82, 56, 0.4);
-  --pupil-core-w: 8px;
-  --pupil-core-h: 27px;
-  --vine: rgba(72, 70, 49, 0.94);
-  --vine-opacity: 0.94;
-  --vine-tilt: 16deg;
-  --vine-curl: 21deg;
-  --leaf-high: #7d8057;
-  --leaf-mid: #4a4a35;
-  --leaf-sat: 0.28;
-  --leaf-bright: 0.56;
-  --leaf-opacity: 0.8;
-  --leaf-scale: 1.16;
-  --thorn: rgba(10, 11, 8, 1);
-  --thorn-opacity: 0.96;
-  --vein: rgba(109, 63, 50, 1);
-  --vein-opacity: 0.66;
-  --wetline: rgba(190, 182, 142, 0.35);
-  --lid-tint: rgba(79, 68, 45, 0.84);
-  --lid-rim: rgba(88, 75, 50, 0.9);
-  --film: rgba(131, 128, 92, 0.76);
-  --film-opacity: 0.48;
-  --bruise: rgba(65, 48, 34, 0.8);
-  --spore-opacity: 0.42;
-  --spore-color: rgba(175, 165, 120, 0.74);
-  --melt-color: rgba(82, 73, 48, 0.88);
-  --melt-opacity: 0.46;
-  --melt-size: 24px;
-  --mist-opacity: 0.28;
-  --highlight-strength: 0.32;
-  --lid-angle: -12deg;
-  --shell-scale: 0.97;
-  --shell-lean: -9deg;
-  --shell-droop: 4px;
-  --iris-size: 50px;
-  --hover-speed: 7.3s;
-  --vine-sway-speed: 9.2s;
-  --vine-sway-amp: 1deg;
-  --leaf-flutter-speed: 8.4s;
-  --leaf-flutter-amp: 1.5deg;
-  --aura-pulse-speed: 8.8s;
-  --mist-drift-speed: 10.2s;
-  --spore-float-speed: 6.2s;
-  --blink-duration: 330ms;
-  --blink-travel: 40px;
-  --blink-lower-travel: 7px;
-}
-
-
-.eye-shell.phase-awakened .eyelid {
-  border-bottom-left-radius: 56% 72%;
-  border-bottom-right-radius: 54% 72%;
-}
-
-.eye-shell.phase-overgrown .eyelid {
-  border-bottom-left-radius: 60% 76%;
-  border-bottom-right-radius: 58% 76%;
-}
-
-.eye-shell.phase-corrupted .eyelid {
-  border-bottom-left-radius: 64% 84%;
-  border-bottom-right-radius: 42% 68%;
-}
-
-.eye-shell.phase-rotten .eyelid {
-  border-bottom-left-radius: 70% 92%;
-  border-bottom-right-radius: 36% 66%;
-}
-
-.eye-shell.phase-corrupted .eye,
 .eye-shell.phase-rotten .eye {
-  box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.04),
-    inset 0 -10px 22px rgba(0, 0, 0, 0.5),
-    inset 0 0 0 1px color-mix(in srgb, var(--glow) 42%, transparent);
+  clip-path: polygon(7% 61%, 11% 40%, 26% 28%, 43% 22%, 58% 24%, 72% 31%, 84% 40%, 93% 52%, 94% 62%, 89% 75%, 77% 84%, 61% 88%, 46% 87%, 31% 82%, 17% 73%, 10% 66%);
 }
 
-.eye-shell.phase-corrupted .vines {
-  animation-timing-function: steps(18, end);
-}
-
-.eye-shell.phase-rotten .vines {
-  animation-timing-function: linear;
-}
-
-.eye-shell.phase-rotten .mist {
-  filter: blur(3.2px);
-}
-
+/* EMOTION SHAPE LAYER */
 .eye-shell.emotion-neutral {
   --squint: 0px;
   --lower-lift: 0px;
+  --eye-scale-y: 1;
   --pupil-size: 1;
-  --pupil-height: 1;
-  --eye-tilt: 0deg;
+  --highlight-opacity: 0.9;
 }
 
 .eye-shell.emotion-happy {
   --squint: -7px;
   --lower-lift: 2px;
-  --pupil-size: 1.1;
-  --pupil-height: 1.08;
-  --eye-tilt: -1deg;
-  --highlight-strength: 1.05;
+  --eye-scale-y: 1.05;
+  --pupil-size: 1.09;
+  --highlight-opacity: 1;
   --lid-angle: -2deg;
 }
 
-.eye-shell.emotion-sad {
-  --squint: 7px;
-  --lower-lift: -2px;
+.eye-shell.emotion-alert {
+  --squint: -9px;
+  --lower-lift: -1px;
+  --eye-scale-y: 1.09;
   --pupil-size: 0.96;
-  --pupil-height: 1.03;
-  --eye-tilt: 1deg;
-  --lid-angle: 5deg;
+  --lid-angle: -5deg;
 }
 
-.eye-shell.emotion-alert,
 .eye-shell.emotion-angry {
   --squint: 11px;
   --lower-lift: 3px;
-  --pupil-size: 0.92;
-  --pupil-height: 1.06;
-  --eye-tilt: -4deg;
-  --lid-angle: -9deg;
+  --eye-scale-y: 0.93;
+  --pupil-size: 0.9;
+  --lid-angle: -10deg;
+  --highlight-opacity: 0.6;
 }
 
 .eye-shell.emotion-afraid {
-  --squint: -10px;
-  --lower-lift: -1px;
-  --pupil-size: 1.14;
-  --pupil-height: 1.1;
-  --eye-tilt: 2deg;
-  --lid-angle: -4deg;
+  --squint: -13px;
+  --lower-lift: -2px;
+  --eye-scale-y: 1.12;
+  --pupil-size: 1.13;
+  --lid-angle: -3deg;
+  --highlight-opacity: 0.75;
 }
 
-
-.eye-shell.emotion-bloodshot {
-  --squint: 13px;
-  --lower-lift: 4px;
-  --pupil-size: 0.9;
-  --pupil-height: 1.14;
-  --eye-tilt: -6deg;
-  --lid-angle: -11deg;
-  --highlight-strength: 0.4;
-  --vein-opacity: 0.72;
+.eye-shell.emotion-sad {
+  --squint: 8px;
+  --lower-lift: -2px;
+  --eye-scale-y: 0.94;
+  --pupil-size: 0.94;
+  --lid-angle: 4deg;
+  --highlight-opacity: 0.5;
 }
 
 .eye-shell.emotion-empty {
   --squint: 16px;
-  --lower-lift: -3px;
-  --pupil-size: 0.85;
-  --pupil-height: 1.2;
-  --eye-tilt: -7deg;
-  --highlight-strength: 0.2;
+  --lower-lift: -4px;
+  --eye-scale-y: 0.84;
+  --pupil-size: 0.84;
   --lid-angle: -12deg;
-  --shell-scale: 0.97;
-  --shell-lean: -9deg;
-  --shell-droop: 4px;
-  --iris-size: 50px;
-  --hover-speed: 7.3s;
-  --vine-sway-speed: 9.2s;
-  --vine-sway-amp: 1deg;
-  --leaf-flutter-speed: 8.4s;
-  --leaf-flutter-amp: 1.5deg;
-  --aura-pulse-speed: 8.8s;
-  --mist-drift-speed: 10.2s;
-  --spore-float-speed: 6.2s;
-  --blink-duration: 330ms;
-  --blink-travel: 40px;
-  --blink-lower-travel: 7px;
+  --highlight-opacity: 0.25;
 }
 
+.eye-shell.emotion-bloodshot {
+  --squint: 13px;
+  --lower-lift: 4px;
+  --eye-scale-y: 0.9;
+  --pupil-size: 0.88;
+  --lid-angle: -12deg;
+  --vein-opacity: 0.84;
+  --highlight-opacity: 0.38;
+}
+
+/* Blink variants */
 .eye-shell.blink-soft {
-  --blink-duration: calc(var(--blink-duration) * 1.14);
-  --blink-travel: calc(var(--blink-travel) * 0.86);
-  --blink-lower-travel: calc(var(--blink-lower-travel) * 0.75);
+  --blink-duration: calc(var(--blink-duration-base) * 1.2);
+  --blink-travel: 34px;
+  --blink-lower-travel: 4px;
 }
 
 .eye-shell.blink-half {
-  --blink-duration: calc(var(--blink-duration) * 0.8);
-  --blink-travel: calc(var(--blink-travel) * 0.54);
-  --blink-lower-travel: calc(var(--blink-lower-travel) * 0.45);
-  --blink-peek: -9px;
+  --blink-duration: calc(var(--blink-duration-base) * 0.8);
+  --blink-travel: 24px;
+  --blink-lower-travel: 3px;
+  --blink-peek: -10px;
 }
 
 .eye-shell.blink-tense {
-  --blink-duration: calc(var(--blink-duration) * 0.72);
-  --blink-travel: calc(var(--blink-travel) * 1.15);
-  --blink-lower-travel: calc(var(--blink-lower-travel) * 1.2);
+  --blink-duration: calc(var(--blink-duration-base) * 0.72);
+  --blink-travel: 45px;
+  --blink-lower-travel: 7px;
 }
 
 .eye-shell.blink-heavy {
-  --blink-duration: calc(var(--blink-duration) * 1.35);
-  --blink-travel: calc(var(--blink-travel) * 1.25);
-  --blink-lower-travel: calc(var(--blink-lower-travel) * 1.35);
+  --blink-duration: calc(var(--blink-duration-base) * 1.35);
+  --blink-travel: 52px;
+  --blink-lower-travel: 9px;
 }
 
-.eye-shell.blinking .eyelid {
-  animation: blinkUpper var(--blink-duration) cubic-bezier(0.34, 0.03, 0.36, 1) 1;
+.eye-shell.blinking .eyelid { animation: blinkTop var(--blink-duration) steps(4, end) 1; }
+.eye-shell.blinking .lower-lid { animation: blinkBottom var(--blink-duration) steps(4, end) 1; }
+.eye-shell.blinking .shine,
+.eye-shell.blinking .wetline { animation: blinkFade var(--blink-duration) steps(3, end) 1; }
+
+.eye-shell.twitch { animation: twitchSnap 320ms steps(5, end) 1; }
+.eye-shell.shudder { animation: shudderDead 900ms steps(8, end) 1; }
+.eye-shell.bloom .aura { animation: auraBloom 440ms steps(5, end) 1; }
+
+.eye-shell.ambient-off .aura,
+.eye-shell.ambient-off .vines,
+.eye-shell.ambient-off .leaf,
+.eye-shell.ambient-off .thorn,
+.eye-shell.ambient-off .mist,
+.eye-shell.ambient-off .spore,
+.eye-shell.ambient-off .melt { animation-play-state: paused; }
+
+/* PALETTE: awakened */
+.eye-shell.state-awakened {
+  --outline: #1a2a20;
+  --socket: #2e4538;
+  --socket-opacity: 0.25;
+
+  --sclera-1: #e6eadc;
+  --sclera-2: #cad3c0;
+  --sclera-3: #9eaf98;
+  --sclera-4: #65796a;
+
+  --iris-1: #bdd6c4;
+  --iris-2: #74a185;
+  --iris-3: #3f7257;
+  --iris-4: #1f3d2f;
+  --iris-border: #304e3d;
+  --pupil-core: #050705;
+  --pupil-core-w: 10px;
+  --pupil-core-h: 19px;
+
+  --shine: #edf5ec;
+  --wetline: #d9efe1;
+  --lid-1: #52735f;
+  --lid-2: #344d3f;
+  --lid-rim: #5f7e69;
+
+  --vein: #7f6f62;
+  --vein-opacity: 0.2;
+  --decay: #6d6a59;
+  --decay-opacity: 0.05;
+
+  --aura: #7daf8e;
+  --aura-opacity: 0.55;
+  --vine: #4f7f5c;
+  --vine-opacity: 0.82;
+  --vine-curl: 0deg;
+  --leaf-light: #9cc6a2;
+  --leaf-dark: #4e845d;
+  --leaf-opacity: 0.92;
+  --thorn: #2e3f32;
+  --thorn-opacity: 0.3;
+
+  --mist: #9ab19e;
+  --mist-opacity: 0.08;
+  --spore: #b8c8b6;
+  --spore-opacity: 0.1;
+  --drip: #728f75;
+  --drip-opacity: 0;
+  --drip-size: 13px;
+
+  --hover-speed: 6.5s;
+  --aura-speed: 6.2s;
+  --vines-speed: 7.8s;
+  --mist-speed: 8.5s;
+  --spore-speed: 5.8s;
+  --blink-duration-base: 210ms;
 }
 
-.eye-shell.blinking .lower-lid {
-  animation: blinkLower var(--blink-duration) cubic-bezier(0.34, 0.03, 0.36, 1) 1;
+/* overgrown */
+.eye-shell.state-overgrown {
+  --outline: #15261d;
+  --socket: #34503e;
+  --socket-opacity: 0.28;
+
+  --sclera-1: #ecf0e2;
+  --sclera-2: #d2dccd;
+  --sclera-3: #a8bca6;
+  --sclera-4: #6a816e;
+
+  --iris-1: #d2e7d6;
+  --iris-2: #89b996;
+  --iris-3: #4a875f;
+  --iris-4: #244f35;
+  --iris-border: #2f5d42;
+  --pupil-core: #040604;
+  --pupil-core-w: 11px;
+  --pupil-core-h: 21px;
+
+  --shine: #f2fbf0;
+  --wetline: #ddf4e2;
+  --lid-1: #578569;
+  --lid-2: #39634b;
+  --lid-rim: #6ba17f;
+
+  --vein: #7d6f63;
+  --vein-opacity: 0.23;
+  --decay: #5f6d54;
+  --decay-opacity: 0.08;
+
+  --aura: #9cd1aa;
+  --aura-opacity: 0.72;
+  --vine: #5ca06d;
+  --vine-opacity: 1;
+  --vine-curl: 6deg;
+  --leaf-light: #c0e4c6;
+  --leaf-dark: #61ad74;
+  --leaf-opacity: 1;
+  --thorn: #2f4a36;
+  --thorn-opacity: 0.4;
+
+  --mist: #9eba9f;
+  --mist-opacity: 0.1;
+  --spore: #c0d8c3;
+  --spore-opacity: 0.12;
+  --drip: #82ab8d;
+  --drip-opacity: 0.05;
+  --drip-size: 15px;
+
+  --eye-scale-x: 1.03;
+  --eye-scale-y: 1.02;
+  --shell-lean: -1deg;
+  --hover-speed: 5.1s;
+  --aura-speed: 4.4s;
+  --vines-speed: 5.2s;
+  --mist-speed: 7.1s;
+  --spore-speed: 5.2s;
+  --blink-duration-base: 185ms;
 }
 
-.eye-shell.twitch {
-  animation: twitch 300ms linear;
+/* corrupted */
+.eye-shell.state-corrupted {
+  --outline: #171712;
+  --socket: #4c4430;
+  --socket-opacity: 0.36;
+
+  --sclera-1: #d3ccb3;
+  --sclera-2: #b7ab8a;
+  --sclera-3: #8f8468;
+  --sclera-4: #5e5b44;
+
+  --iris-1: #b8b57f;
+  --iris-2: #8c8a56;
+  --iris-3: #5f6338;
+  --iris-4: #2a2e1c;
+  --iris-border: #4b5130;
+  --pupil-core: #070806;
+  --pupil-core-w: 9px;
+  --pupil-core-h: 23px;
+
+  --shine: #d7d2b0;
+  --wetline: #b8b18a;
+  --lid-1: #65563d;
+  --lid-2: #473d2b;
+  --lid-rim: #7c6849;
+
+  --vein: #8f5343;
+  --vein-opacity: 0.6;
+  --decay: #625739;
+  --decay-opacity: 0.3;
+
+  --aura: #8e8a63;
+  --aura-opacity: 0.45;
+  --vine: #76704d;
+  --vine-opacity: 1;
+  --vine-curl: 14deg;
+  --leaf-light: #8b8b63;
+  --leaf-dark: #5f5c42;
+  --leaf-opacity: 0.84;
+  --thorn: #181912;
+  --thorn-opacity: 0.84;
+
+  --mist: #9f9471;
+  --mist-opacity: 0.2;
+  --spore: #a79c75;
+  --spore-opacity: 0.3;
+  --drip: #736d4f;
+  --drip-opacity: 0.28;
+  --drip-size: 19px;
+
+  --shell-lean: -5deg;
+  --shell-droop: 1px;
+  --hover-speed: 4s;
+  --aura-speed: 3.1s;
+  --vines-speed: 3.2s;
+  --mist-speed: 4.6s;
+  --spore-speed: 3.9s;
+  --blink-duration-base: 145ms;
 }
 
-.eye-shell.shudder {
-  animation: shudder 900ms ease-in-out;
+/* rotten */
+.eye-shell.state-rotten {
+  --outline: #12120f;
+  --socket: #4f4732;
+  --socket-opacity: 0.45;
+
+  --sclera-1: #d8d3a5;
+  --sclera-2: #c0b686;
+  --sclera-3: #9a9162;
+  --sclera-4: #696342;
+
+  --iris-1: #aba66d;
+  --iris-2: #878255;
+  --iris-3: #5b5a39;
+  --iris-4: #292b1a;
+  --iris-border: #4e4f33;
+  --pupil-core: #080907;
+  --pupil-core-w: 7px;
+  --pupil-core-h: 26px;
+
+  --shine: #aca274;
+  --wetline: #958c5f;
+  --lid-1: #6a5b40;
+  --lid-2: #4a3f2e;
+  --lid-rim: #837251;
+
+  --vein: #734437;
+  --vein-opacity: 0.72;
+  --decay: #5e5439;
+  --decay-opacity: 0.5;
+
+  --aura: #74744f;
+  --aura-opacity: 0.34;
+  --vine: #5d5b3f;
+  --vine-opacity: 0.92;
+  --vine-curl: 20deg;
+  --leaf-light: #78724f;
+  --leaf-dark: #4c4934;
+  --leaf-opacity: 0.76;
+  --thorn: #0d0e0b;
+  --thorn-opacity: 0.98;
+
+  --mist: #8f8461;
+  --mist-opacity: 0.34;
+  --spore: #b3a97c;
+  --spore-opacity: 0.46;
+  --drip: #61563a;
+  --drip-opacity: 0.52;
+  --drip-size: 25px;
+
+  --eye-scale-y: 0.9;
+  --shell-lean: -9deg;
+  --shell-droop: 4px;
+  --hover-speed: 7.7s;
+  --aura-speed: 9s;
+  --vines-speed: 9.6s;
+  --mist-speed: 10.8s;
+  --spore-speed: 6.4s;
+  --blink-duration-base: 340ms;
 }
 
-.eye-shell.bloom .aura {
-  animation: bloomAura 480ms ease-out;
-}
+/* phase motion signatures */
+.eye-shell.phase-corrupted .vines { animation-timing-function: steps(2, end); }
+.eye-shell.phase-corrupted .thorn { animation-timing-function: steps(2, end); }
+.eye-shell.phase-rotten .mist { animation-timing-function: steps(3, end); }
+.eye-shell.phase-rotten .leaf { animation-duration: calc(var(--vines-speed) * 1.1); }
 
 .chat-sim {
   position: absolute;
-  right: -2px;
-  bottom: -4px;
-  width: 152px;
-  padding: 6px 7px;
-  border-radius: 8px;
-  border: 1px solid rgba(104, 130, 112, 0.26);
-  background: rgba(8, 15, 11, 0.34);
-  backdrop-filter: blur(1.5px);
-  color: rgba(210, 228, 213, 0.72);
-  font-size: 9px;
-  line-height: 1.3;
+  right: -4px;
+  bottom: 0;
+  width: 150px;
+  padding: 6px;
+  border: var(--px) solid #3f4e44;
+  background: rgba(7, 10, 8, 0.35);
+  color: #b6c4b6;
+  font-size: 8px;
+  line-height: 1.4;
 }
 
 .chat-sim__header {
   display: flex;
   justify-content: space-between;
   margin-bottom: 4px;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 8px;
-  opacity: 0.68;
-}
-
-.chat-sim__state {
-  color: rgba(190, 207, 193, 0.72);
-}
-
-.chat-sim__feed {
-  display: grid;
-  gap: 2px;
-}
-
-.chat-line {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 7px;
   opacity: 0.8;
 }
 
-.chat-line--corrupt { color: rgba(178, 156, 115, 0.82); }
-.chat-line--heal { color: rgba(146, 195, 163, 0.82); }
-.chat-line--reset { color: rgba(181, 204, 221, 0.8); }
+.chat-sim__feed { display: grid; gap: 2px; }
+.chat-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-line--corrupt { color: #b9a67f; }
+.chat-line--heal { color: #96bfa0; }
+.chat-line--reset { color: #a9bac8; }
 
-
-
-.eye-shell.ambient-off .aura,
-.eye-shell.ambient-off .vines,
-.eye-shell.ambient-off .leaf,
-.eye-shell.ambient-off .mist,
-.eye-shell.ambient-off .melt,
-.eye-shell.ambient-off .spore {
-  animation-play-state: paused;
-}
-
+/* test mode */
 .overlay-corner[data-mode='test'] {
-  width: 520px;
-  height: 340px;
-  right: 10px;
+  width: 550px;
+  height: 360px;
 }
 
 .overlay-corner[data-mode='test'] .eye-shell {
-  margin-top: 24px;
-  width: 208px;
-  height: 140px;
+  width: 220px;
+  height: 156px;
+  margin-top: 30px;
 }
 
-.overlay-corner[data-mode='test'] .chat-sim {
-  display: none;
-}
+.overlay-corner[data-mode='test'] .chat-sim { display: none; }
 
 .test-label {
   position: absolute;
-  left: 4px;
-  top: 4px;
+  left: 6px;
+  top: 6px;
+  max-width: 520px;
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-  font-size: 10px;
-  color: rgba(214, 228, 218, 0.82);
-  background: rgba(8, 14, 11, 0.42);
-  border: 1px solid rgba(105, 128, 108, 0.34);
-  border-radius: 8px;
+  gap: 7px;
   padding: 5px 7px;
+  border: var(--px) solid #506257;
+  background: rgba(7, 11, 8, 0.7);
+  color: #d6dfd4;
+  font-size: 8px;
 }
 
 .test-ui {
   position: absolute;
   right: 0;
-  top: 6px;
-  width: 300px;
-  border-radius: 8px;
-  border: 1px solid rgba(104, 130, 112, 0.3);
-  background: rgba(8, 15, 11, 0.45);
-  backdrop-filter: blur(2px);
+  top: 8px;
+  width: 320px;
   padding: 6px;
+  border: var(--px) solid #4b5f53;
+  background: rgba(7, 11, 8, 0.72);
   pointer-events: auto;
 }
 
-.test-ui__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 4px;
-}
+.test-ui__row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
 
 .test-ui button {
-  background: rgba(30, 41, 33, 0.9);
-  border: 1px solid rgba(112, 144, 118, 0.35);
-  color: rgba(214, 226, 217, 0.88);
-  font-size: 10px;
-  border-radius: 6px;
-  padding: 3px 6px;
+  border: var(--px) solid #5f7c6c;
+  background: #1c2620;
+  color: #d2ddd0;
+  font: inherit;
+  font-size: 8px;
+  padding: 3px 4px;
   text-transform: lowercase;
   cursor: pointer;
 }
 
-@keyframes hover {
-  0%,
-  100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)) scale(var(--shell-scale)); }
-  50% { transform: translateY(calc(var(--shell-droop) - 2.5px)) rotate(var(--shell-lean)) scale(var(--shell-scale)); }
-}
+.test-ui button:hover { background: #28362e; }
 
-@keyframes blinkUpper {
-  0%,
-  100% { transform: translateY(0) rotate(var(--lid-angle)); }
-  45% { transform: translateY(var(--blink-travel)) rotate(var(--lid-angle)); }
-  58% { transform: translateY(calc(var(--blink-travel) - 2px)) rotate(var(--lid-angle)); }
-}
-
-@keyframes blinkLower {
-  0%,
-  100% { transform: translateY(0); }
-  45% { transform: translateY(calc(var(--blink-lower-travel) * -1)); }
-  58% { transform: translateY(calc(var(--blink-lower-travel) * -0.8)); }
-}
-
-
-@keyframes vineSway {
-  0%, 100% { transform: rotate(calc(var(--vine-sway-amp) * -1)); }
-  50% { transform: rotate(var(--vine-sway-amp)); }
-}
-
-@keyframes leafFlutter {
-  0%, 100% { transform: rotate(calc(var(--leaf-base-rotate) - var(--leaf-flutter-amp))) scale(var(--leaf-scale)); }
-  50% { transform: rotate(calc(var(--leaf-base-rotate) + var(--leaf-flutter-amp))) scale(var(--leaf-scale)); }
-}
-
-@keyframes leafFlutterMirror {
-  0%, 100% { transform: scaleX(-1) rotate(calc(var(--leaf-base-rotate) - var(--leaf-flutter-amp))) scale(var(--leaf-scale)); }
-  50% { transform: scaleX(-1) rotate(calc(var(--leaf-base-rotate) + var(--leaf-flutter-amp))) scale(var(--leaf-scale)); }
+/* animations */
+@keyframes shellFloat {
+  0%, 100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)); }
+  50% { transform: translateY(calc(var(--shell-droop) - var(--hover-amp))) rotate(var(--shell-lean)); }
 }
 
 @keyframes auraPulse {
-  0%, 100% { opacity: var(--aura-opacity); filter: blur(3px); }
-  50% { opacity: calc(var(--aura-opacity) + 0.08); filter: blur(4px); }
+  0%, 100% { opacity: var(--aura-opacity); transform: translateX(0); }
+  50% { opacity: calc(var(--aura-opacity) + 0.12); transform: translateX(var(--px)); }
 }
 
-@keyframes mistDrift {
-  0%, 100% { transform: translateX(0) translateY(0); }
-  50% { transform: translateX(3px) translateY(-1px); }
+@keyframes auraBloom {
+  0%, 100% { opacity: var(--aura-opacity); }
+  50% { opacity: calc(var(--aura-opacity) + 0.2); }
 }
 
-@keyframes twitch {
-  0%,
-  100% { transform: translateX(0) rotate(0deg); }
-  20% { transform: translateX(-1px) rotate(-0.5deg); }
-  40% { transform: translateX(2px) rotate(0.4deg); }
-  65% { transform: translateX(-1px) rotate(-0.3deg); }
+@keyframes vinePulse {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  50% { transform: translateX(var(--px)) rotate(1deg); }
 }
 
-@keyframes shudder {
-  0%,
-  100% { transform: translateX(0) rotate(0deg); }
-  12% { transform: translateX(-2px) rotate(-1.2deg); }
-  24% { transform: translateX(1px) rotate(1deg); }
-  48% { transform: translateX(-1px) rotate(-0.7deg); }
-  72% { transform: translateX(1px) rotate(0.5deg); }
+@keyframes leafFlap {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
 }
 
-@keyframes bloomAura {
-  0% { filter: blur(2px); opacity: var(--aura-opacity); }
-  55% { filter: blur(5px); opacity: calc(var(--aura-opacity) + 0.18); }
-  100% { filter: blur(3px); opacity: var(--aura-opacity); }
+@keyframes leafFlapMirror {
+  0%, 100% { transform: scaleX(-1) rotate(-2deg); }
+  50% { transform: scaleX(-1) rotate(2deg); }
 }
 
-@keyframes drip {
-  0%,
-  100% { transform: scaleY(0.88); }
-  50% { transform: scaleY(1.15); }
+@keyframes thornTick {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
 }
 
-@keyframes sporeFloat {
-  0% { transform: translateY(0) scale(0.8); opacity: 0.4; }
-  50% { transform: translateY(-9px) scale(1); opacity: 0.75; }
-  100% { transform: translateY(-14px) scale(0.9); opacity: 0; }
+@keyframes mistShift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(calc(var(--px) * 2)); }
+}
+
+@keyframes sporeLift {
+  0% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(-8px); opacity: 0.8; }
+  100% { transform: translateY(-14px); opacity: 0; }
+}
+
+@keyframes dripDrop {
+  0%, 100% { transform: scaleY(0.8); }
+  50% { transform: scaleY(1.2); }
+}
+
+@keyframes blinkTop {
+  0%, 100% { transform: translateY(0) rotate(var(--lid-angle)); }
+  45% { transform: translateY(var(--blink-travel)) rotate(var(--lid-angle)); }
+  60% { transform: translateY(calc(var(--blink-travel) - 2px)) rotate(var(--lid-angle)); }
+}
+
+@keyframes blinkBottom {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(calc(var(--blink-lower-travel) * -1)); }
+  60% { transform: translateY(calc(var(--blink-lower-travel) * -0.7)); }
+}
+
+@keyframes blinkFade {
+  0%, 100% { opacity: var(--highlight-opacity); }
+  45%, 60% { opacity: 0; }
+}
+
+@keyframes twitchSnap {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+}
+
+@keyframes shudderDead {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15% { transform: translateX(-2px) rotate(-1deg); }
+  30% { transform: translateX(1px) rotate(1deg); }
+  45% { transform: translateX(-1px) rotate(-0.5deg); }
+  60% { transform: translateX(1px) rotate(0.5deg); }
 }
