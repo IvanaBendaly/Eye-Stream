@@ -1,6 +1,10 @@
-# The Ivy Eye Overlay (OBS Browser Source)
+# Ghost Dog Overlay (OBS Browser Source)
 
-This repo contains a lightweight web overlay for OBS Browser Source and a simple message protocol so Streamer.bot can push ivy-eye actions/states from Twitch chat events.
+This repo contains a lightweight web overlay for OBS Browser Source and a simple message protocol so Streamer.bot can push stream pet actions/states from Twitch chat events.
+
+The stream pet is now a ghost dog:
+- **best condition**: happy, bright, energetic wagging
+- **worst condition**: poisoned by ivy, choking/suffocating animations
 
 ## Quick start
 
@@ -8,12 +12,6 @@ This repo contains a lightweight web overlay for OBS Browser Source and a simple
 2. Point it to `overlay/index.html` as a local file.
 3. Set dimensions to `320x220` (or your preference).
 4. Keep background transparency enabled.
-
-The eye will animate on its own with:
-- idle float
-- random blink
-- subtle twitch
-- small pupil drift
 
 ## Manual testing
 
@@ -31,23 +29,23 @@ window.ChatEye.receive({ type: 'action', action: 'lookRight' });
 Set score directly:
 
 ```js
-window.ChatEye.receive({ type: 'setScore', value: 5 });
+window.ChatEye.receive({ type: 'setScore', value: 8 });
 ```
 
 ## State thresholds
 
-- `0-1`: Awakened
+- `0-1`: Awakened (happy ghost dog)
 - `2-3`: Overgrown
 - `4-5`: Corrupted
-- `6+`: Rotten
+- `6+`: Rotten (ivy poison suffocation)
 
 ## Streamer.bot integration outline
 
 1. Use Streamer.bot Twitch Chat Message triggers.
 2. Match keywords:
-   - Corrupt: `ghost`, `demon`, `cursed`, `run`, `hunt`
-   - Heal: `chill`, `safe`, `love`, `okay`, `cute`
-   - Reset: `wake`, `blink`, `revive`
+   - Corrupt: `poison`, `ivy`, `curse`, `suffocate`
+   - Heal: `safe`, `love`, `happy`, `good dog`
+   - Reset: `revive`, `recover`
 3. In trigger actions, update a global `corruptionScore` variable.
 4. Send a structured message matching this overlay protocol:
 

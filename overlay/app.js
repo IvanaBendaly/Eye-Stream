@@ -1,6 +1,6 @@
 (function () {
-  const shell = document.getElementById('eye-shell');
-  const pupil = document.getElementById('pupil');
+  const shell = document.getElementById('pet-shell');
+  const dogFace = document.getElementById('dog-face');
   const overlayRoot = document.getElementById('overlay-root');
 
   const STATE_CLASS = {
@@ -42,7 +42,7 @@
     const resolvedState = STATE_CLASS[state] ? state : 'awakened';
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[resolvedState]);
-    if (overlayRoot) overlayRoot.dataset.eyeState = resolvedState;
+    if (overlayRoot) overlayRoot.dataset.petState = resolvedState;
   };
 
   const syncStateFromScore = () => {
@@ -59,27 +59,27 @@
   const twitch = () => {
     shell.classList.remove('twitch');
     shell.classList.add('twitch');
-    setTimeout(() => shell.classList.remove('twitch'), 320);
+    setTimeout(() => shell.classList.remove('twitch'), 280);
   };
 
   const bloom = () => {
     shell.classList.remove('bloom');
     shell.classList.add('bloom');
-    setTimeout(() => shell.classList.remove('bloom'), 440);
+    setTimeout(() => shell.classList.remove('bloom'), 420);
   };
 
-  const movePupil = (x, y) => {
-    pupil.style.transform = `translate(${x}px, ${y}px)`;
+  const look = (x, y) => {
+    dogFace.style.transform = `translate(${x}px, ${y}px)`;
   };
 
-  const randomPupilDrift = () => {
-    const dx = (Math.random() - 0.5) * 10;
-    const dy = (Math.random() - 0.5) * 6;
-    movePupil(dx, dy);
+  const randomHeadDrift = () => {
+    const dx = (Math.random() - 0.5) * 6;
+    const dy = (Math.random() - 0.5) * 3;
+    look(dx, dy);
   };
 
-  const lookLeft = () => movePupil(-7, 0);
-  const lookRight = () => movePupil(7, 0);
+  const lookLeft = () => look(-5, 0);
+  const lookRight = () => look(5, 0);
 
   const applyAction = (action) => {
     switch (action) {
@@ -100,7 +100,7 @@
       case 'heal':
         corruptionScore = clampScore(corruptionScore - 1);
         syncStateFromScore();
-        if (Math.random() > 0.35) bloom();
+        bloom();
         break;
       case 'reset':
         corruptionScore = 0;
@@ -127,12 +127,11 @@
 
   const simulateChat = () => {
     const script = [
-      { user: 'spookylurker', message: 'ghost in the vines 👻', action: 'corrupt', tone: 'corrupt' },
-      { user: 'moonmoss', message: 'you got this eye, stay calm', action: 'heal', tone: 'heal' },
-      { user: 'nightowl', message: 'run run run', action: 'corrupt', tone: 'corrupt' },
-      { user: 'fernfriend', message: 'cute little watcher 🌿', action: 'heal', tone: 'heal' },
-      { user: 'modbot', message: 'revive', action: 'reset', tone: 'reset' },
-      { user: 'hauntchat', message: 'cursed gaze', action: 'corrupt', tone: 'corrupt' }
+      { user: 'ivyvoid', message: 'poison ivy is closing in 😵', action: 'corrupt', tone: 'corrupt' },
+      { user: 'moonmoss', message: 'good dog, breathe slow', action: 'heal', tone: 'heal' },
+      { user: 'nightowl', message: 'thorns are tightening', action: 'corrupt', tone: 'corrupt' },
+      { user: 'fernfriend', message: 'happy ghost pup!! 💚', action: 'heal', tone: 'heal' },
+      { user: 'modbot', message: 'revive pup', action: 'reset', tone: 'reset' }
     ];
 
     let idx = 0;
@@ -141,13 +140,15 @@
       idx += 1;
       addChatLine(`${evt.user}: ${evt.message}`, evt.tone);
       applyAction(evt.action);
-    }, 1800);
+    }, 1900);
   };
 
   const stateAliases = {
     alive: 'awakened',
     alert: 'overgrown',
-    zombified: 'rotten'
+    zombified: 'rotten',
+    happy: 'awakened',
+    suffocating: 'rotten'
   };
 
   const receive = (payload) => {
@@ -213,20 +214,20 @@
   }
 
   const scheduleBlink = () => {
-    const nextBlinkIn = 2500 + Math.random() * 3700;
+    const nextBlinkIn = 2400 + Math.random() * 3200;
     setTimeout(() => {
       blink();
       scheduleBlink();
     }, nextBlinkIn);
   };
 
-  setInterval(randomPupilDrift, 1500);
+  setInterval(randomHeadDrift, 1400);
   scheduleBlink();
   connectWebSocketBridge();
 
   setInterval(() => {
-    if (Math.random() < 0.15) {
+    if (Math.random() < 0.18) {
       twitch();
     }
-  }, 3000);
+  }, 2800);
 })();

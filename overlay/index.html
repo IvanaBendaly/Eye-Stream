@@ -3,29 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Ivy Eye Overlay</title>
+    <title>Ghost Dog Overlay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="overlay-root" class="overlay-corner">
-      <div class="overlay-hint">Chat to trigger it !</div>
-      <div id="eye-shell" class="eye-shell state-awakened" aria-label="The Ivy Eye">
+      <div class="overlay-hint">Chat to guide the ghost dog!</div>
+
+      <div id="pet-shell" class="pet-shell state-awakened" aria-label="Ghost dog stream pet">
         <div class="aura"></div>
 
-        <div class="vines" aria-hidden="true">
-          <span class="vine vine-left"></span>
-          <span class="vine vine-right"></span>
-          <span class="leaf leaf-left"></span>
-          <span class="leaf leaf-right"></span>
-          <span class="thorn thorn-left"></span>
-          <span class="thorn thorn-right"></span>
+        <div class="ivy-cloud" aria-hidden="true">
+          <span class="ivy-vine ivy-vine-left"></span>
+          <span class="ivy-vine ivy-vine-right"></span>
+          <span class="ivy-leaf ivy-leaf-a"></span>
+          <span class="ivy-leaf ivy-leaf-b"></span>
         </div>
 
-        <div id="eye" class="eye">
-          <div id="pupil" class="pupil"></div>
-          <div class="shine"></div>
-          <div id="eyelid" class="eyelid"></div>
-          <div class="decay-layer"></div>
+        <div id="ghost-dog" class="ghost-dog">
+          <div id="dog-body" class="dog-body"></div>
+          <div id="dog-face" class="dog-face">
+            <div id="dog-eye-left" class="dog-eye"></div>
+            <div id="dog-eye-right" class="dog-eye"></div>
+            <div class="dog-nose"></div>
+            <div class="dog-mouth"></div>
+          </div>
+          <div class="dog-ear dog-ear-left"></div>
+          <div class="dog-ear dog-ear-right"></div>
+          <div id="dog-tail" class="dog-tail"></div>
         </div>
       </div>
 
