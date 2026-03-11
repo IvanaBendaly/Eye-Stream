@@ -4,8 +4,9 @@ This repo contains a lightweight web overlay for OBS Browser Source and a simple
 
 The stream pet is now a ghost dog:
 - includes a special **turn reaction** where it rises on 2 legs and spins
-- **best condition**: happy, ghostly-yellow glow with energetic wagging
-- **worst condition**: poisoned by ivy, cycles through sick-on-ground, zombified, and true-zombie expressions with choking/suffocating motion
+- **best condition**: happy, ghostly-yellow glow with energetic wagging and floating heart/star effects
+- **worst condition**: poisoned by ivy, cycles through sick-on-ground, zombified, and true-zombie expressions with choking/suffocating motion and skull/ring effects
+- redesigned to be more cartoon-detailed (legs, paws, brows, blush, teeth, and layered expressive eyes)
 
 ## Quick start
 

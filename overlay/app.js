@@ -125,7 +125,8 @@
   };
 
   const look = (x, y) => {
-    dogFace.style.transform = `translate(${x}px, ${y}px)`;
+    dogFace.style.setProperty('--look-x', `${x}px`);
+    dogFace.style.setProperty('--look-y', `${y}px`);
   };
 
   const randomHeadDrift = () => {
