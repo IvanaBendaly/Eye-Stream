@@ -1,78 +1,91 @@
 (function () {
-  const shell = document.getElementById('ivy-shell');
+  const shell = document.getElementById('eye-shell');
+  const pupil = document.getElementById('pupil');
 
   const STATE_CLASS = {
-    sprout: 'state-sprout',
-    growing: 'state-growing',
-    wilted: 'state-wilted',
-    blooming: 'state-blooming'
+    awakened: 'state-awakened',
+    overgrown: 'state-overgrown',
+    corrupted: 'state-corrupted',
+    rotten: 'state-rotten'
   };
 
-  let growthScore = 0;
+  let corruptionScore = 0;
 
   const clampScore = (value) => Math.max(0, Math.min(10, value));
 
   const scoreToState = (score) => {
-    if (score >= 6) return 'wilted';
-    if (score >= 4) return 'growing';
-    if (score >= 2) return 'growing';
-    return 'sprout';
+    if (score >= 6) return 'rotten';
+    if (score >= 4) return 'corrupted';
+    if (score >= 2) return 'overgrown';
+    return 'awakened';
   };
 
   const setVisualState = (state) => {
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
-    shell.classList.add(STATE_CLASS[state] || STATE_CLASS.sprout);
+    shell.classList.add(STATE_CLASS[state] || STATE_CLASS.awakened);
   };
 
   const syncStateFromScore = () => {
-    setVisualState(scoreToState(growthScore));
+    setVisualState(scoreToState(corruptionScore));
   };
 
-  const pulseBloom = () => {
-    shell.classList.remove('bloom-burst');
-    shell.classList.add('bloom-burst');
-    setTimeout(() => shell.classList.remove('bloom-burst'), 620);
+  const blink = () => {
+    shell.classList.remove('blinking');
+    shell.classList.add('blinking');
+    setTimeout(() => shell.classList.remove('blinking'), 220);
   };
 
-  const droop = () => {
-    shell.classList.remove('drop');
-    shell.classList.add('drop');
-    setTimeout(() => shell.classList.remove('drop'), 560);
+  const twitch = () => {
+    shell.classList.remove('twitch');
+    shell.classList.add('twitch');
+    setTimeout(() => shell.classList.remove('twitch'), 320);
   };
 
-  const nudge = (direction) => {
-    const className = direction === 'left' ? 'nudge-left' : 'nudge-right';
-    const opposite = direction === 'left' ? 'nudge-right' : 'nudge-left';
-    shell.classList.remove(opposite);
-    shell.classList.add(className);
-    setTimeout(() => shell.classList.remove(className), 450);
+  const bloom = () => {
+    shell.classList.remove('bloom');
+    shell.classList.add('bloom');
+    setTimeout(() => shell.classList.remove('bloom'), 440);
   };
+
+  const movePupil = (x, y) => {
+    pupil.style.transform = `translate(${x}px, ${y}px)`;
+  };
+
+  const randomPupilDrift = () => {
+    const dx = (Math.random() - 0.5) * 10;
+    const dy = (Math.random() - 0.5) * 6;
+    movePupil(dx, dy);
+  };
+
+  const lookLeft = () => movePupil(-7, 0);
+  const lookRight = () => movePupil(7, 0);
 
   const applyAction = (action) => {
     switch (action) {
       case 'blink':
-        pulseBloom();
+        blink();
         break;
       case 'lookLeft':
-        nudge('left');
+        lookLeft();
         break;
       case 'lookRight':
-        nudge('right');
+        lookRight();
         break;
       case 'corrupt':
-        growthScore = clampScore(growthScore + 1);
+        corruptionScore = clampScore(corruptionScore + 1);
         syncStateFromScore();
-        droop();
+        twitch();
         break;
       case 'heal':
-        growthScore = clampScore(growthScore - 1);
+        corruptionScore = clampScore(corruptionScore - 1);
         syncStateFromScore();
+        if (Math.random() > 0.35) bloom();
         break;
       case 'reset':
-        growthScore = 0;
-        setVisualState('blooming');
-        pulseBloom();
-        setTimeout(syncStateFromScore, 650);
+        corruptionScore = 0;
+        syncStateFromScore();
+        bloom();
+        blink();
         break;
       default:
         break;
@@ -80,13 +93,9 @@
   };
 
   const stateAliases = {
-    awakened: 'sprout',
-    overgrown: 'growing',
-    corrupted: 'wilted',
-    rotten: 'wilted',
-    alive: 'sprout',
-    alert: 'growing',
-    zombified: 'wilted'
+    alive: 'awakened',
+    alert: 'overgrown',
+    zombified: 'rotten'
   };
 
   const receive = (payload) => {
@@ -100,7 +109,7 @@
     }
 
     if (payload.type === 'setScore' && Number.isFinite(payload.value)) {
-      growthScore = clampScore(payload.value);
+      corruptionScore = clampScore(payload.value);
       syncStateFromScore();
       return;
     }
@@ -108,12 +117,6 @@
     if (payload.type === 'setState' && typeof payload.state === 'string') {
       const normalized = payload.state.toLowerCase();
       setVisualState(stateAliases[normalized] || normalized);
-      return;
-    }
-
-    if (payload.type === 'focus') {
-      if (payload.x < 0) nudge('left');
-      if (payload.x > 0) nudge('right');
     }
   };
 
@@ -141,16 +144,27 @@
 
   window.ChatEye = {
     receive,
-    getScore: () => growthScore,
-    getState: () => scoreToState(growthScore)
+    getScore: () => corruptionScore,
+    getState: () => scoreToState(corruptionScore)
   };
 
   syncStateFromScore();
+
+  const scheduleBlink = () => {
+    const nextBlinkIn = 2500 + Math.random() * 3700;
+    setTimeout(() => {
+      blink();
+      scheduleBlink();
+    }, nextBlinkIn);
+  };
+
+  setInterval(randomPupilDrift, 1500);
+  scheduleBlink();
   connectWebSocketBridge();
 
   setInterval(() => {
-    if (Math.random() < 0.23) {
-      nudge(Math.random() > 0.5 ? 'left' : 'right');
+    if (Math.random() < 0.15) {
+      twitch();
     }
-  }, 4200);
+  }, 3000);
 })();

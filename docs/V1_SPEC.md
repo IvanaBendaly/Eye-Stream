@@ -1,53 +1,83 @@
-# Ivy Corner Companion V1 Spec
+# The Ivy Eye V1 Specification
 
-## Concept
-A small corner ivy growth that quietly reacts to chat mood over time.
+## Goal
+Build a lightweight OBS Browser Source overlay where a living, ivy-wrapped eye is always animated and Twitch chat nudges it through gradual botanical corruption states.
 
-## Placement
-- top-right corner anchor
-- visual footprint stays small (roughly 6-10% width)
-- decorative/ambient, not gameplay-dominant
+## V1 State Model
+The eye always has one current state derived from a hidden `corruptionScore`.
 
-## State model
-Hidden numeric score (`0..10`) drives visual state.
+- **Awakened** (`0-1`): clean glow, healthy ivy
+- **Overgrown** (`2-3`): brighter leaves, more active vines
+- **Corrupted** (`4-5`): wilted leaves, visible thorns, cloudy eye
+- **Rotten** (`6+`): decayed vines, thorn-forward, sickly eye
 
-- `0-1` => `sprout`
-- `2-5` => `growing`
-- `6+` => `wilted`
-- `reset` action temporarily shows `blooming`, then returns to score-derived state
+### Corruption score rules
+- Initial value: `0`
+- Corrupt word: `+1`
+- Heal word: `-1`
+- Reset word: set to `0` and trigger bloom + blink
+- Clamp floor: `0`
+- Optional cap for styling logic: `10`
 
-## Actions
-- `corrupt`: score +1, adds droop motion
-- `heal`: score -1
-- `reset`: score -> 0, bloom burst
-- `lookLeft` / `lookRight`: gentle nudge sway
-- `blink`: mapped to a gentle bloom pulse (for compatibility)
+## V1 Actions
+Supported live actions:
 
-## Message protocol
-Main entrypoint: `window.ChatEye.receive(payload)`
+- `blink`
+- `lookLeft`
+- `lookRight`
+- `corrupt` (equivalent to `corrupt+1`)
+- `heal` (equivalent to `heal-1`)
+- `reset`
+
+## Trigger Words
+Start list for Streamer.bot chat trigger matching:
+
+- Corrupt: `ghost`, `demon`, `cursed`, `run`, `hunt`
+- Heal: `chill`, `safe`, `love`, `okay`, `cute`
+- Reset: `wake`, `blink`, `revive`
+
+## Overlay Placement
+- Single eye in one corner (recommend: top-right).
+- No permanent label text.
+- Keep mood dark botanical, not comic/neon superhero.
+- Visual intent: *enchanted ivy watcher*, not UI widget.
+
+## Integration Protocol (Streamer.bot -> Overlay)
+The overlay accepts JSON messages either by direct browser function call (for local manual testing) or via an optional WebSocket event bridge.
+
+### Browser function entrypoint
+`window.ChatEye.receive(payload)` where `payload` has shape:
+
+```json
+{
+  "type": "action",
+  "action": "corrupt"
+}
+```
+
+or
+
+```json
+{
+  "type": "setScore",
+  "value": 4
+}
+```
 
 Supported payloads:
-- `{"type":"action","action":"corrupt|heal|reset|lookLeft|lookRight|blink"}`
+- `{"type":"action","action":"blink"}`
+- `{"type":"action","action":"lookLeft"}`
+- `{"type":"action","action":"lookRight"}`
+- `{"type":"action","action":"corrupt"}`
+- `{"type":"action","action":"heal"}`
+- `{"type":"action","action":"reset"}`
 - `{"type":"setScore","value":number}`
-- `{"type":"setState","state":"sprout|growing|wilted|blooming"}`
-- `{"type":"focus","x":number,"y":number}` (mapped to nudge direction)
+- `{"type":"setState","state":"awakened|overgrown|corrupted|rotten"}`
 
-## Compatibility aliases
-`setState` also accepts older names:
-- `awakened` or `alive` => `sprout`
-- `overgrown` or `alert` => `growing`
-- `corrupted` or `rotten` or `zombified` => `wilted`
+Compatibility aliases accepted by `setState`:
+- `alive -> awakened`
+- `alert -> overgrown`
+- `zombified -> rotten`
 
-## Palette direction
-Healthy:
-- deep ivy green
-- muted sage highlight
-- dark forest stem
-
-Corrupted:
-- grey-olive
-- brown-green
-- near-black green thorn
-
-Reset accent:
-- soft ivory bloom
+### Optional WebSocket bridge
+If the overlay URL includes `?ws=ws://HOST:PORT`, the overlay opens a WebSocket client and consumes each text message as JSON, then passes it to `window.ChatEye.receive(payload)`.
