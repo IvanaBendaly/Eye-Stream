@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Ivy Eye Overlay</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="overlay-root" class="overlay-corner">
+      <div id="eye-shell" class="eye-shell state-awakened" aria-label="The Ivy Eye">
+        <div class="aura"></div>
+
+        <div class="vines" aria-hidden="true">
+          <span class="vine vine-left"></span>
+          <span class="vine vine-right"></span>
+          <span class="leaf leaf-left"></span>
+          <span class="leaf leaf-right"></span>
+          <span class="thorn thorn-left"></span>
+          <span class="thorn thorn-right"></span>
+        </div>
+
+        <div id="eye" class="eye">
+          <div id="pupil" class="pupil"></div>
+          <div class="shine"></div>
+          <div id="eyelid" class="eyelid"></div>
+          <div class="decay-layer"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
