@@ -50,6 +50,8 @@ body {
     height 0.7s ease,
     margin 0.7s ease,
     transform 0.7s ease;
+  --look-x: 0px;
+  --look-y: 0px;
 }
 
 .aura {
@@ -244,7 +246,7 @@ body {
     clip-path 0.6s ease;
   border-radius: var(--pupil-shape);
   clip-path: var(--pupil-clip);
-  transform: scale(var(--pupil-scale)) rotate(var(--pupil-tilt));
+  transform: translate(var(--look-x, 0px), var(--look-y, 0px)) scale(var(--pupil-scale)) rotate(var(--pupil-tilt));
 }
 
 .shine {
@@ -767,4 +769,190 @@ body {
 .eye-shell.state-rotten .melt {
   width: 13px;
   filter: blur(0.6px);
+}
+
+
+.vein-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 14% 42%, rgba(83, 54, 39, var(--vein-opacity)) 0 2%, transparent 12%),
+    radial-gradient(circle at 83% 58%, rgba(82, 48, 36, calc(var(--vein-opacity) * 0.95)) 0 2.2%, transparent 13%),
+    linear-gradient(119deg, transparent 25%, rgba(69, 44, 31, calc(var(--vein-opacity) * 0.8)) 31%, transparent 37%),
+    linear-gradient(55deg, transparent 46%, rgba(58, 36, 27, calc(var(--vein-opacity) * 0.75)) 51%, transparent 56%),
+    linear-gradient(158deg, transparent 58%, rgba(54, 31, 24, calc(var(--vein-opacity) * 0.7)) 63%, transparent 67%);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.wetline {
+  position: absolute;
+  inset: auto 12% 11% 12%;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 0%, rgba(228, 230, 214, 0.26), rgba(153, 161, 145, 0.05) 72%, transparent 100%);
+  opacity: var(--wetline-opacity);
+  filter: blur(0.4px);
+}
+
+.lower-lid {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: -24px;
+  height: 38px;
+  border-radius: 60% 40% 0 0 / 100% 100% 0 0;
+  background: linear-gradient(to top, rgba(8, 11, 9, 0.88), var(--lower-lid-tint));
+  transform: translateY(var(--lower-lid-rise));
+  opacity: var(--lower-lid-opacity);
+  transition: transform 0.7s ease, opacity 0.7s ease, background 0.7s ease;
+}
+
+.mist {
+  position: absolute;
+  inset: -10% -8%;
+  background: radial-gradient(circle at 50% 64%, rgba(84, 96, 71, var(--mist-opacity)) 0%, rgba(40, 45, 34, calc(var(--mist-opacity) * 0.6)) 45%, transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.spores {
+  position: absolute;
+  inset: -8px;
+  opacity: var(--spore-opacity);
+  pointer-events: none;
+}
+
+.spore {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(159, 165, 120, 0.6);
+  filter: blur(0.4px);
+  animation: drift 4.8s ease-in-out infinite;
+}
+
+.spore-1 { left: 18%; bottom: 18%; animation-delay: 0s; }
+.spore-2 { left: 64%; bottom: 22%; animation-delay: 1.2s; }
+.spore-3 { left: 48%; bottom: 12%; animation-delay: 2.1s; }
+
+.eye-shell.state-awakened {
+  --vein-opacity: 0.06;
+  --wetline-opacity: 0.55;
+  --lower-lid-rise: 12px;
+  --lower-lid-opacity: 0.74;
+  --lower-lid-tint: rgba(26, 52, 38, 0.56);
+  --mist-opacity: 0.08;
+  --spore-opacity: 0.06;
+}
+
+.eye-shell.state-overgrown {
+  --vein-opacity: 0.12;
+  --wetline-opacity: 0.64;
+  --lower-lid-rise: 10px;
+  --lower-lid-opacity: 0.82;
+  --lower-lid-tint: rgba(33, 67, 45, 0.58);
+  --mist-opacity: 0.12;
+  --spore-opacity: 0.14;
+}
+
+.eye-shell.state-corrupted {
+  --sclera-core: #a39f88;
+  --sclera-mid: #7f7a65;
+  --sclera-edge: #3c4335;
+  --iris-high: #9d9a69;
+  --iris-mid: #6f6b41;
+  --iris-low: #27291c;
+  --vein-opacity: 0.38;
+  --wetline-opacity: 0.4;
+  --lower-lid-rise: 6px;
+  --lower-lid-opacity: 0.88;
+  --lower-lid-tint: rgba(49, 38, 30, 0.72);
+  --mist-opacity: 0.2;
+  --spore-opacity: 0.2;
+}
+
+.eye-shell.state-rotten {
+  --sclera-core: #b6ab78;
+  --sclera-mid: #8a825c;
+  --sclera-edge: #3f3b2b;
+  --iris-high: #8e8a56;
+  --iris-mid: #5b5834;
+  --iris-low: #242518;
+  --vein-opacity: 0.56;
+  --wetline-opacity: 0.22;
+  --lower-lid-rise: 2px;
+  --lower-lid-opacity: 0.94;
+  --lower-lid-tint: rgba(52, 38, 29, 0.86);
+  --mist-opacity: 0.32;
+  --spore-opacity: 0.46;
+}
+
+.eye-shell.emotion-neutral { }
+
+.eye-shell.emotion-happy .eye {
+  transform: scale(calc(var(--eye-scale) * 1.02)) rotate(var(--eye-rotate));
+}
+
+.eye-shell.emotion-happy .pupil {
+  transform: translate(var(--look-x, 0px), var(--look-y, 0px)) scale(calc(var(--pupil-scale) * 1.12)) rotate(calc(var(--pupil-tilt) * 0.55));
+}
+
+.eye-shell.emotion-happy .eye::before { height: calc(38px + var(--lid-drop)); opacity: calc(var(--lid-opacity) * 0.75); }
+.eye-shell.emotion-happy .lower-lid { transform: translateY(calc(var(--lower-lid-rise) + 2px)); }
+.eye-shell.emotion-happy .shine { opacity: 0.95; transform: translateY(-1px) scale(1.07); }
+
+.eye-shell.emotion-sad .eye::before { height: calc(50px + var(--lid-drop)); opacity: calc(var(--lid-opacity) + 0.12); }
+.eye-shell.emotion-sad .lower-lid { transform: translateY(calc(var(--lower-lid-rise) - 3px)); }
+.eye-shell.emotion-sad .pupil { transform: translate(var(--look-x, 0px), calc(var(--look-y, 0px) + 2px)) scale(calc(var(--pupil-scale) * 0.94)) rotate(var(--pupil-tilt)); }
+
+.eye-shell.emotion-alert .eye {
+  transform: scale(calc(var(--eye-scale) * 1.06)) rotate(calc(var(--eye-rotate) - 1deg));
+}
+.eye-shell.emotion-alert .eye::before { height: calc(33px + var(--lid-drop)); opacity: calc(var(--lid-opacity) * 0.65); }
+.eye-shell.emotion-alert .pupil { filter: contrast(1.32) saturate(0.92); }
+
+.eye-shell.emotion-angry .eye::before { height: calc(47px + var(--lid-drop)); transform: rotate(calc(var(--lid-tilt) - 10deg)); }
+.eye-shell.emotion-angry .pupil { transform: translate(var(--look-x, 0px), var(--look-y, 0px)) scale(calc(var(--pupil-scale) * 0.92)) rotate(calc(var(--pupil-tilt) - 8deg)); }
+.eye-shell.emotion-angry .vines { transform: rotate(-5deg) scale(1.03); }
+
+.eye-shell.emotion-afraid .eye { transform: scale(calc(var(--eye-scale) * 1.08)) rotate(var(--eye-rotate)); }
+.eye-shell.emotion-afraid .pupil { transform: translate(var(--look-x, 0px), var(--look-y, 0px)) scale(calc(var(--pupil-scale) * 0.84)) rotate(var(--pupil-tilt)); }
+.eye-shell.emotion-afraid { animation-duration: 2.8s; }
+
+.eye-shell.emotion-empty .eye::before { height: calc(56px + var(--lid-drop)); opacity: calc(var(--lid-opacity) + 0.18); }
+.eye-shell.emotion-empty .shine { opacity: 0.3; }
+.eye-shell.emotion-empty .pupil { filter: saturate(0.4) contrast(1.1); }
+.eye-shell.emotion-empty { animation-duration: 6s; }
+
+.eye-shell.state-rotten .pupil {
+  width: 36px;
+  background: radial-gradient(circle at 40% 40%, #8b8657 0%, #4c4a2f 44%, #1b1d14 100%);
+}
+
+.eye-shell.state-rotten .spore {
+  background: rgba(140, 135, 94, 0.72);
+}
+
+.eye-shell.state-rotten .vines,
+.eye-shell.state-rotten .leaf {
+  filter: saturate(0.3) brightness(0.68);
+}
+
+.eye-shell.blinking .lower-lid {
+  animation: blink-lower 210ms ease-in-out;
+}
+
+@keyframes drift {
+  0% { transform: translateY(0) scale(0.8); opacity: 0.2; }
+  50% { transform: translateY(-10px) translateX(2px) scale(1); opacity: 0.72; }
+  100% { transform: translateY(-18px) translateX(-2px) scale(0.86); opacity: 0; }
+}
+
+@keyframes blink-lower {
+  0% { transform: translateY(var(--lower-lid-rise)); }
+  45% { transform: translateY(calc(var(--lower-lid-rise) - 14px)); }
+  100% { transform: translateY(var(--lower-lid-rise)); }
 }
