@@ -18,10 +18,10 @@ body {
 
 .overlay-corner {
   position: fixed;
-  top: 16px;
-  right: 20px;
-  width: 198px;
-  height: 188px;
+  top: 14px;
+  right: 18px;
+  width: 206px;
+  height: 196px;
   pointer-events: none;
 }
 
@@ -33,72 +33,72 @@ body {
   text-align: center;
   font-size: 11px;
   letter-spacing: 0.03em;
-  color: rgba(186, 209, 194, 0.9);
-  text-shadow: 0 0 8px rgba(16, 40, 29, 0.75);
+  color: rgba(187, 211, 196, 0.92);
+  text-shadow: 0 0 10px rgba(12, 34, 24, 0.84);
 }
 
 .eye-shell {
   position: relative;
-  width: 124px;
-  height: 86px;
-  margin: 18px auto 0;
-  filter: drop-shadow(0 7px 16px rgba(0, 0, 0, 0.62));
+  width: 126px;
+  height: 88px;
+  margin: 20px auto 0;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.64));
   animation: hover 4.2s ease-in-out infinite;
-  transition: filter 0.55s ease;
+  transition: filter 0.6s ease;
 }
 
 .aura {
   position: absolute;
-  inset: -16px;
+  inset: -18px;
   border-radius: 58% 42% 60% 40% / 54% 46% 54% 46%;
   border: 1px solid var(--aura);
   opacity: var(--aura-opacity);
   transform: rotate(var(--aura-tilt));
-  transition: border-color 0.6s ease, opacity 0.6s ease, transform 0.7s ease;
+  transition: border-color 0.7s ease, opacity 0.7s ease, transform 0.8s ease;
 }
 
 .vines {
   position: absolute;
-  inset: -8px;
+  inset: -10px;
 }
 
 .vine {
   position: absolute;
-  width: 62px;
-  height: 84px;
+  width: 64px;
+  height: 88px;
   border: 2px solid transparent;
   border-top-color: var(--vine);
   border-radius: 50%;
   opacity: var(--vine-opacity);
-  transition: border-top-color 0.55s ease, opacity 0.55s ease, transform 0.6s ease;
+  transition: border-top-color 0.65s ease, opacity 0.65s ease, transform 0.7s ease;
 }
 
 .vine-left {
-  left: -26px;
-  top: 4px;
+  left: -27px;
+  top: 2px;
   transform: rotate(calc(-26deg + var(--vine-curl)));
 }
 
 .vine-right {
-  right: -26px;
-  top: 6px;
+  right: -27px;
+  top: 4px;
   transform: scaleX(-1) rotate(calc(-32deg + var(--vine-curl)));
 }
 
 .leaf {
   position: absolute;
-  width: 16px;
+  width: 17px;
   height: 10px;
   background: radial-gradient(circle at 20% 40%, var(--leaf-high), var(--leaf-mid));
   border-radius: 75% 25% 70% 30%;
   opacity: var(--leaf-opacity);
   filter: saturate(var(--leaf-sat));
-  transition: background 0.6s ease, filter 0.6s ease, transform 0.65s ease, opacity 0.6s ease;
+  transition: background 0.7s ease, filter 0.7s ease, transform 0.75s ease, opacity 0.7s ease;
 }
 
 .leaf-left {
   left: 7px;
-  top: 31px;
+  top: 30px;
   transform: rotate(-15deg) scale(var(--leaf-scale));
 }
 
@@ -116,18 +116,18 @@ body {
   border-right: 4px solid transparent;
   border-bottom: 10px solid var(--thorn);
   opacity: var(--thorn-opacity);
-  transition: opacity 0.55s ease, border-bottom-color 0.55s ease;
+  transition: opacity 0.65s ease, border-bottom-color 0.65s ease;
 }
 
 .thorn-left {
-  left: 16px;
-  top: 67px;
+  left: 15px;
+  top: 69px;
   transform: rotate(-8deg);
 }
 
 .thorn-right {
-  right: 22px;
-  top: 29px;
+  right: 21px;
+  top: 28px;
   transform: rotate(165deg);
 }
 
@@ -136,10 +136,10 @@ body {
   inset: 0;
   border-radius: var(--eye-shape);
   background: radial-gradient(circle at 50% 47%, var(--sclera-core) 0%, var(--sclera-mid) 58%, var(--sclera-edge) 100%);
-  border: 2px solid rgba(12, 18, 14, 0.82);
+  border: 2px solid rgba(9, 16, 12, 0.85);
   overflow: hidden;
-  box-shadow: inset 0 0 0 2px var(--glow), inset 0 0 24px rgba(0, 0, 0, 0.22);
-  transition: background 0.6s ease, box-shadow 0.6s ease, border-radius 0.7s ease, transform 0.65s ease;
+  box-shadow: inset 0 0 0 2px var(--glow), inset 0 0 26px rgba(0, 0, 0, 0.28);
+  transition: background 0.7s ease, box-shadow 0.7s ease, border-radius 0.75s ease, transform 0.7s ease;
   transform: scale(var(--eye-scale));
 }
 
@@ -149,27 +149,38 @@ body {
   top: -34px;
   left: -8px;
   right: -8px;
-  height: calc(44px + var(--lid-drop));
+  height: calc(43px + var(--lid-drop));
   border-radius: 0 0 55% 45% / 0 0 80% 80%;
   background: linear-gradient(to bottom, var(--lid-tint), rgba(9, 16, 12, 0.1));
   transform: rotate(var(--lid-tilt));
   opacity: var(--lid-opacity);
-  transition: opacity 0.6s ease, transform 0.65s ease, height 0.65s ease, background 0.6s ease;
+  transition: opacity 0.7s ease, transform 0.75s ease, height 0.75s ease, background 0.7s ease;
+}
+
+.eye::after {
+  content: '';
+  position: absolute;
+  inset: -12% -10%;
+  background: radial-gradient(circle at 50% 45%, transparent 34%, var(--creep-dark) 68%, transparent 88%);
+  opacity: var(--creep-opacity);
+  mix-blend-mode: multiply;
+  transform: rotate(var(--creep-tilt));
+  transition: opacity 0.8s ease, transform 0.8s ease, background 0.8s ease;
 }
 
 .pupil {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 40px;
-  height: 40px;
-  margin-left: -20px;
-  margin-top: -20px;
+  width: 41px;
+  height: 41px;
+  margin-left: -20.5px;
+  margin-top: -20.5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--iris-high) 0%, var(--iris-mid) 30%, var(--iris-low) 70%, #010402 100%);
-  border: 1px solid rgba(191, 217, 196, 0.45);
-  box-shadow: 0 0 16px var(--pupil-glow);
-  transition: transform 0.5s ease, filter 0.6s ease, box-shadow 0.6s ease, background 0.6s ease;
+  background: radial-gradient(circle at 35% 35%, var(--iris-high) 0%, var(--iris-mid) 30%, var(--iris-low) 72%, #020402 100%);
+  border: 1px solid rgba(193, 220, 199, 0.45);
+  box-shadow: 0 0 17px var(--pupil-glow);
+  transition: transform 0.55s ease, filter 0.7s ease, box-shadow 0.7s ease, background 0.7s ease;
   transform: scale(var(--pupil-scale));
 }
 
@@ -196,150 +207,162 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(126deg, rgba(56, 48, 37, 0.26) 11%, transparent 22%),
-    linear-gradient(42deg, rgba(40, 54, 45, 0.24) 17%, transparent 30%),
-    linear-gradient(168deg, rgba(24, 33, 27, 0.24) 25%, transparent 42%);
+    linear-gradient(126deg, rgba(52, 39, 29, 0.32) 11%, transparent 22%),
+    linear-gradient(42deg, rgba(33, 45, 38, 0.3) 17%, transparent 30%),
+    linear-gradient(168deg, rgba(18, 24, 20, 0.28) 25%, transparent 42%);
   opacity: var(--decay-opacity);
   mix-blend-mode: multiply;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.7s ease;
 }
 
 .eye-shell.state-awakened {
-  --aura: rgba(111, 150, 125, 0.46);
-  --aura-opacity: 0.56;
+  --aura: rgba(110, 161, 130, 0.5);
+  --aura-opacity: 0.62;
   --aura-tilt: 8deg;
-  --glow: rgba(202, 229, 209, 0.24);
-  --sclera-core: #dce9df;
-  --sclera-mid: #8aa28f;
-  --sclera-edge: #244333;
-  --iris-high: #a8c8b0;
-  --iris-mid: #1f5b40;
-  --iris-low: #0f2f22;
-  --pupil-glow: rgba(202, 229, 209, 0.3);
-  --vine: rgba(27, 82, 57, 0.95);
-  --vine-opacity: 0.84;
+  --glow: rgba(209, 238, 218, 0.26);
+  --sclera-core: #e0efe3;
+  --sclera-mid: #97b6a0;
+  --sclera-edge: #244938;
+  --iris-high: #bbe2c5;
+  --iris-mid: #2a7a55;
+  --iris-low: #113424;
+  --pupil-glow: rgba(207, 236, 217, 0.38);
+  --vine: rgba(29, 93, 63, 0.95);
+  --vine-opacity: 0.82;
   --vine-curl: 0deg;
-  --leaf-high: #92b69c;
-  --leaf-mid: #2d6d4a;
-  --leaf-sat: 0.96;
-  --leaf-opacity: 0.92;
+  --leaf-high: #a9d4b3;
+  --leaf-mid: #3f8b61;
+  --leaf-sat: 1.1;
+  --leaf-opacity: 0.9;
   --leaf-scale: 1;
-  --thorn: rgba(42, 64, 50, 0.38);
-  --thorn-opacity: 0.07;
-  --decay-opacity: 0.08;
-  --eye-shape: 58% 42% 54% 46% / 70% 70% 30% 30%;
+  --thorn: rgba(51, 77, 59, 0.35);
+  --thorn-opacity: 0.05;
+  --decay-opacity: 0.05;
+  --eye-shape: 61% 39% 55% 45% / 74% 74% 26% 26%;
   --eye-scale: 1;
   --pupil-scale: 1.04;
-  --lid-drop: 0px;
-  --lid-tilt: 0deg;
-  --lid-opacity: 0.22;
-  --lid-tint: rgba(24, 52, 37, 0.28);
+  --lid-drop: -2px;
+  --lid-tilt: 1deg;
+  --lid-opacity: 0.18;
+  --lid-tint: rgba(25, 59, 40, 0.24);
+  --creep-dark: rgba(22, 39, 29, 0.4);
+  --creep-opacity: 0.08;
+  --creep-tilt: 0deg;
 }
 
 .eye-shell.state-overgrown {
-  --aura: rgba(148, 190, 168, 0.5);
-  --aura-opacity: 0.62;
+  --aura: rgba(152, 199, 172, 0.58);
+  --aura-opacity: 0.72;
   --aura-tilt: 4deg;
-  --glow: rgba(216, 236, 221, 0.28);
-  --sclera-core: #d8e5dc;
-  --sclera-mid: #7f9985;
-  --sclera-edge: #234232;
-  --iris-high: #b3cfba;
-  --iris-mid: #2a6a4a;
-  --iris-low: #133424;
-  --pupil-glow: rgba(214, 235, 220, 0.36);
-  --vine: rgba(36, 94, 66, 0.98);
-  --vine-opacity: 0.95;
-  --vine-curl: 4deg;
-  --leaf-high: #a0c3ab;
-  --leaf-mid: #3a7e58;
-  --leaf-sat: 1.08;
-  --leaf-opacity: 0.98;
-  --leaf-scale: 1.16;
-  --thorn: rgba(44, 66, 51, 0.46);
-  --thorn-opacity: 0.15;
-  --decay-opacity: 0.13;
-  --eye-shape: 60% 40% 52% 48% / 72% 68% 32% 28%;
-  --eye-scale: 1.02;
-  --pupil-scale: 1.1;
-  --lid-drop: 2px;
-  --lid-tilt: -2deg;
-  --lid-opacity: 0.2;
-  --lid-tint: rgba(20, 46, 33, 0.24);
+  --glow: rgba(222, 248, 229, 0.34);
+  --sclera-core: #e8f5e9;
+  --sclera-mid: #a0c3ab;
+  --sclera-edge: #295039;
+  --iris-high: #c9f0d2;
+  --iris-mid: #379868;
+  --iris-low: #16442e;
+  --pupil-glow: rgba(221, 249, 231, 0.48);
+  --vine: rgba(38, 116, 77, 0.98);
+  --vine-opacity: 1;
+  --vine-curl: 8deg;
+  --leaf-high: #bde9c8;
+  --leaf-mid: #48a370;
+  --leaf-sat: 1.28;
+  --leaf-opacity: 1;
+  --leaf-scale: 1.34;
+  --thorn: rgba(43, 71, 53, 0.4);
+  --thorn-opacity: 0.14;
+  --decay-opacity: 0.12;
+  --eye-shape: 64% 36% 50% 50% / 76% 70% 30% 24%;
+  --eye-scale: 1.03;
+  --pupil-scale: 1.14;
+  --lid-drop: -3px;
+  --lid-tilt: -1deg;
+  --lid-opacity: 0.16;
+  --lid-tint: rgba(20, 64, 41, 0.2);
+  --creep-dark: rgba(22, 51, 32, 0.46);
+  --creep-opacity: 0.13;
+  --creep-tilt: -4deg;
 }
 
 .eye-shell.state-corrupted {
-  --aura: rgba(96, 103, 76, 0.48);
-  --aura-opacity: 0.5;
-  --aura-tilt: -5deg;
-  --glow: rgba(89, 98, 78, 0.22);
-  --sclera-core: #949d8d;
-  --sclera-mid: #5f6f5b;
-  --sclera-edge: #2f392f;
-  --iris-high: #8b9375;
-  --iris-mid: #61694b;
-  --iris-low: #161c16;
-  --pupil-glow: rgba(79, 88, 70, 0.34);
-  --vine: rgba(76, 94, 75, 0.95);
-  --vine-opacity: 0.92;
-  --vine-curl: 7deg;
-  --leaf-high: #78816b;
-  --leaf-mid: #56624c;
-  --leaf-sat: 0.52;
-  --leaf-opacity: 0.84;
-  --leaf-scale: 1.22;
-  --thorn: rgba(22, 30, 24, 0.9);
-  --thorn-opacity: 0.64;
-  --decay-opacity: 0.44;
-  --eye-shape: 54% 46% 56% 44% / 62% 66% 38% 42%;
+  --aura: rgba(89, 96, 69, 0.56);
+  --aura-opacity: 0.52;
+  --aura-tilt: -8deg;
+  --glow: rgba(92, 99, 75, 0.24);
+  --sclera-core: #939b87;
+  --sclera-mid: #5b6a56;
+  --sclera-edge: #273128;
+  --iris-high: #9ca584;
+  --iris-mid: #6a754f;
+  --iris-low: #171e17;
+  --pupil-glow: rgba(80, 88, 64, 0.38);
+  --vine: rgba(84, 101, 77, 0.98);
+  --vine-opacity: 1;
+  --vine-curl: 16deg;
+  --leaf-high: #808a71;
+  --leaf-mid: #5b664f;
+  --leaf-sat: 0.46;
+  --leaf-opacity: 0.88;
+  --leaf-scale: 1.5;
+  --thorn: rgba(20, 28, 22, 0.92);
+  --thorn-opacity: 0.76;
+  --decay-opacity: 0.54;
+  --eye-shape: 53% 47% 59% 41% / 60% 68% 40% 40%;
   --eye-scale: 0.99;
-  --pupil-scale: 1.18;
-  --lid-drop: 9px;
-  --lid-tilt: -8deg;
-  --lid-opacity: 0.58;
-  --lid-tint: rgba(33, 36, 27, 0.66);
+  --pupil-scale: 1.2;
+  --lid-drop: 10px;
+  --lid-tilt: -10deg;
+  --lid-opacity: 0.66;
+  --lid-tint: rgba(38, 35, 27, 0.7);
+  --creep-dark: rgba(29, 32, 24, 0.72);
+  --creep-opacity: 0.34;
+  --creep-tilt: -12deg;
 }
 
 .eye-shell.state-rotten {
-  --aura: rgba(62, 70, 56, 0.52);
-  --aura-opacity: 0.42;
-  --aura-tilt: -10deg;
-  --glow: rgba(50, 58, 47, 0.3);
-  --sclera-core: #857f6f;
-  --sclera-mid: #56554a;
-  --sclera-edge: #292922;
-  --iris-high: #726d59;
-  --iris-mid: #454132;
-  --iris-low: #151b15;
-  --pupil-glow: rgba(30, 37, 29, 0.5);
-  --vine: rgba(56, 68, 54, 0.95);
-  --vine-opacity: 0.88;
-  --vine-curl: 10deg;
-  --leaf-high: #626655;
-  --leaf-mid: #3e4336;
-  --leaf-sat: 0.35;
-  --leaf-opacity: 0.74;
-  --leaf-scale: 1.24;
-  --thorn: rgba(18, 25, 20, 0.96);
-  --thorn-opacity: 0.88;
-  --decay-opacity: 0.6;
-  --eye-shape: 52% 48% 60% 40% / 58% 68% 42% 42%;
-  --eye-scale: 0.97;
-  --pupil-scale: 1.22;
-  --lid-drop: 12px;
-  --lid-tilt: -12deg;
-  --lid-opacity: 0.68;
-  --lid-tint: rgba(35, 28, 22, 0.72);
+  --aura: rgba(53, 60, 47, 0.62);
+  --aura-opacity: 0.46;
+  --aura-tilt: -13deg;
+  --glow: rgba(47, 53, 42, 0.3);
+  --sclera-core: #786f62;
+  --sclera-mid: #4b483f;
+  --sclera-edge: #1f211c;
+  --iris-high: #605b4a;
+  --iris-mid: #383526;
+  --iris-low: #111611;
+  --pupil-glow: rgba(25, 31, 24, 0.58);
+  --vine: rgba(47, 58, 45, 1);
+  --vine-opacity: 1;
+  --vine-curl: 24deg;
+  --leaf-high: #5f634f;
+  --leaf-mid: #353a2f;
+  --leaf-sat: 0.22;
+  --leaf-opacity: 0.78;
+  --leaf-scale: 1.68;
+  --thorn: rgba(12, 18, 14, 1);
+  --thorn-opacity: 0.97;
+  --decay-opacity: 0.74;
+  --eye-shape: 50% 50% 64% 36% / 56% 70% 44% 44%;
+  --eye-scale: 0.96;
+  --pupil-scale: 1.25;
+  --lid-drop: 16px;
+  --lid-tilt: -16deg;
+  --lid-opacity: 0.8;
+  --lid-tint: rgba(37, 28, 23, 0.82);
+  --creep-dark: rgba(15, 17, 13, 0.95);
+  --creep-opacity: 0.56;
+  --creep-tilt: -18deg;
 }
 
 .eye-shell.state-corrupted .leaf,
 .eye-shell.state-rotten .leaf {
-  filter: saturate(var(--leaf-sat)) brightness(0.8);
+  filter: saturate(var(--leaf-sat)) brightness(0.72);
 }
 
 .eye-shell.state-corrupted .pupil,
 .eye-shell.state-rotten .pupil {
-  filter: contrast(1.15) saturate(0.75);
+  filter: contrast(1.22) saturate(0.72);
 }
 
 .eye-shell.blinking .eyelid {
@@ -355,11 +378,11 @@ body {
 }
 
 .eye-shell.bloom .pupil {
-  box-shadow: 0 0 18px rgba(142, 168, 214, 0.6);
+  box-shadow: 0 0 20px rgba(142, 168, 214, 0.66);
 }
 
 .eye-shell.bloom .aura {
-  border-color: rgba(142, 168, 214, 0.72);
+  border-color: rgba(142, 168, 214, 0.78);
 }
 
 @keyframes hover {
@@ -410,10 +433,10 @@ body {
     transform: scale(1) rotate(-10deg);
   }
   50% {
-    transform: scale(1.32) rotate(-5deg);
+    transform: scale(1.36) rotate(-5deg);
   }
   100% {
-    transform: scale(1.16) rotate(-10deg);
+    transform: scale(1.22) rotate(-10deg);
   }
 }
 
@@ -421,12 +444,12 @@ body {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 198px;
-  max-height: 100px;
+  width: 206px;
+  max-height: 104px;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(78, 101, 87, 0.52);
-  background: rgba(10, 18, 14, 0.82);
+  border: 1px solid rgba(78, 101, 87, 0.58);
+  background: rgba(9, 16, 13, 0.86);
   backdrop-filter: blur(2px);
   pointer-events: none;
   color: rgba(208, 224, 214, 0.92);
