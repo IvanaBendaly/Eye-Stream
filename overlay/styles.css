@@ -18,20 +18,33 @@ body {
 
 .overlay-corner {
   position: fixed;
-  top: 18px;
-  right: 22px;
-  width: 220px;
-  height: 180px;
+  top: 14px;
+  right: 18px;
+  width: 206px;
+  height: 196px;
   pointer-events: none;
+}
+
+.overlay-hint {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: rgba(187, 211, 196, 0.92);
+  text-shadow: 0 0 10px rgba(12, 34, 24, 0.84);
 }
 
 .eye-shell {
   position: relative;
-  width: 160px;
-  height: 110px;
-  margin: 28px auto;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.58));
+  width: 126px;
+  height: 88px;
+  margin: 20px auto 0;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.64));
   animation: hover 4.2s ease-in-out infinite;
+  transition: filter 0.6s ease, width 0.7s ease, height 0.7s ease, margin 0.7s ease, transform 0.7s ease;
 }
 
 .aura {
@@ -39,60 +52,60 @@ body {
   inset: -18px;
   border-radius: 58% 42% 60% 40% / 54% 46% 54% 46%;
   border: 1px solid var(--aura);
-  opacity: 0.48;
-  transform: rotate(8deg);
-  transition: border-color 0.5s ease;
+  opacity: var(--aura-opacity);
+  transform: rotate(var(--aura-tilt));
+  transition: border-color 0.7s ease, opacity 0.7s ease, transform 0.8s ease;
 }
 
 .vines {
   position: absolute;
-  inset: -8px;
+  inset: -10px;
 }
 
 .vine {
   position: absolute;
-  width: 66px;
-  height: 92px;
+  width: 64px;
+  height: 88px;
   border: 2px solid transparent;
   border-top-color: var(--vine);
   border-radius: 50%;
-  opacity: 0.88;
-  transition: border-top-color 0.45s ease;
+  opacity: var(--vine-opacity);
+  transition: border-top-color 0.65s ease, opacity 0.65s ease, transform 0.7s ease;
 }
 
 .vine-left {
-  left: -26px;
-  top: 6px;
-  transform: rotate(-26deg);
+  left: -27px;
+  top: 2px;
+  transform: rotate(calc(-26deg + var(--vine-curl)));
 }
 
 .vine-right {
-  right: -26px;
-  top: 8px;
-  transform: scaleX(-1) rotate(-32deg);
+  right: -27px;
+  top: 4px;
+  transform: scaleX(-1) rotate(calc(-32deg + var(--vine-curl)));
 }
 
 .leaf {
   position: absolute;
   width: 17px;
-  height: 11px;
+  height: 10px;
   background: radial-gradient(circle at 20% 40%, var(--leaf-high), var(--leaf-mid));
   border-radius: 75% 25% 70% 30%;
-  opacity: 0.9;
-  filter: saturate(0.9);
-  transition: background 0.45s ease, filter 0.45s ease, transform 0.45s ease;
+  opacity: var(--leaf-opacity);
+  filter: saturate(var(--leaf-sat));
+  transition: background 0.7s ease, filter 0.7s ease, transform 0.75s ease, opacity 0.7s ease;
 }
 
 .leaf-left {
   left: 7px;
-  top: 34px;
-  transform: rotate(-15deg);
+  top: 30px;
+  transform: rotate(-15deg) scale(var(--leaf-scale));
 }
 
 .leaf-right {
   right: 7px;
-  top: 50px;
-  transform: scaleX(-1) rotate(-12deg);
+  top: 47px;
+  transform: scaleX(-1) rotate(-12deg) scale(var(--leaf-scale));
 }
 
 .thorn {
@@ -102,63 +115,90 @@ body {
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   border-bottom: 10px solid var(--thorn);
-  opacity: 0.08;
-  transition: opacity 0.45s ease, border-bottom-color 0.45s ease;
+  opacity: var(--thorn-opacity);
+  transition: opacity 0.65s ease, border-bottom-color 0.65s ease;
 }
 
 .thorn-left {
-  left: 18px;
-  top: 73px;
+  left: 15px;
+  top: 69px;
   transform: rotate(-8deg);
 }
 
 .thorn-right {
-  right: 24px;
-  top: 33px;
+  right: 21px;
+  top: 28px;
   transform: rotate(165deg);
 }
 
 .eye {
   position: absolute;
   inset: 0;
-  border-radius: 56% 44% 52% 48% / 62% 62% 38% 38%;
+  border-radius: var(--eye-shape);
   background: radial-gradient(circle at 50% 47%, var(--sclera-core) 0%, var(--sclera-mid) 58%, var(--sclera-edge) 100%);
-  border: 2px solid rgba(17, 18, 15, 0.72);
+  border: 2px solid rgba(9, 16, 12, 0.85);
   overflow: hidden;
-  box-shadow: inset 0 0 0 2px var(--glow);
-  transition: background 0.45s ease, box-shadow 0.45s ease;
+  box-shadow: inset 0 0 0 2px var(--glow), inset 0 0 26px rgba(0, 0, 0, 0.28);
+  transition: background 0.7s ease, box-shadow 0.7s ease, border-radius 0.75s ease, transform 0.7s ease;
+  transform: scale(var(--eye-scale));
+}
+
+.eye::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  left: -8px;
+  right: -8px;
+  height: calc(43px + var(--lid-drop));
+  border-radius: 0 0 55% 45% / 0 0 80% 80%;
+  background: linear-gradient(to bottom, var(--lid-tint), rgba(9, 16, 12, 0.1));
+  transform: rotate(var(--lid-tilt));
+  opacity: var(--lid-opacity);
+  transition: opacity 0.7s ease, transform 0.75s ease, height 0.75s ease, background 0.7s ease;
+}
+
+.eye::after {
+  content: '';
+  position: absolute;
+  inset: -12% -10%;
+  background: radial-gradient(circle at 50% 45%, transparent 34%, var(--creep-dark) 68%, transparent 88%);
+  opacity: var(--creep-opacity);
+  mix-blend-mode: multiply;
+  transform: rotate(var(--creep-tilt));
+  transition: opacity 0.8s ease, transform 0.8s ease, background 0.8s ease;
 }
 
 .pupil {
   position: absolute;
   left: 50%;
-  top: 49%;
-  width: 34px;
-  height: 34px;
-  margin-left: -17px;
-  margin-top: -17px;
+  top: 50%;
+  width: 41px;
+  height: 41px;
+  margin-left: -20.5px;
+  margin-top: -20.5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--iris-high) 0%, var(--iris-mid) 27%, var(--iris-low) 66%, #010402 100%);
-  border: 1px solid rgba(211, 255, 226, 0.42);
-  box-shadow: 0 0 12px var(--pupil-glow);
-  transition: transform 0.35s ease, filter 0.45s ease, box-shadow 0.45s ease, background 0.45s ease;
+  background: radial-gradient(circle at 35% 35%, var(--iris-high) 0%, var(--iris-mid) 30%, var(--iris-low) 72%, #020402 100%);
+  border: 1px solid rgba(193, 220, 199, 0.45);
+  box-shadow: 0 0 17px var(--pupil-glow);
+  transition: transform 0.55s ease, filter 0.7s ease, box-shadow 0.7s ease, background 0.7s ease;
+  transform: scale(var(--pupil-scale));
 }
 
 .shine {
   position: absolute;
   left: 43%;
   top: 35%;
-  width: 14px;
-  height: 8px;
+  width: 13px;
+  height: 7px;
   border-radius: 50%;
-  background: rgba(247, 255, 251, 0.72);
+  background: rgba(236, 244, 238, 0.72);
   filter: blur(0.5px);
 }
 
 .eyelid {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 120%, rgba(36, 63, 46, 0.96), rgba(20, 36, 29, 0.99));
+  background: radial-gradient(circle at 50% 120%, rgba(26, 50, 36, 0.96), rgba(14, 27, 20, 0.99));
   transform-origin: 50% 0%;
   transform: scaleY(0);
 }
@@ -167,98 +207,162 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(126deg, rgba(66, 18, 19, 0.2) 11%, transparent 22%),
-    linear-gradient(42deg, rgba(76, 25, 31, 0.25) 17%, transparent 30%),
-    linear-gradient(168deg, rgba(42, 31, 20, 0.22) 25%, transparent 42%);
+    linear-gradient(126deg, rgba(52, 39, 29, 0.32) 11%, transparent 22%),
+    linear-gradient(42deg, rgba(33, 45, 38, 0.3) 17%, transparent 30%),
+    linear-gradient(168deg, rgba(18, 24, 20, 0.28) 25%, transparent 42%);
   opacity: var(--decay-opacity);
   mix-blend-mode: multiply;
-  transition: opacity 0.45s ease;
+  transition: opacity 0.7s ease;
 }
 
 .eye-shell.state-awakened {
-  --aura: rgba(145, 232, 178, 0.28);
-  --glow: rgba(132, 214, 164, 0.18);
-  --sclera-core: #f0f7f2;
-  --sclera-mid: #cfdfd1;
-  --sclera-edge: #97b89d;
-  --iris-high: #8af8c2;
-  --iris-mid: #246747;
-  --iris-low: #10291f;
-  --pupil-glow: rgba(111, 243, 169, 0.32);
-  --vine: rgba(90, 171, 112, 0.9);
-  --leaf-high: #8ed08a;
-  --leaf-mid: #35643f;
-  --thorn: rgba(114, 150, 126, 0.58);
-  --decay-opacity: 0.1;
+  --aura: rgba(110, 161, 130, 0.5);
+  --aura-opacity: 0.62;
+  --aura-tilt: 8deg;
+  --glow: rgba(209, 238, 218, 0.26);
+  --sclera-core: #e0efe3;
+  --sclera-mid: #97b6a0;
+  --sclera-edge: #244938;
+  --iris-high: #bbe2c5;
+  --iris-mid: #2a7a55;
+  --iris-low: #113424;
+  --pupil-glow: rgba(207, 236, 217, 0.38);
+  --vine: rgba(29, 93, 63, 0.95);
+  --vine-opacity: 0.82;
+  --vine-curl: 0deg;
+  --leaf-high: #a9d4b3;
+  --leaf-mid: #3f8b61;
+  --leaf-sat: 1.1;
+  --leaf-opacity: 0.9;
+  --leaf-scale: 1;
+  --thorn: rgba(51, 77, 59, 0.35);
+  --thorn-opacity: 0.05;
+  --decay-opacity: 0.05;
+  --eye-shape: 61% 39% 55% 45% / 74% 74% 26% 26%;
+  --eye-scale: 1;
+  --pupil-scale: 1.04;
+  --lid-drop: -2px;
+  --lid-tilt: 1deg;
+  --lid-opacity: 0.18;
+  --lid-tint: rgba(25, 59, 40, 0.24);
+  --creep-dark: rgba(22, 39, 29, 0.4);
+  --creep-opacity: 0.08;
+  --creep-tilt: 0deg;
 }
 
 .eye-shell.state-overgrown {
-  --aura: rgba(112, 208, 136, 0.32);
-  --glow: rgba(96, 190, 121, 0.22);
-  --sclera-core: #edf7ed;
-  --sclera-mid: #bed4be;
-  --sclera-edge: #84a286;
-  --iris-high: #9dffc8;
-  --iris-mid: #2f7b4d;
-  --iris-low: #153622;
-  --pupil-glow: rgba(116, 255, 171, 0.4);
-  --vine: rgba(77, 154, 98, 0.95);
-  --leaf-high: #9ce99a;
-  --leaf-mid: #3f7a4c;
-  --thorn: rgba(126, 169, 139, 0.6);
-  --decay-opacity: 0.06;
+  --aura: rgba(152, 199, 172, 0.58);
+  --aura-opacity: 0.72;
+  --aura-tilt: 4deg;
+  --glow: rgba(222, 248, 229, 0.34);
+  --sclera-core: #e8f5e9;
+  --sclera-mid: #a0c3ab;
+  --sclera-edge: #295039;
+  --iris-high: #c9f0d2;
+  --iris-mid: #379868;
+  --iris-low: #16442e;
+  --pupil-glow: rgba(221, 249, 231, 0.48);
+  --vine: rgba(38, 116, 77, 0.98);
+  --vine-opacity: 1;
+  --vine-curl: 8deg;
+  --leaf-high: #bde9c8;
+  --leaf-mid: #48a370;
+  --leaf-sat: 1.28;
+  --leaf-opacity: 1;
+  --leaf-scale: 1.34;
+  --thorn: rgba(43, 71, 53, 0.4);
+  --thorn-opacity: 0.14;
+  --decay-opacity: 0.12;
+  --eye-shape: 64% 36% 50% 50% / 76% 70% 30% 24%;
+  --eye-scale: 1.03;
+  --pupil-scale: 1.14;
+  --lid-drop: -3px;
+  --lid-tilt: -1deg;
+  --lid-opacity: 0.16;
+  --lid-tint: rgba(20, 64, 41, 0.2);
+  --creep-dark: rgba(22, 51, 32, 0.46);
+  --creep-opacity: 0.13;
+  --creep-tilt: -4deg;
 }
 
 .eye-shell.state-corrupted {
-  --aura: rgba(109, 157, 98, 0.28);
-  --glow: rgba(95, 133, 82, 0.2);
-  --sclera-core: #d5d8cc;
-  --sclera-mid: #9fa793;
-  --sclera-edge: #697766;
-  --iris-high: #98b383;
-  --iris-mid: #3c5232;
-  --iris-low: #1f261b;
-  --pupil-glow: rgba(113, 162, 90, 0.25);
-  --vine: rgba(72, 99, 61, 0.92);
-  --leaf-high: #8e9474;
-  --leaf-mid: #515b43;
-  --thorn: rgba(163, 180, 97, 0.86);
-  --decay-opacity: 0.35;
+  --aura: rgba(89, 96, 69, 0.56);
+  --aura-opacity: 0.52;
+  --aura-tilt: -8deg;
+  --glow: rgba(92, 99, 75, 0.24);
+  --sclera-core: #939b87;
+  --sclera-mid: #5b6a56;
+  --sclera-edge: #273128;
+  --iris-high: #9ca584;
+  --iris-mid: #6a754f;
+  --iris-low: #171e17;
+  --pupil-glow: rgba(80, 88, 64, 0.38);
+  --vine: rgba(84, 101, 77, 0.98);
+  --vine-opacity: 1;
+  --vine-curl: 16deg;
+  --leaf-high: #808a71;
+  --leaf-mid: #5b664f;
+  --leaf-sat: 0.46;
+  --leaf-opacity: 0.88;
+  --leaf-scale: 1.5;
+  --thorn: rgba(20, 28, 22, 0.92);
+  --thorn-opacity: 0.76;
+  --decay-opacity: 0.54;
+  --eye-shape: 53% 47% 59% 41% / 60% 68% 40% 40%;
+  --eye-scale: 0.99;
+  --pupil-scale: 1.2;
+  --lid-drop: 10px;
+  --lid-tilt: -10deg;
+  --lid-opacity: 0.66;
+  --lid-tint: rgba(38, 35, 27, 0.7);
+  --creep-dark: rgba(29, 32, 24, 0.72);
+  --creep-opacity: 0.34;
+  --creep-tilt: -12deg;
 }
 
 .eye-shell.state-rotten {
-  --aura: rgba(97, 72, 58, 0.34);
-  --glow: rgba(111, 75, 56, 0.28);
-  --sclera-core: #bbb1a1;
-  --sclera-mid: #817a6a;
-  --sclera-edge: #4a433a;
-  --iris-high: #d3a267;
-  --iris-mid: #6b4128;
-  --iris-low: #1c130d;
-  --pupil-glow: rgba(160, 95, 62, 0.36);
-  --vine: rgba(92, 66, 42, 0.95);
-  --leaf-high: #6f5a41;
-  --leaf-mid: #3f3123;
-  --thorn: rgba(214, 127, 83, 0.9);
-  --decay-opacity: 0.5;
-}
-
-.eye-shell.state-overgrown .leaf {
-  transform: scale(1.15) rotate(-10deg);
-}
-
-.eye-shell.state-corrupted .thorn,
-.eye-shell.state-rotten .thorn {
-  opacity: 0.8;
+  --aura: rgba(53, 60, 47, 0.62);
+  --aura-opacity: 0.46;
+  --aura-tilt: -13deg;
+  --glow: rgba(47, 53, 42, 0.3);
+  --sclera-core: #786f62;
+  --sclera-mid: #4b483f;
+  --sclera-edge: #1f211c;
+  --iris-high: #605b4a;
+  --iris-mid: #383526;
+  --iris-low: #111611;
+  --pupil-glow: rgba(25, 31, 24, 0.58);
+  --vine: rgba(47, 58, 45, 1);
+  --vine-opacity: 1;
+  --vine-curl: 24deg;
+  --leaf-high: #5f634f;
+  --leaf-mid: #353a2f;
+  --leaf-sat: 0.22;
+  --leaf-opacity: 0.78;
+  --leaf-scale: 1.68;
+  --thorn: rgba(12, 18, 14, 1);
+  --thorn-opacity: 0.97;
+  --decay-opacity: 0.74;
+  --eye-shape: 50% 50% 64% 36% / 56% 70% 44% 44%;
+  --eye-scale: 0.96;
+  --pupil-scale: 1.25;
+  --lid-drop: 16px;
+  --lid-tilt: -16deg;
+  --lid-opacity: 0.8;
+  --lid-tint: rgba(37, 28, 23, 0.82);
+  --creep-dark: rgba(15, 17, 13, 0.95);
+  --creep-opacity: 0.56;
+  --creep-tilt: -18deg;
 }
 
 .eye-shell.state-corrupted .leaf,
 .eye-shell.state-rotten .leaf {
-  filter: saturate(0.45) brightness(0.78);
+  filter: saturate(var(--leaf-sat)) brightness(0.72);
 }
 
+.eye-shell.state-corrupted .pupil,
 .eye-shell.state-rotten .pupil {
-  filter: contrast(1.12) saturate(0.8);
+  filter: contrast(1.22) saturate(0.72);
 }
 
 .eye-shell.blinking .eyelid {
@@ -271,6 +375,14 @@ body {
 
 .eye-shell.bloom .leaf {
   animation: bloom 420ms ease-out 1;
+}
+
+.eye-shell.bloom .pupil {
+  box-shadow: 0 0 20px rgba(142, 168, 214, 0.66);
+}
+
+.eye-shell.bloom .aura {
+  border-color: rgba(142, 168, 214, 0.78);
 }
 
 @keyframes hover {
@@ -321,9 +433,167 @@ body {
     transform: scale(1) rotate(-10deg);
   }
   50% {
-    transform: scale(1.3) rotate(-5deg);
+    transform: scale(1.36) rotate(-5deg);
   }
   100% {
-    transform: scale(1.15) rotate(-10deg);
+    transform: scale(1.22) rotate(-10deg);
   }
+}
+
+.chat-sim {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 206px;
+  max-height: 104px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(78, 101, 87, 0.58);
+  background: rgba(9, 16, 13, 0.86);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  color: rgba(208, 224, 214, 0.92);
+}
+
+.chat-sim__header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.chat-sim__state {
+  color: rgba(191, 217, 196, 0.95);
+}
+
+.chat-sim__feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.chat-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
+.chat-line--corrupt {
+  color: #8f8a67;
+}
+
+.chat-line--heal {
+  color: #9dbca6;
+}
+
+.chat-line--reset {
+  color: #8ea8d6;
+}
+
+
+/* Extreme per-state layout shifts so each state fully transforms the eye */
+.eye-shell.state-awakened {
+  width: 122px;
+  height: 84px;
+  margin-top: 20px;
+  transform: rotate(0deg) scale(1);
+}
+
+.eye-shell.state-overgrown {
+  width: 132px;
+  height: 92px;
+  margin-top: 16px;
+  transform: rotate(-2deg) scale(1.04);
+}
+
+.eye-shell.state-corrupted {
+  width: 138px;
+  height: 100px;
+  margin-top: 12px;
+  transform: rotate(-7deg) scale(1.08);
+}
+
+.eye-shell.state-rotten {
+  width: 146px;
+  height: 108px;
+  margin-top: 8px;
+  transform: rotate(-12deg) scale(1.14);
+}
+
+.eye-shell.state-awakened .vines {
+  inset: -8px;
+}
+
+.eye-shell.state-overgrown .vines {
+  inset: -12px;
+}
+
+.eye-shell.state-corrupted .vines {
+  inset: -16px;
+}
+
+.eye-shell.state-rotten .vines {
+  inset: -20px;
+}
+
+.eye-shell.state-awakened .chat-sim__state,
+.eye-shell.state-overgrown .chat-sim__state,
+.eye-shell.state-corrupted .chat-sim__state,
+.eye-shell.state-rotten .chat-sim__state {
+  transition: color 0.7s ease;
+}
+
+.eye-shell.state-rotten .vine-left {
+  left: -34px;
+  top: -2px;
+}
+
+.eye-shell.state-rotten .vine-right {
+  right: -34px;
+  top: -4px;
+}
+
+.eye-shell.state-rotten .leaf-left {
+  left: -1px;
+  top: 20px;
+}
+
+.eye-shell.state-rotten .leaf-right {
+  right: -1px;
+  top: 56px;
+}
+
+.eye-shell.state-rotten .thorn-left {
+  left: 8px;
+  top: 78px;
+}
+
+.eye-shell.state-rotten .thorn-right {
+  right: 14px;
+  top: 18px;
+}
+
+.overlay-corner[data-eye-state="awakened"] .chat-sim {
+  border-color: rgba(77, 129, 96, 0.6);
+  background: rgba(9, 24, 16, 0.82);
+}
+
+.overlay-corner[data-eye-state="overgrown"] .chat-sim {
+  border-color: rgba(90, 156, 115, 0.66);
+  background: rgba(11, 31, 20, 0.84);
+}
+
+.overlay-corner[data-eye-state="corrupted"] .chat-sim {
+  border-color: rgba(107, 112, 78, 0.72);
+  background: rgba(26, 29, 19, 0.88);
+}
+
+.overlay-corner[data-eye-state="rotten"] .chat-sim {
+  border-color: rgba(62, 56, 45, 0.82);
+  background: rgba(23, 17, 14, 0.9);
 }
