@@ -3,94 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Ivy Eye Overlay</title>
+    <title>Watcher Familiar Eye</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="overlay-root" class="overlay-corner" data-mode="overlay">
-      <div id="eye-shell" class="eye-shell state-awakened" aria-label="The Ivy Eye">
-        <div class="aura"></div>
-
-        <div class="vines" aria-hidden="true">
-          <span class="vine vine-left"></span>
-          <span class="vine vine-right"></span>
-          <span class="leaf leaf-left"></span>
-          <span class="leaf leaf-right"></span>
-          <span class="thorn thorn-left"></span>
-          <span class="thorn thorn-right"></span>
-          <span class="thorn thorn-top"></span>
-          <span class="thorn thorn-bottom"></span>
-        </div>
+    <div id="overlay-root" class="overlay" data-mode="overlay">
+      <div id="eye-shell" class="eye-shell state-awake" aria-label="Watcher familiar eye">
+        <div class="halo"></div>
+        <div class="veil"></div>
 
         <div id="eye" class="eye">
-          <div class="vein-layer"></div>
-          <div id="pupil" class="pupil"></div>
-          <div class="shine"></div>
-          <div class="wetline"></div>
-          <div id="eyelid" class="eyelid"></div>
+          <div class="upper-lid"></div>
           <div class="lower-lid"></div>
-          <div class="decay-layer"></div>
-          <div class="mist"></div>
-          <div class="spores" aria-hidden="true">
-            <span class="spore spore-1"></span>
-            <span class="spore spore-2"></span>
-            <span class="spore spore-3"></span>
+
+          <div id="iris" class="iris">
+            <div class="pupil"></div>
+            <span class="iris-glint iris-glint-main"></span>
+            <span class="iris-glint iris-glint-small"></span>
           </div>
-          <div class="melt melt-left"></div>
-          <div class="melt melt-center"></div>
-          <div class="melt melt-right"></div>
-        </div>
-      </div>
 
-      <aside id="chat-sim" class="chat-sim" aria-live="polite" hidden>
-        <div class="chat-sim__header">
-          <span>Whispers</span>
-          <span id="chat-state" class="chat-sim__state">Awakened • 0</span>
+          <span class="spark spark-a"></span>
+          <span class="spark spark-b"></span>
         </div>
-        <div id="chat-feed" class="chat-sim__feed"></div>
-      </aside>
-
-      <div id="test-label" class="test-label" hidden>
-        <span id="label-status">phase:awakened • emo:neutral • blink:normal • shape:awakened-neutral • amb:on • glow</span>
       </div>
 
       <aside id="test-ui" class="test-ui" hidden>
         <div class="test-ui__row">
-          <button data-act="phase" data-value="awakened">awakened</button>
-          <button data-act="phase" data-value="overgrown">overgrown</button>
-          <button data-act="phase" data-value="corrupted">corrupted</button>
-          <button data-act="phase" data-value="rotten">rotten</button>
+          <button data-act="state" data-value="dormant">dormant</button>
+          <button data-act="state" data-value="awake">awake</button>
+          <button data-act="state" data-value="fond">fond</button>
+          <button data-act="state" data-value="agitated">agitated</button>
+          <button data-act="state" data-value="possessed">possessed</button>
         </div>
         <div class="test-ui__row">
-          <button data-act="emotion" data-value="neutral">calm</button>
-          <button data-act="emotion" data-value="happy">happy</button>
-          <button data-act="emotion" data-value="alert">alert</button>
-          <button data-act="emotion" data-value="angry">angry</button>
-          <button data-act="emotion" data-value="afraid">afraid</button>
-          <button data-act="emotion" data-value="sad">sad</button>
-          <button data-act="emotion" data-value="empty">dead</button>
-          <button data-act="emotion" data-value="bloodshot">bloodshot</button>
-        </div>
-        <div class="test-ui__row">
-          <button data-act="blink" data-value="normal">blink</button>
-          <button data-act="blink" data-value="soft">soft blink</button>
-          <button data-act="blink" data-value="half">half blink</button>
-          <button data-act="blink" data-value="tense">tense blink</button>
-          <button data-act="blink" data-value="heavy">heavy blink</button>
-          <button data-act="action" data-value="twitch">twitch</button>
-          <button data-act="action" data-value="shudder">shudder</button>
-          <button data-act="ambient" data-value="toggle">ambient on/off</button>
-        </div>
-
-        <div class="test-ui__row">
-          <button data-act="variant" data-value="bloodshot">bloodshot</button>
-          <button data-act="variant" data-value="bleeding">bleeding</button>
-          <button data-act="variant" data-value="zombified">zombified</button>
-          <button data-act="variant" data-value="decay">heavy decay</button>
-          <button data-act="variant" data-value="glow">soft glow</button>
-        </div>
-        <div class="test-ui__row">
-          <button data-act="demo" data-value="toggle">start/stop auto demo</button>
+          <button data-act="action" data-value="blink">blink</button>
+          <button data-act="action" data-value="glance">glance</button>
+          <button data-act="action" data-value="pulse">pulse</button>
+          <button data-act="action" data-value="possess">possess burst</button>
+          <button data-act="action" data-value="calm">calm reset</button>
         </div>
       </aside>
     </div>
