@@ -341,13 +341,41 @@ body {
 .pet-shell.state-rotten .dog-body,
 .pet-shell.state-rotten .dog-face { animation: suffocate 1.2s ease-in-out infinite; }
 
+.pet-shell.expression-happy .dog-eye { transform: scaleY(1.1); }
+.pet-shell.expression-happy .dog-mouth { transform: scaleY(1.2) translateY(-1px); }
+
+.pet-shell.expression-playful .dog-face { transform: translateX(2px) translateY(var(--face-drop)); }
+.pet-shell.expression-playful .dog-eye { transform: scaleY(0.95) scaleX(1.08); }
+.pet-shell.expression-playful .dog-mouth { transform: scaleY(0.95) rotate(-4deg); }
+
+.pet-shell.expression-surprised .dog-eye { transform: scaleY(1.28) scaleX(1.1); }
+.pet-shell.expression-surprised .dog-mouth { transform: scaleY(0.45) translateY(1px); border-radius: 42%; }
+
+.pet-shell.expression-scared .dog-eye { transform: scaleY(1.2) scaleX(0.88); box-shadow: 0 0 14px rgba(255, 244, 170, 0.7); }
+.pet-shell.expression-scared .dog-mouth { transform: scaleY(0.3) translateY(2px); }
+
+.pet-shell.expression-angry .dog-face { transform: translateX(-2px) translateY(var(--face-drop)); }
+.pet-shell.expression-angry .dog-eye { transform: scaleY(0.62) scaleX(1.2); }
+.pet-shell.expression-angry .dog-mouth { transform: scaleY(0.26) rotate(2deg); border-bottom-color: #70743b; }
+
 .pet-shell.expression-tired .ghost-dog { animation: lieTired 1.5s ease-in-out infinite; }
+.pet-shell.expression-tired .dog-eye { transform: scaleY(0.35); }
+.pet-shell.expression-tired .dog-mouth { transform: scaleY(0.2) translateY(2px); }
+
 .pet-shell.expression-sick .ghost-dog { animation: sickGround 1.2s ease-in-out infinite; }
-.pet-shell.expression-zombified .dog-eye { background: #8ea73d; box-shadow: 0 0 14px rgba(175, 204, 78, 0.55); }
+.pet-shell.expression-sick .dog-eye { transform: scaleY(0.45) scaleX(0.9); }
+.pet-shell.expression-sick .dog-mouth { transform: scaleY(0.14) translateY(3px); border-bottom-color: #646836; }
+
+.pet-shell.expression-zombified .dog-eye { background: #8ea73d; box-shadow: 0 0 14px rgba(175, 204, 78, 0.55); transform: scaleY(1.12) scaleX(0.8); }
 .pet-shell.expression-zombified .dog-mouth { transform: scaleY(0.2) translateY(2px); }
+
 .pet-shell.expression-true-zombie .ghost-dog { animation: zombieRise 1.1s ease-in-out infinite; }
-.pet-shell.expression-true-zombie .dog-eye { background: #b9de57; box-shadow: 0 0 17px rgba(197, 240, 95, 0.82); }
+.pet-shell.expression-true-zombie .dog-eye { background: #b9de57; box-shadow: 0 0 17px rgba(197, 240, 95, 0.82); transform: scaleY(1.2) scaleX(0.78); }
 .pet-shell.expression-true-zombie .dog-mouth { border-bottom-color: #8ca53d; transform: scaleY(0.1) translateY(3px); }
+
+.pet-shell.turning .ghost-dog { animation: standTurn 1.25s ease-in-out 1; }
+.pet-shell.turning .dog-tail { animation: joyWag 250ms ease-out 3; }
+.pet-shell.turning .dog-face { box-shadow: inset 0 0 0 2px rgba(255, 245, 173, 0.62); }
 
 .pet-shell.blinking .dog-eye { transform: scaleY(0.06); }
 .pet-shell.twitch { animation: twitch 260ms linear 1; }
@@ -372,6 +400,14 @@ body {
   0%,100% { transform: translate(var(--dog-x), calc(var(--dog-y) + 4px)) rotate(calc(var(--dog-tilt) - 4deg)); }
   50% { transform: translate(calc(var(--dog-x) + 2px), calc(var(--dog-y) - 2px)) rotate(calc(var(--dog-tilt) + 2deg)); }
 }
+
+@keyframes standTurn {
+  0% { transform: translate(var(--dog-x), var(--dog-y)) rotate(var(--dog-tilt)) scale(1); }
+  30% { transform: translate(calc(var(--dog-x) + 2px), calc(var(--dog-y) - 18px)) rotate(calc(var(--dog-tilt) + 22deg)) scale(1.02); }
+  60% { transform: translate(calc(var(--dog-x) + 4px), calc(var(--dog-y) - 16px)) rotate(calc(var(--dog-tilt) + 178deg)) scale(1.02); }
+  100% { transform: translate(var(--dog-x), var(--dog-y)) rotate(calc(var(--dog-tilt) + 360deg)) scale(1); }
+}
+
 
 @keyframes auraFloat {
   0%,100% { transform: rotate(-4deg) scale(1); }
@@ -410,7 +446,7 @@ body {
 .chat-sim {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: -18px;
   width: 220px;
   max-height: 104px;
   padding: 8px 10px;

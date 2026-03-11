@@ -10,12 +10,23 @@
     rotten: 'state-rotten'
   };
 
-  const EXPRESSION_CLASS = ['expression-tired', 'expression-sick', 'expression-zombified', 'expression-true-zombie'];
+  const EXPRESSION_CLASS = [
+    'expression-happy',
+    'expression-playful',
+    'expression-surprised',
+    'expression-scared',
+    'expression-angry',
+    'expression-tired',
+    'expression-sick',
+    'expression-zombified',
+    'expression-true-zombie'
+  ];
+
   const EXPRESSION_SEQUENCE = {
-    awakened: [],
-    overgrown: ['expression-tired'],
-    corrupted: ['expression-tired', 'expression-sick', 'expression-zombified'],
-    rotten: ['expression-sick', 'expression-zombified', 'expression-true-zombie']
+    awakened: ['expression-happy', 'expression-playful', 'expression-surprised'],
+    overgrown: ['expression-playful', 'expression-scared', 'expression-tired'],
+    corrupted: ['expression-angry', 'expression-tired', 'expression-sick', 'expression-zombified'],
+    rotten: ['expression-sick', 'expression-zombified', 'expression-scared', 'expression-true-zombie']
   };
 
   let corruptionScore = 0;
@@ -73,7 +84,7 @@
     };
 
     paint();
-    expressionTimer = setInterval(paint, state === 'rotten' ? 1100 : 1600);
+    expressionTimer = setInterval(paint, state === 'rotten' ? 1000 : 1400);
   };
 
   const setVisualState = (state) => {
@@ -107,6 +118,12 @@
     setTimeout(() => shell.classList.remove('bloom'), 420);
   };
 
+  const turnOnTwoLegs = () => {
+    shell.classList.remove('turning');
+    shell.classList.add('turning');
+    setTimeout(() => shell.classList.remove('turning'), 1250);
+  };
+
   const look = (x, y) => {
     dogFace.style.transform = `translate(${x}px, ${y}px)`;
   };
@@ -130,6 +147,9 @@
         break;
       case 'lookRight':
         lookRight();
+        break;
+      case 'turn':
+        turnOnTwoLegs();
         break;
       case 'corrupt':
         corruptionScore = clampScore(corruptionScore + 1);
@@ -168,7 +188,7 @@
     const script = [
       { user: 'ivyvoid', message: 'poison ivy is closing in 😵', action: 'corrupt', tone: 'corrupt' },
       { user: 'moonmoss', message: 'good dog, breathe slow', action: 'heal', tone: 'heal' },
-      { user: 'nightowl', message: 'it looks tired now...', action: 'corrupt', tone: 'corrupt' },
+      { user: 'nightowl', message: 'it turned and stood up!', action: 'turn', tone: 'reset' },
       { user: 'fernfriend', message: 'zombie pup incoming!', action: 'corrupt', tone: 'corrupt' },
       { user: 'modbot', message: 'revive pup', action: 'reset', tone: 'reset' }
     ];
