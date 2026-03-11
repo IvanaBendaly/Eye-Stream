@@ -108,6 +108,12 @@
     setTimeout(() => shell.classList.remove('bloom'), 440);
   };
 
+  const shudder = () => {
+    shell.classList.remove('shudder');
+    shell.classList.add('shudder');
+    setTimeout(() => shell.classList.remove('shudder'), 900);
+  };
+
   const movePupil = (x, y) => {
     shell.style.setProperty('--look-x', `${x}px`);
     shell.style.setProperty('--look-y', `${y}px`);
@@ -115,13 +121,14 @@
 
   const getDriftProfile = () => {
     const state = scoreToState(corruptionScore);
-    if (currentEmotion === 'afraid') return { x: 11, y: 8, interval: 520 };
-    if (currentEmotion === 'alert' || currentEmotion === 'angry') return { x: 10, y: 5, interval: 760 };
-    if (currentEmotion === 'sad' || currentEmotion === 'empty') return { x: 3, y: 2, interval: 2000 };
-    if (state === 'rotten') return { x: 4, y: 2, interval: 2200 };
-    if (state === 'corrupted') return { x: 9, y: 5, interval: 900 };
-    if (state === 'overgrown') return { x: 8, y: 4, interval: 1200 };
-    return { x: 6, y: 3, interval: 1500 };
+    if (currentEmotion === 'happy') return { x: 3, y: 2, interval: 1600 };
+    if (currentEmotion === 'afraid') return { x: 12, y: 9, interval: 500 };
+    if (currentEmotion === 'alert' || currentEmotion === 'angry') return { x: 10, y: 4, interval: 720 };
+    if (currentEmotion === 'sad' || currentEmotion === 'empty') return { x: 2, y: 1, interval: 2300 };
+    if (state === 'rotten') return { x: 2.6, y: 1.5, interval: 2600 };
+    if (state === 'corrupted') return { x: 9, y: 5, interval: 860 };
+    if (state === 'overgrown') return { x: 6, y: 3, interval: 1300 };
+    return { x: 5, y: 3, interval: 1500 };
   };
 
   const randomPupilDrift = () => {
@@ -291,9 +298,13 @@
 
   setInterval(() => {
     const state = scoreToState(corruptionScore);
-    const twitchChance = state === 'corrupted' ? 0.35 : state === 'rotten' ? 0.18 : 0.08;
+    const twitchChance = state === 'corrupted' ? 0.38 : state === 'rotten' ? 0.12 : 0.06;
     if (Math.random() < twitchChance) {
       twitch();
     }
-  }, 2800);
+
+    if (state === 'rotten' && Math.random() < 0.28) {
+      shudder();
+    }
+  }, 3000);
 })();
