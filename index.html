@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ghost Dog Overlay Local Preview</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #0b1510;
+        color: #d2eadb;
+        font-family: Inter, system-ui, sans-serif;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .toolbar {
+        padding: 12px;
+        border-bottom: 1px solid #294033;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .toolbar strong {
+        margin-right: 8px;
+      }
+      button {
+        background: #163423;
+        color: #d2eadb;
+        border: 1px solid #3f6b52;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #1e4932;
+      }
+      .note {
+        font-size: 12px;
+        opacity: 0.88;
+        margin-left: 10px;
+      }
+      .stage {
+        position: relative;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: radial-gradient(circle at 25% 25%, #1a3024, #0b1510 64%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <strong>Ghost Dog Test Controls</strong>
+      <button data-action="heal">Heal</button>
+      <button data-action="corrupt">Corrupt</button>
+      <button data-action="reset">Reset</button>
+      <button data-action="blink">Blink</button>
+      <button data-action="lookLeft">Look Left</button>
+      <button data-action="lookRight">Look Right</button>
+      <button data-state="awakened">Set Happy</button>
+      <button data-state="rotten">Set Suffocating</button>
+      <span class="note">Run <code>python3 -m http.server 4173</code> then open <code>http://localhost:4173</code>.</span>
+    </div>
+
+    <div class="stage">
+      <iframe id="overlayFrame" src="overlay/index.html" title="Ghost dog overlay preview"></iframe>
+    </div>
+
+    <script>
+      const frame = document.getElementById('overlayFrame');
+
+      const sendToOverlay = (payload) => {
+        const overlayApi = frame.contentWindow && frame.contentWindow.ChatEye;
+        if (!overlayApi || typeof overlayApi.receive !== 'function') return;
+        overlayApi.receive(payload);
+      };
+
+      document.querySelectorAll('button[data-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          sendToOverlay({ type: 'action', action: button.dataset.action });
+        });
+      });
+
+      document.querySelectorAll('button[data-state]').forEach((button) => {
+        button.addEventListener('click', () => {
+          sendToOverlay({ type: 'setState', state: button.dataset.state });
+        });
+      });
+    </script>
+  </body>
+</html>

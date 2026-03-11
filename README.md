@@ -13,6 +13,20 @@ The stream pet is now a ghost dog:
 3. Set dimensions to `320x220` (or your preference).
 4. Keep background transparency enabled.
 
+## Localhost preview (recommended)
+
+If you want a quick local test page in your browser:
+
+1. From the repo root, run:
+   ```bash
+   python3 -m http.server 4173
+   ```
+2. Open:
+   - `http://localhost:4173` (new test page with control buttons), or
+   - `http://localhost:4173/overlay/index.html` (raw overlay only).
+
+The root test page includes buttons for heal/corrupt/reset/look/blink so you can verify the ghost dog animation states without needing OBS first.
+
 ## Manual testing
 
 In the browser dev console:
