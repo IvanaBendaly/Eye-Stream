@@ -9,6 +9,13 @@
     rotten: 'state-rotten'
   };
 
+  const PHASE_MOTION_CLASS = {
+    awakened: 'phase-awakened',
+    overgrown: 'phase-overgrown',
+    corrupted: 'phase-corrupted',
+    rotten: 'phase-rotten'
+  };
+
   const EMOTION_CLASS = {
     neutral: 'emotion-neutral',
     happy: 'emotion-happy',
@@ -71,7 +78,9 @@
   const setVisualState = (state) => {
     const resolvedState = STATE_CLASS[state] ? state : 'awakened';
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
+    Object.values(PHASE_MOTION_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[resolvedState]);
+    shell.classList.add(PHASE_MOTION_CLASS[resolvedState]);
     if (overlayRoot) overlayRoot.dataset.eyeState = resolvedState;
   };
 
@@ -93,7 +102,8 @@
   const blink = () => {
     shell.classList.remove('blinking');
     shell.classList.add('blinking');
-    setTimeout(() => shell.classList.remove('blinking'), 220);
+    const cssDuration = Number.parseFloat(getComputedStyle(shell).getPropertyValue('--blink-duration')) || 220;
+    setTimeout(() => shell.classList.remove('blinking'), cssDuration + 40);
   };
 
   const twitch = () => {
@@ -282,9 +292,17 @@
 
   const scheduleBlink = () => {
     const state = scoreToState(corruptionScore);
-    const weighted = state === 'rotten' || currentEmotion === 'empty'
-      ? 3800 + Math.random() * 5200
-      : 2400 + Math.random() * 3400;
+    const ranges = {
+      awakened: [2900, 5200],
+      overgrown: [2200, 4200],
+      corrupted: [1600, 3000],
+      rotten: [4200, 7600]
+    };
+
+    const [min, max] = ranges[state] || ranges.awakened;
+    const weighted = currentEmotion === 'empty'
+      ? 4500 + Math.random() * 6200
+      : min + Math.random() * (max - min);
 
     setTimeout(() => {
       blink();
