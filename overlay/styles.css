@@ -75,7 +75,13 @@ body {
 .lower-lid,
 .mist,
 .spores,
-.melt {
+.melt,
+.intrusion-shadow,
+.rot-film,
+.rot-veil,
+.thorn-intrusion,
+.fungus-patch,
+.curse-crack {
   image-rendering: pixelated;
 }
 
@@ -225,6 +231,36 @@ body {
   opacity: var(--bleed-opacity, 0);
 }
 
+.intrusion-shadow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(52% 58% at 7% 50%, color-mix(in srgb, var(--intrusion-shadow) 90%, transparent), transparent 72%),
+    radial-gradient(48% 54% at 94% 47%, color-mix(in srgb, var(--intrusion-shadow) 90%, transparent), transparent 74%),
+    linear-gradient(180deg, color-mix(in srgb, var(--intrusion-shadow) 58%, transparent) 0 18%, transparent 42% 100%);
+  opacity: var(--intrusion-opacity);
+}
+
+.rot-film {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(56% 42% at 52% 46%, color-mix(in srgb, var(--film) 46%, transparent), transparent 78%),
+    linear-gradient(112deg, transparent 0 38%, color-mix(in srgb, var(--film) 44%, transparent) 47% 66%, transparent 74%);
+  opacity: var(--film-opacity);
+}
+
+.curse-crack {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(124deg, transparent 0 46%, color-mix(in srgb, var(--crack) 78%, transparent) 47% 49%, transparent 50% 100%),
+    linear-gradient(145deg, transparent 0 58%, color-mix(in srgb, var(--crack) 66%, transparent) 59% 60%, transparent 61% 100%),
+    linear-gradient(18deg, transparent 0 55%, color-mix(in srgb, var(--crack) 62%, transparent) 56% 57%, transparent 58% 100%);
+  opacity: var(--crack-opacity);
+}
+
+
 .vein-layer {
   position: absolute;
   inset: 0;
@@ -340,6 +376,50 @@ body {
   opacity: var(--decay-opacity);
 }
 
+.rot-veil {
+  position: absolute;
+  left: -4%;
+  right: -4%;
+  top: -7%;
+  height: 44%;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--veil) 90%, transparent) 0 62%, transparent 100%),
+    repeating-linear-gradient(90deg,
+      transparent 0 calc(var(--px) * 2),
+      color-mix(in srgb, var(--veil) 72%, transparent) calc(var(--px) * 2) calc(var(--px) * 3),
+      transparent calc(var(--px) * 3) calc(var(--px) * 5));
+  clip-path: polygon(0 0, 100% 0, 100% 52%, 92% 66%, 82% 74%, 66% 78%, 50% 84%, 35% 80%, 20% 71%, 9% 62%, 0 50%);
+  opacity: var(--veil-opacity);
+}
+
+.thorn-intrusion {
+  position: absolute;
+  width: 25px;
+  height: 48px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--thorn-intrusion) 95%, transparent) 0 40%, color-mix(in srgb, var(--thorn-intrusion) 70%, transparent) 40% 100%);
+  clip-path: polygon(52% 0, 80% 34%, 100% 76%, 80% 100%, 34% 84%, 0 100%, 26% 60%, 20% 22%);
+  opacity: var(--thorn-intrusion-opacity);
+}
+
+.thorn-intrusion-left { left: -4px; top: 26px; transform: rotate(-28deg); }
+.thorn-intrusion-right { right: -3px; top: 10px; transform: scaleX(-1) rotate(-12deg); }
+
+.fungus-patch {
+  position: absolute;
+  width: 30px;
+  height: 22px;
+  background:
+    radial-gradient(circle at 22% 50%, color-mix(in srgb, var(--fungus) 85%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 52% 38%, color-mix(in srgb, var(--fungus) 80%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 75% 64%, color-mix(in srgb, var(--fungus) 75%, transparent) 0 2px, transparent 3px),
+    linear-gradient(180deg, color-mix(in srgb, var(--fungus) 45%, transparent), transparent 80%);
+  opacity: var(--fungus-opacity);
+}
+
+.fungus-patch-left { left: 6px; bottom: 14px; }
+.fungus-patch-right { right: 4px; top: 18px; }
+
 .mist {
   position: absolute;
   inset: -4px;
@@ -428,12 +508,13 @@ body {
 }
 
 .eye-shell.emotion-happy {
-  --squint: -7px;
-  --lower-lift: 2px;
-  --eye-scale-y: 1.08;
-  --pupil-size: 1.09;
-  --highlight-opacity: 1;
-  --lid-angle: -2deg;
+  --squint: -12px;
+  --lower-lift: 3px;
+  --eye-scale-x: 1.04;
+  --eye-scale-y: 1.12;
+  --pupil-size: 1.16;
+  --highlight-opacity: 1.16;
+  --lid-angle: 1deg;
 }
 
 .eye-shell.emotion-alert {
@@ -445,39 +526,40 @@ body {
 }
 
 .eye-shell.emotion-angry {
-  --squint: 11px;
-  --lower-lift: 3px;
-  --eye-scale-y: 0.88;
-  --pupil-size: 0.9;
-  --lid-angle: -10deg;
-  --highlight-opacity: 0.6;
+  --squint: 16px;
+  --lower-lift: 4px;
+  --eye-scale-y: 0.8;
+  --pupil-size: 0.82;
+  --lid-angle: -16deg;
+  --highlight-opacity: 0.42;
 }
 
 .eye-shell.emotion-afraid {
-  --squint: -13px;
-  --lower-lift: -2px;
-  --eye-scale-y: 1.18;
-  --pupil-size: 1.13;
-  --lid-angle: -3deg;
-  --highlight-opacity: 0.75;
+  --squint: -18px;
+  --lower-lift: -4px;
+  --eye-scale-x: 1.05;
+  --eye-scale-y: 1.22;
+  --pupil-size: 1.2;
+  --lid-angle: -7deg;
+  --highlight-opacity: 0.58;
 }
 
 .eye-shell.emotion-sad {
-  --squint: 8px;
-  --lower-lift: -2px;
-  --eye-scale-y: 0.9;
-  --pupil-size: 0.94;
-  --lid-angle: 4deg;
-  --highlight-opacity: 0.5;
+  --squint: 13px;
+  --lower-lift: -3px;
+  --eye-scale-y: 0.84;
+  --pupil-size: 0.9;
+  --lid-angle: 8deg;
+  --highlight-opacity: 0.34;
 }
 
 .eye-shell.emotion-empty {
-  --squint: 16px;
-  --lower-lift: -4px;
-  --eye-scale-y: 0.78;
-  --pupil-size: 0.84;
-  --lid-angle: -12deg;
-  --highlight-opacity: 0.25;
+  --squint: 20px;
+  --lower-lift: -6px;
+  --eye-scale-y: 0.72;
+  --pupil-size: 0.78;
+  --lid-angle: -16deg;
+  --highlight-opacity: 0.14;
 }
 
 .eye-shell.emotion-bloodshot {
@@ -488,6 +570,41 @@ body {
   --lid-angle: -12deg;
   --vein-opacity: 0.84;
   --highlight-opacity: 0.38;
+}
+
+
+.eye-shell.emotion-happy {
+  --iris-1: #f8e58a;
+  --iris-2: #e1be54;
+  --iris-3: #b38e2f;
+  --iris-4: #5f4519;
+  --iris-ring: #ffe895;
+  --iris-speck: #fff0b8;
+  --shine: #fff8de;
+  --wetline: #f0e6b8;
+}
+
+.eye-shell.emotion-afraid {
+  --iris-1: #d8d9bc;
+  --iris-2: #b0b38a;
+  --iris-ring: #e0e4cd;
+  --socket-opacity: calc(var(--socket-opacity) + 0.08);
+}
+
+.eye-shell.emotion-angry {
+  --iris-ring: #f0c35b;
+  --vein-opacity: max(0.42, var(--vein-opacity));
+}
+
+.eye-shell.emotion-sad {
+  --aura-opacity: calc(var(--aura-opacity) * 0.72);
+  --iris-speck: color-mix(in srgb, var(--iris-speck) 45%, #7a7a6a);
+}
+
+.eye-shell.emotion-empty {
+  --aura-opacity: calc(var(--aura-opacity) * 0.45);
+  --iris-speck: color-mix(in srgb, var(--iris-speck) 35%, #636055);
+  --film-opacity: calc(var(--film-opacity) + 0.1);
 }
 
 /* Blink variants */
@@ -571,10 +688,10 @@ body {
   --sclera-3: #b3b18e;
   --sclera-4: #6c7359;
 
-  --iris-1: #ece29e;
-  --iris-2: #c8b85b;
-  --iris-3: #8b7d35;
-  --iris-4: #41371c;
+  --iris-1: #ecdca2;
+  --iris-2: #cdb863;
+  --iris-3: #897737;
+  --iris-4: #3f3419;
   --iris-border: #635526;
   --iris-ring: #e0cf6d;
   --iris-speck: #f3e89f;
@@ -593,7 +710,19 @@ body {
   --bleed-color: #7a3028;
   --bleed-opacity: 0;
   --decay: #6d6a59;
-  --decay-opacity: 0.05;
+  --decay-opacity: 0.04;
+  --intrusion-shadow: #3a4c3e;
+  --intrusion-opacity: 0.08;
+  --film: #f0eac9;
+  --film-opacity: 0.04;
+  --veil: #5a745f;
+  --veil-opacity: 0.1;
+  --thorn-intrusion: #253129;
+  --thorn-intrusion-opacity: 0.04;
+  --fungus: #99b28f;
+  --fungus-opacity: 0.02;
+  --crack: #5f6e58;
+  --crack-opacity: 0.03;
 
   --aura: #7daf8e;
   --aura-opacity: 0.55;
@@ -634,10 +763,10 @@ body {
   --sclera-3: #c0c195;
   --sclera-4: #717953;
 
-  --iris-1: #f1dc7a;
-  --iris-2: #d5b448;
-  --iris-3: #9f842f;
-  --iris-4: #4b3d1d;
+  --iris-1: #f6de7f;
+  --iris-2: #d9b84a;
+  --iris-3: #a78a31;
+  --iris-4: #4f3f1c;
   --iris-border: #775f24;
   --iris-ring: #efd16a;
   --iris-speck: #f7e79a;
@@ -656,7 +785,19 @@ body {
   --bleed-color: #7b322b;
   --bleed-opacity: 0;
   --decay: #5f6d54;
-  --decay-opacity: 0.08;
+  --decay-opacity: 0.09;
+  --intrusion-shadow: #304936;
+  --intrusion-opacity: 0.12;
+  --film: #e6e5be;
+  --film-opacity: 0.06;
+  --veil: #5f8869;
+  --veil-opacity: 0.14;
+  --thorn-intrusion: #2a4130;
+  --thorn-intrusion-opacity: 0.08;
+  --fungus: #9fc08d;
+  --fungus-opacity: 0.05;
+  --crack: #647c62;
+  --crack-opacity: 0.05;
 
   --aura: #9cd1aa;
   --aura-opacity: 0.72;
@@ -700,10 +841,10 @@ body {
   --sclera-3: #8f7c5e;
   --sclera-4: #58523b;
 
-  --iris-1: #d9c35d;
-  --iris-2: #af8f33;
-  --iris-3: #79611f;
-  --iris-4: #342812;
+  --iris-1: #cbc15d;
+  --iris-2: #9f8a2f;
+  --iris-3: #6f6120;
+  --iris-4: #322b13;
   --iris-border: #6a4f1d;
   --iris-ring: #cfac42;
   --iris-speck: #e0c05f;
@@ -722,7 +863,19 @@ body {
   --bleed-color: #7d2f2a;
   --bleed-opacity: 0.2;
   --decay: #625739;
-  --decay-opacity: 0.3;
+  --decay-opacity: 0.42;
+  --intrusion-shadow: #262318;
+  --intrusion-opacity: 0.34;
+  --film: #8f8968;
+  --film-opacity: 0.22;
+  --veil: #514328;
+  --veil-opacity: 0.46;
+  --thorn-intrusion: #0f110c;
+  --thorn-intrusion-opacity: 0.62;
+  --fungus: #84764a;
+  --fungus-opacity: 0.34;
+  --crack: #2a2314;
+  --crack-opacity: 0.42;
 
   --aura: #9a8f55;
   --aura-opacity: 0.4;
@@ -765,10 +918,10 @@ body {
   --sclera-3: #938454;
   --sclera-4: #5e5635;
 
-  --iris-1: #c7b15f;
-  --iris-2: #9a7d32;
-  --iris-3: #695321;
-  --iris-4: #312611;
+  --iris-1: #c7b67a;
+  --iris-2: #9f8440;
+  --iris-3: #6e5a2a;
+  --iris-4: #352c15;
   --iris-border: #654b1b;
   --iris-ring: #b2903c;
   --iris-speck: #b7a063;
@@ -787,7 +940,19 @@ body {
   --bleed-color: #6d2822;
   --bleed-opacity: 0.28;
   --decay: #5e5439;
-  --decay-opacity: 0.5;
+  --decay-opacity: 0.62;
+  --intrusion-shadow: #1a1710;
+  --intrusion-opacity: 0.5;
+  --film: #726f56;
+  --film-opacity: 0.34;
+  --veil: #47361f;
+  --veil-opacity: 0.64;
+  --thorn-intrusion: #090a07;
+  --thorn-intrusion-opacity: 0.78;
+  --fungus: #7a6740;
+  --fungus-opacity: 0.48;
+  --crack: #1f1a10;
+  --crack-opacity: 0.58;
 
   --aura: #6a6642;
   --aura-opacity: 0.28;
