@@ -1,6 +1,7 @@
 (function () {
   const shell = document.getElementById('eye-shell');
   const pupil = document.getElementById('pupil');
+  const overlayRoot = document.getElementById('overlay-root');
 
   const STATE_CLASS = {
     awakened: 'state-awakened',
@@ -38,8 +39,10 @@
   };
 
   const setVisualState = (state) => {
+    const resolvedState = STATE_CLASS[state] ? state : 'awakened';
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
-    shell.classList.add(STATE_CLASS[state] || STATE_CLASS.awakened);
+    shell.classList.add(STATE_CLASS[resolvedState]);
+    if (overlayRoot) overlayRoot.dataset.eyeState = resolvedState;
   };
 
   const syncStateFromScore = () => {
