@@ -219,7 +219,7 @@ body {
   background:
     linear-gradient(180deg, transparent 0 74%, color-mix(in srgb, var(--bleed-color) 84%, transparent) 74% 100%),
     linear-gradient(180deg, color-mix(in srgb, var(--bleed-color) 78%, transparent) 0 100%);
-  clip-path: polygon(6% 72%, 12% 76%, 14% 94%, 9% 100%, 4% 92%, 4% 82%, 86% 74%, 92% 78%, 95% 95%, 91% 100%, 85% 96%, 84% 84%);
+  clip-path: polygon(4% 74%, 8% 78%, 10% 92%, 8% 100%, 5% 93%, 4% 84%, 90% 75%, 94% 79%, 96% 92%, 94% 100%, 91% 93%, 90% 84%);
   opacity: var(--bleed-opacity, 0);
 }
 
@@ -227,16 +227,14 @@ body {
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(18deg,
-      transparent 0 calc(var(--px) * 6),
-      color-mix(in srgb, var(--vein) 82%, transparent) calc(var(--px) * 6) calc(var(--px) * 7),
-      transparent calc(var(--px) * 7) calc(var(--px) * 11)),
-    repeating-linear-gradient(160deg,
-      transparent 0 calc(var(--px) * 7),
-      color-mix(in srgb, var(--vein) 72%, transparent) calc(var(--px) * 7) calc(var(--px) * 8),
-      transparent calc(var(--px) * 8) calc(var(--px) * 13));
+    radial-gradient(34% 28% at 12% 70%, color-mix(in srgb, var(--vein) 65%, transparent), transparent 72%),
+    radial-gradient(30% 26% at 89% 69%, color-mix(in srgb, var(--vein) 65%, transparent), transparent 74%),
+    linear-gradient(132deg, transparent 52%, color-mix(in srgb, var(--vein) 70%, transparent) 54%, transparent 58%),
+    linear-gradient(35deg, transparent 48%, color-mix(in srgb, var(--vein) 62%, transparent) 50%, transparent 54%),
+    linear-gradient(150deg, transparent 65%, color-mix(in srgb, var(--vein) 55%, transparent) 66%, transparent 70%);
   opacity: var(--vein-opacity);
 }
+
 
 .pupil {
   position: absolute;
@@ -251,12 +249,23 @@ body {
       var(--iris-1) 0 20%,
       var(--iris-2) 20% 45%,
       var(--iris-3) 45% 70%,
-      var(--iris-4) 70% 100%);
+      var(--iris-4) 70% 100%),
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--iris-ring) 45%, transparent) 0 10deg, transparent 10deg 22deg);
   clip-path: polygon(
     32% 4%, 50% 0, 68% 4%, 82% 16%, 95% 33%, 98% 50%, 94% 68%, 82% 84%, 66% 95%,
     50% 100%, 33% 95%, 16% 84%, 5% 68%, 2% 50%, 5% 33%, 18% 16%
   );
   border: var(--px) solid var(--iris-border);
+}
+
+.pupil::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background:
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 4px, color-mix(in srgb, var(--iris-ring) 70%, transparent) 4px 5px, transparent 5px 8px),
+    repeating-linear-gradient(140deg, transparent 0 6px, color-mix(in srgb, var(--iris-speck) 60%, transparent) 6px 7px, transparent 7px 11px);
+  opacity: 0.65;
 }
 
 .pupil::after {
@@ -376,19 +385,19 @@ body {
 
 /* PHASE BASE SHAPES (silhouette-first) */
 .eye-shell.phase-awakened .eye {
-  clip-path: polygon(5% 52%, 11% 36%, 22% 26%, 36% 20%, 50% 18%, 65% 20%, 78% 27%, 89% 37%, 95% 51%, 90% 64%, 79% 74%, 65% 80%, 50% 82%, 35% 79%, 22% 73%, 11% 63%);
+  clip-path: polygon(6% 52%, 12% 36%, 23% 27%, 37% 21%, 50% 19%, 64% 21%, 77% 27%, 88% 36%, 94% 51%, 89% 64%, 78% 73%, 64% 79%, 50% 81%, 36% 78%, 23% 73%, 12% 63%);
 }
 
 .eye-shell.phase-overgrown .eye {
-  clip-path: polygon(4% 52%, 9% 33%, 20% 23%, 35% 17%, 50% 15%, 67% 17%, 81% 23%, 92% 34%, 96% 51%, 92% 67%, 81% 78%, 67% 84%, 50% 86%, 33% 83%, 19% 76%, 8% 66%);
+  clip-path: polygon(3% 52%, 8% 31%, 20% 21%, 36% 15%, 50% 14%, 67% 16%, 82% 22%, 93% 33%, 97% 51%, 93% 68%, 82% 80%, 67% 86%, 50% 88%, 33% 85%, 18% 78%, 7% 67%);
 }
 
 .eye-shell.phase-corrupted .eye {
-  clip-path: polygon(6% 58%, 10% 37%, 24% 24%, 40% 18%, 57% 19%, 72% 24%, 84% 31%, 95% 44%, 96% 56%, 90% 71%, 76% 79%, 60% 83%, 44% 82%, 28% 76%, 14% 67%, 8% 62%);
+  clip-path: polygon(8% 60%, 12% 39%, 26% 26%, 42% 20%, 58% 21%, 72% 26%, 84% 34%, 95% 46%, 95% 56%, 89% 68%, 76% 76%, 60% 80%, 45% 79%, 30% 73%, 17% 66%, 10% 63%);
 }
 
 .eye-shell.phase-rotten .eye {
-  clip-path: polygon(7% 61%, 11% 40%, 26% 28%, 43% 22%, 58% 24%, 72% 31%, 84% 40%, 93% 52%, 94% 62%, 89% 75%, 77% 84%, 61% 88%, 46% 87%, 31% 82%, 17% 73%, 10% 66%);
+  clip-path: polygon(9% 64%, 13% 43%, 28% 31%, 45% 25%, 59% 27%, 72% 34%, 83% 43%, 92% 54%, 93% 63%, 88% 76%, 77% 85%, 62% 90%, 47% 90%, 32% 85%, 19% 77%, 12% 70%);
 }
 
 /* EMOTION SHAPE LAYER */
@@ -403,7 +412,7 @@ body {
 .eye-shell.emotion-happy {
   --squint: -7px;
   --lower-lift: 2px;
-  --eye-scale-y: 1.05;
+  --eye-scale-y: 1.08;
   --pupil-size: 1.09;
   --highlight-opacity: 1;
   --lid-angle: -2deg;
@@ -412,7 +421,7 @@ body {
 .eye-shell.emotion-alert {
   --squint: -9px;
   --lower-lift: -1px;
-  --eye-scale-y: 1.09;
+  --eye-scale-y: 1.14;
   --pupil-size: 0.96;
   --lid-angle: -5deg;
 }
@@ -420,7 +429,7 @@ body {
 .eye-shell.emotion-angry {
   --squint: 11px;
   --lower-lift: 3px;
-  --eye-scale-y: 0.93;
+  --eye-scale-y: 0.88;
   --pupil-size: 0.9;
   --lid-angle: -10deg;
   --highlight-opacity: 0.6;
@@ -429,7 +438,7 @@ body {
 .eye-shell.emotion-afraid {
   --squint: -13px;
   --lower-lift: -2px;
-  --eye-scale-y: 1.12;
+  --eye-scale-y: 1.18;
   --pupil-size: 1.13;
   --lid-angle: -3deg;
   --highlight-opacity: 0.75;
@@ -438,7 +447,7 @@ body {
 .eye-shell.emotion-sad {
   --squint: 8px;
   --lower-lift: -2px;
-  --eye-scale-y: 0.94;
+  --eye-scale-y: 0.9;
   --pupil-size: 0.94;
   --lid-angle: 4deg;
   --highlight-opacity: 0.5;
@@ -447,7 +456,7 @@ body {
 .eye-shell.emotion-empty {
   --squint: 16px;
   --lower-lift: -4px;
-  --eye-scale-y: 0.84;
+  --eye-scale-y: 0.78;
   --pupil-size: 0.84;
   --lid-angle: -12deg;
   --highlight-opacity: 0.25;
@@ -505,7 +514,7 @@ body {
 }
 
 .eye-shell.variant-bleeding {
-  --bleed-opacity: 0.9;
+  --bleed-opacity: 0.58;
 }
 
 .eye-shell.variant-zombified {
@@ -537,7 +546,7 @@ body {
 .eye-shell.state-awakened {
   --outline: #1a2a20;
   --socket: #2e4538;
-  --socket-opacity: 0.25;
+  --socket-opacity: 0.12;
 
   --sclera-1: #e6eadc;
   --sclera-2: #cad3c0;
@@ -549,6 +558,8 @@ body {
   --iris-3: #3f7257;
   --iris-4: #1f3d2f;
   --iris-border: #304e3d;
+  --iris-ring: #88ba9b;
+  --iris-speck: #c4decf;
   --pupil-core: #050705;
   --pupil-core-w: 10px;
   --pupil-core-h: 19px;
@@ -597,7 +608,7 @@ body {
 .eye-shell.state-overgrown {
   --outline: #15261d;
   --socket: #34503e;
-  --socket-opacity: 0.28;
+  --socket-opacity: 0.16;
 
   --sclera-1: #ecf0e2;
   --sclera-2: #d2dccd;
@@ -609,6 +620,8 @@ body {
   --iris-3: #4a875f;
   --iris-4: #244f35;
   --iris-border: #2f5d42;
+  --iris-ring: #9cd8b0;
+  --iris-speck: #d8efd8;
   --pupil-core: #040604;
   --pupil-core-w: 11px;
   --pupil-core-h: 21px;
@@ -672,6 +685,8 @@ body {
   --iris-3: #5f6338;
   --iris-4: #2a2e1c;
   --iris-border: #4b5130;
+  --iris-ring: #989058;
+  --iris-speck: #c2b67e;
   --pupil-core: #070806;
   --pupil-core-w: 9px;
   --pupil-core-h: 23px;
@@ -722,7 +737,7 @@ body {
 .eye-shell.state-rotten {
   --outline: #12120f;
   --socket: #4f4732;
-  --socket-opacity: 0.45;
+  --socket-opacity: 0.5;
 
   --sclera-1: #ddd8a8;
   --sclera-2: #c8be82;
@@ -734,6 +749,8 @@ body {
   --iris-3: #5b5a39;
   --iris-4: #292b1a;
   --iris-border: #4e4f33;
+  --iris-ring: #7f7646;
+  --iris-speck: #9d935c;
   --pupil-core: #080907;
   --pupil-core-w: 7px;
   --pupil-core-h: 26px;
@@ -782,6 +799,23 @@ body {
 }
 
 /* phase motion signatures */
+
+.eye-shell.phase-awakened {
+  animation: shellFloat 6.8s steps(6, end) infinite;
+}
+
+.eye-shell.phase-overgrown {
+  animation: shellBloom 4.8s steps(6, end) infinite;
+}
+
+.eye-shell.phase-corrupted {
+  animation: shellTense 3.3s steps(5, end) infinite;
+}
+
+.eye-shell.phase-rotten {
+  animation: shellDead 8.8s steps(7, end) infinite;
+}
+
 .eye-shell.phase-corrupted .vines { animation-timing-function: steps(2, end); }
 .eye-shell.phase-corrupted .thorn { animation-timing-function: steps(2, end); }
 .eye-shell.phase-rotten .mist { animation-timing-function: steps(3, end); }
@@ -791,11 +825,11 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: -2px;
-  width: 132px;
+  bottom: -8px;
+  width: 118px;
   padding: 6px;
   border: var(--px) solid #3f4e44;
-  background: rgba(7, 10, 8, 0.35);
+  background: rgba(7, 10, 8, 0.28);
   color: #b6c4b6;
   font-size: 8px;
   line-height: 1.4;
@@ -845,13 +879,15 @@ body {
   top: 0;
   max-width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  padding: 5px 7px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+  gap: 8px;
+  padding: 3px 6px;
   border: var(--px) solid #506257;
-  background: rgba(7, 11, 8, 0.7);
+  background: rgba(7, 11, 8, 0.62);
   color: #d6dfd4;
-  font-size: 8px;
+  font-size: 7px;
 }
 
 .test-ui {
@@ -886,6 +922,24 @@ body {
 @keyframes shellFloat {
   0%, 100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)); }
   50% { transform: translateY(calc(var(--shell-droop) - var(--hover-amp))) rotate(var(--shell-lean)); }
+}
+
+@keyframes shellBloom {
+  0%, 100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)); }
+  35% { transform: translateY(calc(var(--shell-droop) - 3px)) rotate(calc(var(--shell-lean) - 1deg)); }
+  65% { transform: translateY(calc(var(--shell-droop) - 1px)) rotate(calc(var(--shell-lean) + 1deg)); }
+}
+
+@keyframes shellTense {
+  0%, 100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)); }
+  20% { transform: translateY(calc(var(--shell-droop) - 1px)) rotate(calc(var(--shell-lean) - 1.5deg)); }
+  45% { transform: translateY(calc(var(--shell-droop) - 2px)) rotate(calc(var(--shell-lean) + 1.4deg)); }
+  75% { transform: translateY(calc(var(--shell-droop) - 1px)) rotate(calc(var(--shell-lean) - 0.9deg)); }
+}
+
+@keyframes shellDead {
+  0%, 100% { transform: translateY(var(--shell-droop)) rotate(var(--shell-lean)); }
+  50% { transform: translateY(calc(var(--shell-droop) - 1px)) rotate(calc(var(--shell-lean) - 0.5deg)); }
 }
 
 @keyframes auraPulse {

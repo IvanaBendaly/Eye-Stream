@@ -62,11 +62,7 @@
 
   const testUi = document.getElementById('test-ui');
   const testLabel = document.getElementById('test-label');
-  const labelPhase = document.getElementById('label-phase');
-  const labelEmotion = document.getElementById('label-emotion');
-  const labelBlink = document.getElementById('label-blink');
-  const labelShape = document.getElementById('label-shape');
-  const labelAmbient = document.getElementById('label-ambient');
+  const labelStatus = document.getElementById('label-status');
 
   const chatSim = document.getElementById('chat-sim');
   const chatFeed = document.getElementById('chat-feed');
@@ -90,11 +86,7 @@
       chatState.textContent = `${currentState} • ${currentEmotion}${variantText}`;
     }
     if (!isTestMode || !testLabel) return;
-    labelPhase.textContent = `phase:${currentState}`;
-    labelEmotion.textContent = `emo:${currentEmotion}`;
-    labelBlink.textContent = `blink:${currentBlinkType}`;
-    labelShape.textContent = `shape:${currentState}-${currentEmotion}`;
-    labelAmbient.textContent = `amb:${ambientEnabled ? 'on' : 'off'} • ${Array.from(activeVariants).join(',') || 'base'}`;
+    labelStatus.textContent = `phase:${currentState} • emo:${currentEmotion} • blink:${currentBlinkType} • shape:${currentState}-${currentEmotion} • amb:${ambientEnabled ? 'on' : 'off'} • ${Array.from(activeVariants).join(',') || 'base'}`;
   };
 
   const setVisualState = (state) => {
