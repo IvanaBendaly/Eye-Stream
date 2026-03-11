@@ -7,6 +7,7 @@ The stream pet is now a ghost dog:
 - **best condition**: happy, ghostly-yellow glow with energetic wagging and floating heart/star effects
 - **worst condition**: poisoned by ivy, cycles through sick-on-ground, zombified, and true-zombie expressions with choking/suffocating motion and skull/ring effects
 - redesigned to be more cartoon-detailed (legs, paws, brows, blush, teeth, and layered expressive eyes)
+- face cycles clearly through anger, fear, happiness, tired/sick, zombified, and rotten expressions based on state
 
 ## Quick start
 
