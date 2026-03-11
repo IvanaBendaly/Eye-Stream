@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="overlay-root" class="overlay-corner">
+    <div id="overlay-root" class="overlay-corner" data-mode="overlay">
       <div id="eye-shell" class="eye-shell state-awakened" aria-label="The Ivy Eye">
         <div class="aura"></div>
 
@@ -48,6 +48,46 @@
           <span id="chat-state" class="chat-sim__state">Awakened • 0</span>
         </div>
         <div id="chat-feed" class="chat-sim__feed"></div>
+      </aside>
+
+      <div id="test-label" class="test-label" hidden>
+        <span id="label-phase">phase: awakened</span>
+        <span id="label-emotion">emotion: neutral</span>
+        <span id="label-blink">blink: normal</span>
+        <span id="label-shape">shape: awakened-neutral</span>
+        <span id="label-ambient">ambient: on</span>
+      </div>
+
+      <aside id="test-ui" class="test-ui" hidden>
+        <div class="test-ui__row">
+          <button data-act="phase" data-value="awakened">awakened</button>
+          <button data-act="phase" data-value="overgrown">overgrown</button>
+          <button data-act="phase" data-value="corrupted">corrupted</button>
+          <button data-act="phase" data-value="rotten">rotten</button>
+        </div>
+        <div class="test-ui__row">
+          <button data-act="emotion" data-value="neutral">calm</button>
+          <button data-act="emotion" data-value="happy">happy</button>
+          <button data-act="emotion" data-value="alert">alert</button>
+          <button data-act="emotion" data-value="angry">angry</button>
+          <button data-act="emotion" data-value="afraid">afraid</button>
+          <button data-act="emotion" data-value="sad">sad</button>
+          <button data-act="emotion" data-value="empty">dead</button>
+          <button data-act="emotion" data-value="bloodshot">bloodshot</button>
+        </div>
+        <div class="test-ui__row">
+          <button data-act="blink" data-value="normal">blink</button>
+          <button data-act="blink" data-value="soft">soft blink</button>
+          <button data-act="blink" data-value="half">half blink</button>
+          <button data-act="blink" data-value="tense">tense blink</button>
+          <button data-act="blink" data-value="heavy">heavy blink</button>
+          <button data-act="action" data-value="twitch">twitch</button>
+          <button data-act="action" data-value="shudder">shudder</button>
+          <button data-act="ambient" data-value="toggle">ambient on/off</button>
+        </div>
+        <div class="test-ui__row">
+          <button data-act="demo" data-value="toggle">start/stop auto demo</button>
+        </div>
       </aside>
     </div>
 

@@ -61,6 +61,7 @@ body {
   --blink-duration: 220ms;
   --blink-travel: 34px;
   --blink-lower-travel: 4px;
+  --blink-peek: 0px;
 }
 
 .aura {
@@ -344,7 +345,7 @@ body {
   left: -6%;
   right: -6%;
   top: -42px;
-  height: calc(68px + var(--squint));
+  height: calc(68px + var(--squint) + var(--blink-peek));
   border-bottom-left-radius: 56% 70%;
   border-bottom-right-radius: 54% 70%;
   background: linear-gradient(to bottom, color-mix(in srgb, var(--lid-tint) 85%, #10150f), color-mix(in srgb, var(--lid-tint) 35%, transparent));
@@ -357,7 +358,7 @@ body {
   position: absolute;
   left: 7%;
   right: 7%;
-  bottom: calc(8px - var(--lower-lift));
+  bottom: calc(8px - var(--lower-lift) + calc(var(--blink-peek) * 0.2));
   height: 13px;
   border-radius: 50%;
   border-bottom: 2px solid color-mix(in srgb, var(--lid-rim) 65%, transparent);
@@ -536,6 +537,7 @@ body {
   --blink-duration: 185ms;
   --blink-travel: 29px;
   --blink-lower-travel: 4px;
+  --blink-peek: 0px;
 }
 
 .eye-shell.state-corrupted {
@@ -743,6 +745,18 @@ body {
   --lid-angle: -4deg;
 }
 
+
+.eye-shell.emotion-bloodshot {
+  --squint: 13px;
+  --lower-lift: 4px;
+  --pupil-size: 0.9;
+  --pupil-height: 1.14;
+  --eye-tilt: -6deg;
+  --lid-angle: -11deg;
+  --highlight-strength: 0.4;
+  --vein-opacity: 0.72;
+}
+
 .eye-shell.emotion-empty {
   --squint: 16px;
   --lower-lift: -3px;
@@ -766,6 +780,31 @@ body {
   --blink-duration: 330ms;
   --blink-travel: 40px;
   --blink-lower-travel: 7px;
+}
+
+.eye-shell.blink-soft {
+  --blink-duration: calc(var(--blink-duration) * 1.14);
+  --blink-travel: calc(var(--blink-travel) * 0.86);
+  --blink-lower-travel: calc(var(--blink-lower-travel) * 0.75);
+}
+
+.eye-shell.blink-half {
+  --blink-duration: calc(var(--blink-duration) * 0.8);
+  --blink-travel: calc(var(--blink-travel) * 0.54);
+  --blink-lower-travel: calc(var(--blink-lower-travel) * 0.45);
+  --blink-peek: -9px;
+}
+
+.eye-shell.blink-tense {
+  --blink-duration: calc(var(--blink-duration) * 0.72);
+  --blink-travel: calc(var(--blink-travel) * 1.15);
+  --blink-lower-travel: calc(var(--blink-lower-travel) * 1.2);
+}
+
+.eye-shell.blink-heavy {
+  --blink-duration: calc(var(--blink-duration) * 1.35);
+  --blink-travel: calc(var(--blink-travel) * 1.25);
+  --blink-lower-travel: calc(var(--blink-lower-travel) * 1.35);
 }
 
 .eye-shell.blinking .eyelid {
@@ -832,6 +871,79 @@ body {
 .chat-line--corrupt { color: rgba(178, 156, 115, 0.82); }
 .chat-line--heal { color: rgba(146, 195, 163, 0.82); }
 .chat-line--reset { color: rgba(181, 204, 221, 0.8); }
+
+
+
+.eye-shell.ambient-off .aura,
+.eye-shell.ambient-off .vines,
+.eye-shell.ambient-off .leaf,
+.eye-shell.ambient-off .mist,
+.eye-shell.ambient-off .melt,
+.eye-shell.ambient-off .spore {
+  animation-play-state: paused;
+}
+
+.overlay-corner[data-mode='test'] {
+  width: 520px;
+  height: 340px;
+  right: 10px;
+}
+
+.overlay-corner[data-mode='test'] .eye-shell {
+  margin-top: 24px;
+  width: 208px;
+  height: 140px;
+}
+
+.overlay-corner[data-mode='test'] .chat-sim {
+  display: none;
+}
+
+.test-label {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: rgba(214, 228, 218, 0.82);
+  background: rgba(8, 14, 11, 0.42);
+  border: 1px solid rgba(105, 128, 108, 0.34);
+  border-radius: 8px;
+  padding: 5px 7px;
+}
+
+.test-ui {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  width: 300px;
+  border-radius: 8px;
+  border: 1px solid rgba(104, 130, 112, 0.3);
+  background: rgba(8, 15, 11, 0.45);
+  backdrop-filter: blur(2px);
+  padding: 6px;
+  pointer-events: auto;
+}
+
+.test-ui__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.test-ui button {
+  background: rgba(30, 41, 33, 0.9);
+  border: 1px solid rgba(112, 144, 118, 0.35);
+  color: rgba(214, 226, 217, 0.88);
+  font-size: 10px;
+  border-radius: 6px;
+  padding: 3px 6px;
+  text-transform: lowercase;
+  cursor: pointer;
+}
 
 @keyframes hover {
   0%,
