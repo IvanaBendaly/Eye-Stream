@@ -70,19 +70,19 @@ body {
   border-top-color: var(--vine);
   border-radius: 50%;
   opacity: var(--vine-opacity);
-  transition: border-top-color 0.55s ease, opacity 0.55s ease;
+  transition: border-top-color 0.55s ease, opacity 0.55s ease, transform 0.6s ease;
 }
 
 .vine-left {
   left: -26px;
   top: 4px;
-  transform: rotate(-26deg);
+  transform: rotate(calc(-26deg + var(--vine-curl)));
 }
 
 .vine-right {
   right: -26px;
   top: 6px;
-  transform: scaleX(-1) rotate(-32deg);
+  transform: scaleX(-1) rotate(calc(-32deg + var(--vine-curl)));
 }
 
 .leaf {
@@ -91,21 +91,21 @@ body {
   height: 10px;
   background: radial-gradient(circle at 20% 40%, var(--leaf-high), var(--leaf-mid));
   border-radius: 75% 25% 70% 30%;
-  opacity: 0.9;
+  opacity: var(--leaf-opacity);
   filter: saturate(var(--leaf-sat));
-  transition: background 0.6s ease, filter 0.6s ease, transform 0.65s ease;
+  transition: background 0.6s ease, filter 0.6s ease, transform 0.65s ease, opacity 0.6s ease;
 }
 
 .leaf-left {
   left: 7px;
   top: 31px;
-  transform: rotate(-15deg);
+  transform: rotate(-15deg) scale(var(--leaf-scale));
 }
 
 .leaf-right {
   right: 7px;
   top: 47px;
-  transform: scaleX(-1) rotate(-12deg);
+  transform: scaleX(-1) rotate(-12deg) scale(var(--leaf-scale));
 }
 
 .thorn {
@@ -141,6 +141,20 @@ body {
   box-shadow: inset 0 0 0 2px var(--glow), inset 0 0 24px rgba(0, 0, 0, 0.22);
   transition: background 0.6s ease, box-shadow 0.6s ease, border-radius 0.7s ease, transform 0.65s ease;
   transform: scale(var(--eye-scale));
+}
+
+.eye::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  left: -8px;
+  right: -8px;
+  height: calc(44px + var(--lid-drop));
+  border-radius: 0 0 55% 45% / 0 0 80% 80%;
+  background: linear-gradient(to bottom, var(--lid-tint), rgba(9, 16, 12, 0.1));
+  transform: rotate(var(--lid-tilt));
+  opacity: var(--lid-opacity);
+  transition: opacity 0.6s ease, transform 0.65s ease, height 0.65s ease, background 0.6s ease;
 }
 
 .pupil {
@@ -191,126 +205,141 @@ body {
 }
 
 .eye-shell.state-awakened {
-  --aura: rgba(111, 150, 125, 0.42);
-  --aura-opacity: 0.5;
+  --aura: rgba(111, 150, 125, 0.46);
+  --aura-opacity: 0.56;
   --aura-tilt: 8deg;
-  --glow: rgba(191, 217, 196, 0.2);
-  --sclera-core: #d5e0d7;
-  --sclera-mid: #90a492;
-  --sclera-edge: #2b4537;
-  --iris-high: #8aa690;
-  --iris-mid: #1f4d38;
-  --iris-low: #10281d;
-  --pupil-glow: rgba(191, 217, 196, 0.26);
-  --vine: rgba(31, 77, 56, 0.95);
+  --glow: rgba(202, 229, 209, 0.24);
+  --sclera-core: #dce9df;
+  --sclera-mid: #8aa28f;
+  --sclera-edge: #244333;
+  --iris-high: #a8c8b0;
+  --iris-mid: #1f5b40;
+  --iris-low: #0f2f22;
+  --pupil-glow: rgba(202, 229, 209, 0.3);
+  --vine: rgba(27, 82, 57, 0.95);
   --vine-opacity: 0.84;
-  --leaf-high: #7f9f86;
-  --leaf-mid: #1f4d38;
-  --leaf-sat: 0.8;
-  --thorn: rgba(51, 74, 60, 0.4);
-  --thorn-opacity: 0.08;
-  --decay-opacity: 0.1;
-  --eye-shape: 56% 44% 52% 48% / 62% 62% 38% 38%;
+  --vine-curl: 0deg;
+  --leaf-high: #92b69c;
+  --leaf-mid: #2d6d4a;
+  --leaf-sat: 0.96;
+  --leaf-opacity: 0.92;
+  --leaf-scale: 1;
+  --thorn: rgba(42, 64, 50, 0.38);
+  --thorn-opacity: 0.07;
+  --decay-opacity: 0.08;
+  --eye-shape: 58% 42% 54% 46% / 70% 70% 30% 30%;
   --eye-scale: 1;
-  --pupil-scale: 1;
+  --pupil-scale: 1.04;
+  --lid-drop: 0px;
+  --lid-tilt: 0deg;
+  --lid-opacity: 0.22;
+  --lid-tint: rgba(24, 52, 37, 0.28);
 }
 
 .eye-shell.state-overgrown {
-  --aura: rgba(143, 177, 155, 0.45);
-  --aura-opacity: 0.58;
+  --aura: rgba(148, 190, 168, 0.5);
+  --aura-opacity: 0.62;
   --aura-tilt: 4deg;
-  --glow: rgba(191, 217, 196, 0.24);
-  --sclera-core: #cfdbd1;
-  --sclera-mid: #829a86;
-  --sclera-edge: #284234;
-  --iris-high: #9ab5a0;
-  --iris-mid: #2a5f46;
-  --iris-low: #11291f;
-  --pupil-glow: rgba(191, 217, 196, 0.33);
-  --vine: rgba(43, 92, 68, 0.96);
-  --vine-opacity: 0.92;
-  --leaf-high: #92ad98;
-  --leaf-mid: #2e6047;
-  --leaf-sat: 0.92;
-  --thorn: rgba(47, 66, 54, 0.5);
-  --thorn-opacity: 0.16;
-  --decay-opacity: 0.14;
-  --eye-shape: 57% 43% 50% 50% / 64% 60% 40% 36%;
-  --eye-scale: 1.01;
-  --pupil-scale: 1.07;
+  --glow: rgba(216, 236, 221, 0.28);
+  --sclera-core: #d8e5dc;
+  --sclera-mid: #7f9985;
+  --sclera-edge: #234232;
+  --iris-high: #b3cfba;
+  --iris-mid: #2a6a4a;
+  --iris-low: #133424;
+  --pupil-glow: rgba(214, 235, 220, 0.36);
+  --vine: rgba(36, 94, 66, 0.98);
+  --vine-opacity: 0.95;
+  --vine-curl: 4deg;
+  --leaf-high: #a0c3ab;
+  --leaf-mid: #3a7e58;
+  --leaf-sat: 1.08;
+  --leaf-opacity: 0.98;
+  --leaf-scale: 1.16;
+  --thorn: rgba(44, 66, 51, 0.46);
+  --thorn-opacity: 0.15;
+  --decay-opacity: 0.13;
+  --eye-shape: 60% 40% 52% 48% / 72% 68% 32% 28%;
+  --eye-scale: 1.02;
+  --pupil-scale: 1.1;
+  --lid-drop: 2px;
+  --lid-tilt: -2deg;
+  --lid-opacity: 0.2;
+  --lid-tint: rgba(20, 46, 33, 0.24);
 }
 
 .eye-shell.state-corrupted {
-  --aura: rgba(93, 101, 76, 0.45);
+  --aura: rgba(96, 103, 76, 0.48);
   --aura-opacity: 0.5;
-  --aura-tilt: -2deg;
-  --glow: rgba(79, 93, 80, 0.26);
-  --sclera-core: #9fa495;
-  --sclera-mid: #646f5b;
-  --sclera-edge: #333a30;
-  --iris-high: #8b9072;
-  --iris-mid: #6a7254;
-  --iris-low: #182019;
-  --pupil-glow: rgba(79, 93, 80, 0.3);
-  --vine: rgba(79, 93, 80, 0.9);
-  --vine-opacity: 0.88;
-  --leaf-high: #7a836b;
-  --leaf-mid: #4f5d50;
-  --leaf-sat: 0.6;
-  --thorn: rgba(32, 40, 31, 0.85);
-  --thorn-opacity: 0.56;
-  --decay-opacity: 0.38;
-  --eye-shape: 60% 40% 56% 44% / 60% 64% 36% 40%;
+  --aura-tilt: -5deg;
+  --glow: rgba(89, 98, 78, 0.22);
+  --sclera-core: #949d8d;
+  --sclera-mid: #5f6f5b;
+  --sclera-edge: #2f392f;
+  --iris-high: #8b9375;
+  --iris-mid: #61694b;
+  --iris-low: #161c16;
+  --pupil-glow: rgba(79, 88, 70, 0.34);
+  --vine: rgba(76, 94, 75, 0.95);
+  --vine-opacity: 0.92;
+  --vine-curl: 7deg;
+  --leaf-high: #78816b;
+  --leaf-mid: #56624c;
+  --leaf-sat: 0.52;
+  --leaf-opacity: 0.84;
+  --leaf-scale: 1.22;
+  --thorn: rgba(22, 30, 24, 0.9);
+  --thorn-opacity: 0.64;
+  --decay-opacity: 0.44;
+  --eye-shape: 54% 46% 56% 44% / 62% 66% 38% 42%;
   --eye-scale: 0.99;
-  --pupil-scale: 1.13;
+  --pupil-scale: 1.18;
+  --lid-drop: 9px;
+  --lid-tilt: -8deg;
+  --lid-opacity: 0.58;
+  --lid-tint: rgba(33, 36, 27, 0.66);
 }
 
 .eye-shell.state-rotten {
-  --aura: rgba(62, 70, 56, 0.5);
-  --aura-opacity: 0.44;
-  --aura-tilt: -8deg;
+  --aura: rgba(62, 70, 56, 0.52);
+  --aura-opacity: 0.42;
+  --aura-tilt: -10deg;
   --glow: rgba(50, 58, 47, 0.3);
-  --sclera-core: #8f8a78;
-  --sclera-mid: #5b5a4d;
-  --sclera-edge: #2f2f28;
-  --iris-high: #7f7a63;
-  --iris-mid: #4b4636;
-  --iris-low: #182019;
-  --pupil-glow: rgba(32, 40, 31, 0.44);
-  --vine: rgba(61, 70, 56, 0.9);
-  --vine-opacity: 0.82;
-  --leaf-high: #676b5a;
-  --leaf-mid: #434738;
-  --leaf-sat: 0.42;
-  --thorn: rgba(24, 32, 25, 0.92);
-  --thorn-opacity: 0.82;
-  --decay-opacity: 0.56;
-  --eye-shape: 62% 38% 58% 42% / 58% 66% 34% 42%;
+  --sclera-core: #857f6f;
+  --sclera-mid: #56554a;
+  --sclera-edge: #292922;
+  --iris-high: #726d59;
+  --iris-mid: #454132;
+  --iris-low: #151b15;
+  --pupil-glow: rgba(30, 37, 29, 0.5);
+  --vine: rgba(56, 68, 54, 0.95);
+  --vine-opacity: 0.88;
+  --vine-curl: 10deg;
+  --leaf-high: #626655;
+  --leaf-mid: #3e4336;
+  --leaf-sat: 0.35;
+  --leaf-opacity: 0.74;
+  --leaf-scale: 1.24;
+  --thorn: rgba(18, 25, 20, 0.96);
+  --thorn-opacity: 0.88;
+  --decay-opacity: 0.6;
+  --eye-shape: 52% 48% 60% 40% / 58% 68% 42% 42%;
   --eye-scale: 0.97;
-  --pupil-scale: 1.2;
+  --pupil-scale: 1.22;
+  --lid-drop: 12px;
+  --lid-tilt: -12deg;
+  --lid-opacity: 0.68;
+  --lid-tint: rgba(35, 28, 22, 0.72);
 }
 
-.eye-shell.state-overgrown .leaf {
-  transform: scale(1.14) rotate(-8deg);
-}
-
-.eye-shell.state-corrupted .leaf {
-  transform: scale(1.05) rotate(-18deg);
-}
-
+.eye-shell.state-corrupted .leaf,
 .eye-shell.state-rotten .leaf {
-  transform: scale(0.92) rotate(-22deg);
-  filter: saturate(0.35) brightness(0.76);
-}
-
-.eye-shell.state-corrupted .thorn,
-.eye-shell.state-rotten .thorn {
-  opacity: var(--thorn-opacity);
+  filter: saturate(var(--leaf-sat)) brightness(0.8);
 }
 
 .eye-shell.state-corrupted .pupil,
 .eye-shell.state-rotten .pupil {
-  filter: contrast(1.15) saturate(0.78);
+  filter: contrast(1.15) saturate(0.75);
 }
 
 .eye-shell.blinking .eyelid {
@@ -330,7 +359,7 @@ body {
 }
 
 .eye-shell.bloom .aura {
-  border-color: rgba(142, 168, 214, 0.7);
+  border-color: rgba(142, 168, 214, 0.72);
 }
 
 @keyframes hover {
@@ -381,10 +410,10 @@ body {
     transform: scale(1) rotate(-10deg);
   }
   50% {
-    transform: scale(1.3) rotate(-5deg);
+    transform: scale(1.32) rotate(-5deg);
   }
   100% {
-    transform: scale(1.15) rotate(-10deg);
+    transform: scale(1.16) rotate(-10deg);
   }
 }
 
@@ -432,11 +461,11 @@ body {
 }
 
 .chat-line--corrupt {
-  color: #a69f7e;
+  color: #8f8a67;
 }
 
 .chat-line--heal {
-  color: #a3c0ac;
+  color: #9dbca6;
 }
 
 .chat-line--reset {
