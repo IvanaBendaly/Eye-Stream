@@ -164,6 +164,18 @@ body {
   transform: rotate(165deg);
 }
 
+.thorn-top {
+  left: 52%;
+  top: 3px;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+.thorn-bottom {
+  left: 55%;
+  top: 78px;
+  transform: translateX(-50%) rotate(8deg);
+}
+
 .eye {
   position: absolute;
   inset: 0;
@@ -176,8 +188,10 @@ body {
     background 0.7s ease,
     box-shadow 0.7s ease,
     border-radius 0.75s ease,
+    clip-path 0.75s ease,
     transform 0.7s ease;
-  transform: scale(var(--eye-scale));
+  clip-path: var(--eye-clip);
+  transform: scale(var(--eye-scale)) rotate(var(--eye-rotate));
 }
 
 .eye::before {
@@ -225,8 +239,12 @@ body {
     transform 0.55s ease,
     filter 0.7s ease,
     box-shadow 0.7s ease,
-    background 0.7s ease;
-  transform: scale(var(--pupil-scale));
+    background 0.7s ease,
+    border-radius 0.6s ease,
+    clip-path 0.6s ease;
+  border-radius: var(--pupil-shape);
+  clip-path: var(--pupil-clip);
+  transform: scale(var(--pupil-scale)) rotate(var(--pupil-tilt));
 }
 
 .shine {
@@ -313,7 +331,12 @@ body {
   --thorn-opacity: 0.05;
   --decay-opacity: 0.05;
   --eye-shape: 61% 39% 55% 45% / 74% 74% 26% 26%;
+  --eye-clip: ellipse(48% 46% at 50% 50%);
+  --eye-rotate: 0deg;
   --eye-scale: 1;
+  --pupil-shape: 50%;
+  --pupil-clip: ellipse(46% 48% at 50% 50%);
+  --pupil-tilt: 0deg;
   --pupil-scale: 1.04;
   --lid-drop: -2px;
   --lid-tilt: 1deg;
@@ -354,7 +377,12 @@ body {
   --thorn-opacity: 0.14;
   --decay-opacity: 0.12;
   --eye-shape: 64% 36% 50% 50% / 76% 70% 30% 24%;
+  --eye-clip: polygon(6% 48%, 17% 20%, 44% 7%, 75% 14%, 95% 40%, 91% 67%, 73% 88%, 39% 93%, 12% 81%);
+  --eye-rotate: -2deg;
   --eye-scale: 1.03;
+  --pupil-shape: 40% 60% 52% 48% / 52% 44% 56% 48%;
+  --pupil-clip: polygon(51% 0%, 71% 12%, 84% 36%, 77% 70%, 50% 100%, 28% 81%, 17% 51%, 24% 24%);
+  --pupil-tilt: -4deg;
   --pupil-scale: 1.14;
   --lid-drop: -3px;
   --lid-tilt: -1deg;
@@ -395,7 +423,12 @@ body {
   --thorn-opacity: 0.76;
   --decay-opacity: 0.54;
   --eye-shape: 53% 47% 59% 41% / 60% 68% 40% 40%;
+  --eye-clip: polygon(7% 60%, 12% 26%, 34% 13%, 66% 11%, 88% 23%, 97% 45%, 90% 72%, 67% 90%, 33% 86%, 16% 77%);
+  --eye-rotate: -6deg;
   --eye-scale: 0.99;
+  --pupil-shape: 34% 66% 49% 51% / 42% 49% 51% 58%;
+  --pupil-clip: polygon(54% 2%, 83% 18%, 88% 56%, 64% 95%, 33% 88%, 12% 58%, 20% 22%);
+  --pupil-tilt: -11deg;
   --pupil-scale: 1.2;
   --lid-drop: 10px;
   --lid-tilt: -10deg;
@@ -436,7 +469,12 @@ body {
   --thorn-opacity: 0.97;
   --decay-opacity: 0.74;
   --eye-shape: 44% 56% 70% 30% / 50% 74% 50% 50%;
+  --eye-clip: polygon(0% 69%, 7% 34%, 30% 9%, 61% 5%, 84% 19%, 100% 48%, 95% 74%, 79% 92%, 49% 100%, 20% 92%);
+  --eye-rotate: -11deg;
   --eye-scale: 0.96;
+  --pupil-shape: 28% 72% 58% 42% / 35% 42% 58% 65%;
+  --pupil-clip: polygon(52% 0%, 88% 17%, 100% 48%, 89% 81%, 56% 100%, 24% 91%, 5% 62%, 15% 27%);
+  --pupil-tilt: -18deg;
   --pupil-scale: 1.25;
   --lid-drop: 16px;
   --lid-tilt: -16deg;
@@ -703,4 +741,30 @@ body {
 .overlay-corner[data-eye-state="rotten"] .chat-sim {
   border-color: rgba(62, 56, 45, 0.82);
   background: rgba(23, 17, 14, 0.9);
+}
+.eye-shell.state-rotten .vines::before {
+  border-style: solid;
+  border-width: 3px;
+  box-shadow: 0 0 0 1px rgba(8, 9, 8, 0.9), inset 0 0 14px rgba(9, 6, 5, 0.8);
+}
+
+.eye-shell.state-rotten .vines::after {
+  border-width: 3px;
+}
+
+.eye-shell.state-rotten .thorn {
+  border-bottom-width: 14px;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9));
+}
+
+.eye-shell.state-rotten .decay-layer {
+  background:
+    linear-gradient(156deg, rgba(34, 17, 14, 0.64) 14%, transparent 30%),
+    linear-gradient(36deg, rgba(54, 43, 28, 0.58) 21%, transparent 38%),
+    radial-gradient(circle at 35% 85%, rgba(74, 42, 30, 0.5) 0%, transparent 52%);
+}
+
+.eye-shell.state-rotten .melt {
+  width: 13px;
+  filter: blur(0.6px);
 }

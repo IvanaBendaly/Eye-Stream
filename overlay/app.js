@@ -147,7 +147,9 @@
   const stateAliases = {
     alive: 'awakened',
     alert: 'overgrown',
-    zombified: 'rotten'
+    zombified: 'rotten',
+    ombified: 'rotten',
+    zombie: 'rotten'
   };
 
   const receive = (payload) => {
