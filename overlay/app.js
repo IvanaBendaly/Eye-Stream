@@ -1,6 +1,5 @@
 (function () {
   const shell = document.getElementById('eye-shell');
-  const pupil = document.getElementById('pupil');
   const overlayRoot = document.getElementById('overlay-root');
 
   const STATE_CLASS = {
@@ -10,7 +9,37 @@
     rotten: 'state-rotten'
   };
 
+  const EMOTION_CLASS = {
+    neutral: 'emotion-neutral',
+    happy: 'emotion-happy',
+    sad: 'emotion-sad',
+    alert: 'emotion-alert',
+    angry: 'emotion-angry',
+    afraid: 'emotion-afraid',
+    empty: 'emotion-empty'
+  };
+
+  const stateAliases = {
+    alive: 'awakened',
+    alert: 'overgrown',
+    zombified: 'rotten',
+    ombified: 'rotten',
+    zombie: 'rotten'
+  };
+
+  const emotionAliases = {
+    puppy: 'happy',
+    puppyeye: 'happy',
+    puppy_eyes: 'happy',
+    affectionate: 'happy',
+    hostile: 'angry',
+    disturbed: 'afraid',
+    dead: 'empty',
+    blank: 'empty'
+  };
+
   let corruptionScore = 0;
+  let currentEmotion = 'neutral';
 
   const chatSim = document.getElementById('chat-sim');
   const chatFeed = document.getElementById('chat-feed');
@@ -35,7 +64,8 @@
   const updateStateLabel = () => {
     if (!chatState) return;
     const stateName = scoreToState(corruptionScore);
-    chatState.textContent = `${stateName[0].toUpperCase()}${stateName.slice(1)} • ${corruptionScore}`;
+    const emotionName = currentEmotion === 'neutral' ? '' : ` • ${currentEmotion}`;
+    chatState.textContent = `${stateName[0].toUpperCase()}${stateName.slice(1)} • ${corruptionScore}${emotionName}`;
   };
 
   const setVisualState = (state) => {
@@ -43,6 +73,16 @@
     Object.values(STATE_CLASS).forEach((className) => shell.classList.remove(className));
     shell.classList.add(STATE_CLASS[resolvedState]);
     if (overlayRoot) overlayRoot.dataset.eyeState = resolvedState;
+  };
+
+  const setEmotion = (emotion) => {
+    const normalized = String(emotion || '').toLowerCase();
+    const resolvedEmotion = EMOTION_CLASS[emotionAliases[normalized] || normalized] ? (emotionAliases[normalized] || normalized) : 'neutral';
+    Object.values(EMOTION_CLASS).forEach((className) => shell.classList.remove(className));
+    shell.classList.add(EMOTION_CLASS[resolvedEmotion]);
+    currentEmotion = resolvedEmotion;
+    if (overlayRoot) overlayRoot.dataset.eyeEmotion = resolvedEmotion;
+    updateStateLabel();
   };
 
   const syncStateFromScore = () => {
@@ -69,13 +109,27 @@
   };
 
   const movePupil = (x, y) => {
-    pupil.style.transform = `translate(${x}px, ${y}px)`;
+    shell.style.setProperty('--look-x', `${x}px`);
+    shell.style.setProperty('--look-y', `${y}px`);
+  };
+
+  const getDriftProfile = () => {
+    const state = scoreToState(corruptionScore);
+    if (currentEmotion === 'afraid') return { x: 11, y: 8, interval: 520 };
+    if (currentEmotion === 'alert' || currentEmotion === 'angry') return { x: 10, y: 5, interval: 760 };
+    if (currentEmotion === 'sad' || currentEmotion === 'empty') return { x: 3, y: 2, interval: 2000 };
+    if (state === 'rotten') return { x: 4, y: 2, interval: 2200 };
+    if (state === 'corrupted') return { x: 9, y: 5, interval: 900 };
+    if (state === 'overgrown') return { x: 8, y: 4, interval: 1200 };
+    return { x: 6, y: 3, interval: 1500 };
   };
 
   const randomPupilDrift = () => {
-    const dx = (Math.random() - 0.5) * 10;
-    const dy = (Math.random() - 0.5) * 6;
+    const profile = getDriftProfile();
+    const dx = (Math.random() - 0.5) * profile.x;
+    const dy = (Math.random() - 0.5) * profile.y;
     movePupil(dx, dy);
+    setTimeout(randomPupilDrift, profile.interval);
   };
 
   const lookLeft = () => movePupil(-7, 0);
@@ -95,16 +149,19 @@
       case 'corrupt':
         corruptionScore = clampScore(corruptionScore + 1);
         syncStateFromScore();
+        if (scoreToState(corruptionScore) === 'corrupted') setEmotion('afraid');
         twitch();
         break;
       case 'heal':
         corruptionScore = clampScore(corruptionScore - 1);
         syncStateFromScore();
+        setEmotion('happy');
         if (Math.random() > 0.35) bloom();
         break;
       case 'reset':
         corruptionScore = 0;
         syncStateFromScore();
+        setEmotion('neutral');
         bloom();
         blink();
         break;
@@ -130,7 +187,7 @@
       { user: 'spookylurker', message: 'ghost in the vines 👻', action: 'corrupt', tone: 'corrupt' },
       { user: 'moonmoss', message: 'you got this eye, stay calm', action: 'heal', tone: 'heal' },
       { user: 'nightowl', message: 'run run run', action: 'corrupt', tone: 'corrupt' },
-      { user: 'fernfriend', message: 'cute little watcher 🌿', action: 'heal', tone: 'heal' },
+      { user: 'fernfriend', message: 'gentle watcher, don\'t cry', action: 'heal', tone: 'heal' },
       { user: 'modbot', message: 'revive', action: 'reset', tone: 'reset' },
       { user: 'hauntchat', message: 'cursed gaze', action: 'corrupt', tone: 'corrupt' }
     ];
@@ -142,12 +199,6 @@
       addChatLine(`${evt.user}: ${evt.message}`, evt.tone);
       applyAction(evt.action);
     }, 1800);
-  };
-
-  const stateAliases = {
-    alive: 'awakened',
-    alert: 'overgrown',
-    zombified: 'rotten'
   };
 
   const receive = (payload) => {
@@ -166,12 +217,20 @@
       return;
     }
 
+    if (payload.type === 'setEmotion' && typeof payload.emotion === 'string') {
+      setEmotion(payload.emotion);
+      return;
+    }
+
     if (payload.type === 'setState' && typeof payload.state === 'string') {
       const normalized = payload.state.toLowerCase();
       const resolvedState = stateAliases[normalized] || normalized;
       setVisualState(resolvedState);
       if (Object.prototype.hasOwnProperty.call(stateToScore, resolvedState)) {
         corruptionScore = stateToScore[resolvedState];
+      }
+      if (typeof payload.emotion === 'string') {
+        setEmotion(payload.emotion);
       }
       updateStateLabel();
     }
@@ -202,10 +261,12 @@
   window.ChatEye = {
     receive,
     getScore: () => corruptionScore,
-    getState: () => scoreToState(corruptionScore)
+    getState: () => scoreToState(corruptionScore),
+    getEmotion: () => currentEmotion
   };
 
   syncStateFromScore();
+  setEmotion('neutral');
 
   if (chatSim) {
     chatSim.hidden = false;
@@ -213,20 +274,26 @@
   }
 
   const scheduleBlink = () => {
-    const nextBlinkIn = 2500 + Math.random() * 3700;
+    const state = scoreToState(corruptionScore);
+    const weighted = state === 'rotten' || currentEmotion === 'empty'
+      ? 3800 + Math.random() * 5200
+      : 2400 + Math.random() * 3400;
+
     setTimeout(() => {
       blink();
       scheduleBlink();
-    }, nextBlinkIn);
+    }, weighted);
   };
 
-  setInterval(randomPupilDrift, 1500);
+  randomPupilDrift();
   scheduleBlink();
   connectWebSocketBridge();
 
   setInterval(() => {
-    if (Math.random() < 0.15) {
+    const state = scoreToState(corruptionScore);
+    const twitchChance = state === 'corrupted' ? 0.35 : state === 'rotten' ? 0.18 : 0.08;
+    if (Math.random() < twitchChance) {
       twitch();
     }
-  }, 3000);
+  }, 2800);
 })();
