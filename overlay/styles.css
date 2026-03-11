@@ -1,0 +1,238 @@
+:root {
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.overlay-corner {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 250px;
+  height: 210px;
+  pointer-events: none;
+}
+
+.ivy-shell {
+  position: absolute;
+  inset: 0;
+  transform-origin: 100% 0;
+  animation: sway 6s ease-in-out infinite;
+}
+
+.mist {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  width: 130px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--mist), transparent 70%);
+  opacity: 0.55;
+  filter: blur(8px);
+}
+
+.stem {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  width: 80px;
+  height: 160px;
+  border-right: 5px solid var(--stem);
+  border-bottom: 5px solid var(--stem);
+  border-radius: 0 0 82px 0;
+  transform: rotate(10deg);
+}
+
+.curl {
+  position: absolute;
+  border: 3px solid transparent;
+  border-right-color: var(--stem);
+  border-bottom-color: var(--stem);
+  border-radius: 0 0 80px 0;
+  opacity: 0.92;
+}
+
+.curl-main {
+  top: 36px;
+  right: 54px;
+  width: 52px;
+  height: 56px;
+  transform: rotate(-8deg);
+}
+
+.curl-secondary {
+  top: 72px;
+  right: 68px;
+  width: 36px;
+  height: 36px;
+  transform: rotate(20deg) scale(0.7);
+  opacity: 0;
+}
+
+.leaf {
+  position: absolute;
+  width: 32px;
+  height: 18px;
+  border-radius: 80% 20% 78% 22%;
+  background: radial-gradient(circle at 20% 40%, var(--leaf-hi), var(--leaf-mid));
+  box-shadow: inset -4px -2px 8px rgba(0, 0, 0, 0.22);
+  transform-origin: 86% 50%;
+  animation: leafBreath 4.6s ease-in-out infinite;
+  opacity: 0.95;
+}
+
+.leaf-a { top: 26px; right: 58px; transform: rotate(-16deg); }
+.leaf-b { top: 52px; right: 80px; transform: rotate(8deg) scaleX(-1); }
+.leaf-c { top: 83px; right: 74px; transform: rotate(26deg); }
+.leaf-d { top: 110px; right: 58px; transform: rotate(2deg) scale(0.76); opacity: 0; }
+
+.thorn {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 10px solid var(--thorn);
+  opacity: 0;
+}
+
+.thorn-a { top: 86px; right: 52px; transform: rotate(156deg); }
+.thorn-b { top: 58px; right: 93px; transform: rotate(-18deg); }
+
+.bud {
+  position: absolute;
+  top: 18px;
+  right: 77px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--bud-hi), var(--bud-mid));
+  box-shadow: 0 0 7px var(--bud-glow);
+}
+
+.bloom {
+  position: absolute;
+  top: 9px;
+  right: 69px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.92) 0 6px, transparent 7px),
+    conic-gradient(from 10deg, var(--bloom) 0 18%, transparent 18% 33%, var(--bloom) 33% 50%, transparent 50% 66%, var(--bloom) 66% 83%, transparent 83% 100%);
+  filter: blur(0.25px);
+}
+
+.ivy-shell.state-sprout {
+  --stem: #1c4a30;
+  --leaf-hi: #5f8b67;
+  --leaf-mid: #2e5f40;
+  --thorn: #22362b;
+  --bud-hi: #d8ebdd;
+  --bud-mid: #9fc6ad;
+  --bud-glow: rgba(164, 204, 176, 0.25);
+  --mist: rgba(154, 186, 164, 0.16);
+  --bloom: #f4eee2;
+}
+
+.ivy-shell.state-growing {
+  --stem: #1d5535;
+  --leaf-hi: #6f9a75;
+  --leaf-mid: #356b49;
+  --thorn: #1f3227;
+  --bud-hi: #dbeee0;
+  --bud-mid: #abd0b8;
+  --bud-glow: rgba(176, 214, 188, 0.3);
+  --mist: rgba(164, 198, 174, 0.18);
+  --bloom: #f7f1e6;
+}
+
+.ivy-shell.state-wilted {
+  --stem: #3d4632;
+  --leaf-hi: #75806a;
+  --leaf-mid: #565f4c;
+  --thorn: #1f241f;
+  --bud-hi: #b7bbad;
+  --bud-mid: #7e8578;
+  --bud-glow: rgba(122, 129, 111, 0.18);
+  --mist: rgba(102, 108, 89, 0.14);
+  --bloom: #ddd6c7;
+}
+
+.ivy-shell.state-blooming {
+  --stem: #2a5a3b;
+  --leaf-hi: #87aa8b;
+  --leaf-mid: #416f51;
+  --thorn: #203127;
+  --bud-hi: #fff7eb;
+  --bud-mid: #e8dfc8;
+  --bud-glow: rgba(246, 235, 209, 0.4);
+  --mist: rgba(216, 206, 182, 0.22);
+  --bloom: #fff5e4;
+}
+
+.ivy-shell.state-growing .curl-secondary,
+.ivy-shell.state-growing .leaf-d,
+.ivy-shell.state-blooming .curl-secondary,
+.ivy-shell.state-blooming .leaf-d {
+  opacity: 1;
+}
+
+.ivy-shell.state-wilted .leaf {
+  filter: saturate(0.55) brightness(0.8);
+}
+
+.ivy-shell.state-wilted .leaf-c,
+.ivy-shell.state-wilted .leaf-d {
+  transform: rotate(40deg) translateY(5px);
+}
+
+.ivy-shell.state-wilted .thorn,
+.ivy-shell.state-blooming .thorn {
+  opacity: 0.88;
+}
+
+.ivy-shell.bloom-burst .bloom {
+  animation: bloomBurst 560ms ease-out 1;
+}
+
+.ivy-shell.drop {
+  animation: droop 520ms ease-out 1;
+}
+
+.ivy-shell.nudge-left { transform: rotate(-3deg); }
+.ivy-shell.nudge-right { transform: rotate(3deg); }
+
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(-2deg) translateY(-2px); }
+}
+
+@keyframes leafBreath {
+  0%, 100% { filter: brightness(0.98); }
+  50% { filter: brightness(1.05); }
+}
+
+@keyframes bloomBurst {
+  0% { opacity: 0; transform: scale(0.45) rotate(-10deg); }
+  35% { opacity: 0.95; transform: scale(1) rotate(6deg); }
+  100% { opacity: 0; transform: scale(1.35) rotate(18deg); }
+}
+
+@keyframes droop {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(4deg) translateY(4px); }
+  100% { transform: rotate(0deg); }
+}
