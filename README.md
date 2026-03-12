@@ -20,6 +20,7 @@ A polished, atmospheric OBS browser overlay featuring a living cursed lantern co
 Open with query params:
 
 - `overlay/index.html?mode=test`
+- `overlay/index.html?mode=showcase` (forced visual cycle, ignores auto resolver while active)
 
 Test mode adds compact controls for:
 
@@ -28,6 +29,7 @@ Test mode adds compact controls for:
 - triggering kind/chaos/curse bursts
 - toggling particles, smoke, thorns/cracks
 - auto demo sequence
+- forced showcase loop across all major/variant moods
 - visible debug status (`state`, `auto`, `manual`, intensity channels)
 
 ## Event API (for chat bridges / Streamer.bot)

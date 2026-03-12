@@ -393,3 +393,18 @@ html, body {
 .lantern.state-possessed .particle-layer.smoke { opacity: 1; }
 .lantern.state-warm .particle-layer.warm { opacity: 1; }
 .lantern.state-agitated .particle-layer.ash { opacity: 1; }
+
+.showcase-label {
+  position: absolute;
+  right: 6px;
+  top: -18px;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: #ece6ff;
+  background: rgba(16, 18, 30, 0.72);
+  border: 1px solid rgba(174, 158, 228, 0.45);
+  border-radius: 8px;
+  padding: 4px 8px;
+  z-index: 40;
+  pointer-events: none;
+}

@@ -20,10 +20,12 @@
   const lantern = document.getElementById('lantern');
   const testUi = document.getElementById('test-ui');
   const testStatus = document.getElementById('test-status');
+  const showcaseLabel = document.getElementById('showcase-label');
 
   const params = new URLSearchParams(window.location.search);
   const isTestMode = params.get('mode') === 'test' || params.get('test') === '1';
-  root.dataset.mode = isTestMode ? 'test' : 'overlay';
+  const isShowcaseMode = params.get('mode') === 'showcase' || params.get('showcase') === '1';
+  root.dataset.mode = isShowcaseMode ? 'showcase' : (isTestMode ? 'test' : 'overlay');
 
   const model = {
     currentState: 'awake',
@@ -37,10 +39,13 @@
     manualOverride: false,
     manualState: null,
     isAutoDemo: false,
+    isShowcase: false,
     effects: { particles: true, smoke: true, thorns: false },
     demoTimer: null,
     decayTimer: null,
-    particleTimer: null
+    particleTimer: null,
+    showcaseTimer: null,
+    showcaseStep: 0
   };
 
   const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
@@ -55,8 +60,12 @@
     console.log(`[LanternOverlay] render updated: ${state}`);
   }
 
-  function updateVisualEffects(state = model.renderedState) {
-    if (state === 'possessed') {
+  function applyStateEffects(state = model.renderedState, override = null) {
+    if (override) {
+      model.effects.particles = override.particles;
+      model.effects.smoke = override.smoke;
+      model.effects.thorns = override.thorns;
+    } else if (state === 'possessed') {
       model.effects.thorns = true;
       model.effects.smoke = true;
     } else if (state === 'dormant' && !model.manualOverride) {
@@ -77,10 +86,16 @@
     testStatus.textContent = [
       `manualOverride: ${model.manualOverride ? 'on' : 'off'}`,
       `manualState: ${model.manualState || '-'}`,
+      `showcase: ${model.isShowcase ? 'on' : 'off'}`,
       `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
       `derivedState: ${model.derivedState}`,
       `renderedState: ${model.renderedState}`
     ].join(' • ');
+  }
+
+  function setShowcaseLabel(text) {
+    if (!showcaseLabel) return;
+    showcaseLabel.textContent = `Showcase • ${text}`;
   }
 
   function deriveStateFromMeters(reason = 'auto') {
@@ -116,14 +131,26 @@
     return next;
   }
 
+  function forceRenderState(state, options = {}) {
+    const effects = options.effects || null;
+    setVisualClass(state);
+    applyStateEffects(state, effects);
+    if (showcaseLabel && model.isShowcase) setShowcaseLabel(options.label || state);
+    updateStatus();
+    console.log(`[LanternOverlay] force rendered state: ${state}${options.label ? ` (${options.label})` : ''}`);
+    if (options.burst) pulseBurst(options.burst);
+  }
+
   function render(reason = 'unknown') {
+    if (model.isShowcase) return;
+
     const stateToRender = model.manualOverride && model.manualState
       ? model.manualState
       : deriveStateFromMeters(reason);
 
     const source = model.manualOverride && model.manualState ? 'manual override' : 'auto resolver';
     setVisualClass(stateToRender);
-    updateVisualEffects(stateToRender);
+    applyStateEffects(stateToRender);
     updateStatus();
     console.log(`[LanternOverlay] final rendered state: ${stateToRender} (source: ${source}, reason: ${reason})`);
   }
@@ -135,8 +162,52 @@
     model.isAutoDemo = false;
   }
 
+  function stopShowcase() {
+    if (model.showcaseTimer) {
+      clearTimeout(model.showcaseTimer);
+      model.showcaseTimer = null;
+    }
+    model.isShowcase = false;
+    model.showcaseStep = 0;
+    if (showcaseLabel) showcaseLabel.hidden = true;
+  }
+
+  function startShowcase() {
+    stopDemo();
+    stopShowcase();
+    model.manualOverride = false;
+    model.manualState = null;
+    model.isShowcase = true;
+    root.dataset.mode = 'showcase';
+    if (showcaseLabel) showcaseLabel.hidden = false;
+
+    const sequence = [
+      { state: 'dormant', label: 'Dormant', ms: 2800, effects: { particles: false, smoke: false, thorns: false } },
+      { state: 'awake', label: 'Awake', ms: 2700, effects: { particles: true, smoke: true, thorns: false } },
+      { state: 'warm', label: 'Warm/Fond', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
+      { state: 'agitated', label: 'Agitated', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
+      { state: 'possessed', label: 'Possessed', ms: 3200, effects: { particles: true, smoke: true, thorns: true } },
+      { state: 'warm', label: 'Warm/Fond + Particles', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'kind' },
+      { state: 'agitated', label: 'Agitated + Sharp Flicker', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'chaos' },
+      { state: 'possessed', label: 'Possessed + Smoke', ms: 2600, effects: { particles: true, smoke: true, thorns: false } },
+      { state: 'possessed', label: 'Possessed + Thorns/Cracks', ms: 2600, effects: { particles: true, smoke: true, thorns: true } },
+      { state: 'possessed', label: 'Possessed + Curse Burst', ms: 2800, effects: { particles: true, smoke: true, thorns: true }, burst: 'curse' }
+    ];
+
+    const runStep = () => {
+      if (!model.isShowcase) return;
+      const step = sequence[model.showcaseStep % sequence.length];
+      model.showcaseStep += 1;
+      forceRenderState(step.state, step);
+      model.showcaseTimer = setTimeout(runStep, step.ms);
+    };
+
+    runStep();
+  }
+
   function setManualState(state, source = 'api') {
     if (!config.states.includes(state)) return;
+    if (model.isShowcase) return;
     console.log(`[LanternOverlay] clicked state button: ${state} (${source})`);
     stopDemo();
     model.manualOverride = true;
@@ -147,8 +218,10 @@
   }
 
   function resumeAutoMode() {
+    stopShowcase();
     model.manualOverride = false;
     model.manualState = null;
+    root.dataset.mode = isTestMode ? 'test' : 'overlay';
     console.log('[LanternOverlay] manual override disabled; resumed auto mode');
     render('resume-auto');
   }
@@ -185,7 +258,7 @@
   function toggleEffect(effect, value) {
     if (!(effect in model.effects)) return;
     model.effects[effect] = typeof value === 'boolean' ? value : !model.effects[effect];
-    updateVisualEffects();
+    applyStateEffects(model.renderedState);
     updateStatus();
   }
 
@@ -206,7 +279,7 @@
       model.chaosLevel = clamp(model.chaosLevel + amount * 0.5);
       model.activityLevel = clamp(model.activityLevel + amount * 1.4);
       model.effects.thorns = true;
-      updateVisualEffects();
+      applyStateEffects();
     }
 
     pulseBurst(kind);
@@ -232,7 +305,7 @@
     model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
     model.curseLevel = clamp(model.curseLevel - config.decay.curse);
 
-    if (model.manualOverride) {
+    if (model.manualOverride || model.isShowcase) {
       updateStatus();
       return;
     }
@@ -257,6 +330,7 @@
       return;
     }
 
+    stopShowcase();
     model.manualOverride = false;
     model.manualState = null;
     model.isAutoDemo = true;
@@ -282,6 +356,8 @@
   function receive(payload = {}) {
     const { type } = payload;
     if (type === 'setState' && payload.state) setManualState(String(payload.state).toLowerCase(), 'receive');
+    if (type === 'startShowcase') startShowcase();
+    if (type === 'stopShowcase') resumeAutoMode();
     if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
     if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
     if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
@@ -321,10 +397,11 @@
   function bootstrap() {
     if (!isTestMode) root.style.pointerEvents = 'none';
     setupTestMode();
-    updateVisualEffects();
+    applyStateEffects();
     render('bootstrap');
     startAmbientLoop();
     model.decayTimer = setInterval(applyDecayTick, 1300);
+    if (isShowcaseMode) startShowcase();
   }
 
   window.LanternOverlay = {
@@ -334,6 +411,8 @@
     setManualState,
     clearForcedState: resumeAutoMode,
     resumeAutoMode,
+    startShowcase,
+    stopShowcase: resumeAutoMode,
     addActivity,
     triggerBurst,
     toggleEffect,
