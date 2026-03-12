@@ -27,13 +27,15 @@
 
   const model = {
     currentState: 'awake',
+    derivedState: 'awake',
+    renderedState: 'awake',
     activityLevel: 0.2,
     warmLevel: 0,
     chaosLevel: 0,
     curseLevel: 0,
-    forcedState: null,
-    manualOverrideActive: false,
     possessedUntil: 0,
+    manualOverride: false,
+    manualState: null,
     isAutoDemo: false,
     effects: { particles: true, smoke: true, thorns: false },
     demoTimer: null,
@@ -49,10 +51,22 @@
     lantern.classList.add(`state-${state}`);
     root.dataset.state = state;
     model.currentState = state;
-    console.log(`[LanternOverlay] render applied: ${state}`);
+    model.renderedState = state;
+    console.log(`[LanternOverlay] render updated: ${state}`);
   }
 
-  function updateVisualEffects() {
+  function updateVisualEffects(state = model.renderedState) {
+    if (state === 'possessed') {
+      model.effects.thorns = true;
+      model.effects.smoke = true;
+    } else if (state === 'dormant' && !model.manualOverride) {
+      model.effects.smoke = false;
+      model.effects.thorns = false;
+    } else if (!model.manualOverride && state === 'awake') {
+      model.effects.thorns = false;
+      model.effects.smoke = true;
+    }
+
     lantern.dataset.particles = model.effects.particles ? 'on' : 'off';
     lantern.dataset.smoke = model.effects.smoke ? 'on' : 'off';
     lantern.dataset.thorns = model.effects.thorns ? 'on' : 'off';
@@ -60,55 +74,83 @@
 
   function updateStatus() {
     if (!isTestMode || !testStatus) return;
-    const manualActive = model.manualOverrideActive && !!model.forcedState;
     testStatus.textContent = [
-      `state: ${model.currentState}`,
+      `manualOverride: ${model.manualOverride ? 'on' : 'off'}`,
+      `manualState: ${model.manualState || '-'}`,
       `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
-      `manual: ${manualActive ? 'on' : 'off'}`,
-      `activity: ${model.activityLevel.toFixed(2)}`,
-      `warm: ${model.warmLevel.toFixed(2)}`,
-      `chaos: ${model.chaosLevel.toFixed(2)}`,
-      `curse: ${model.curseLevel.toFixed(2)}`
+      `derivedState: ${model.derivedState}`,
+      `renderedState: ${model.renderedState}`
     ].join(' • ');
   }
 
-  function getDerivedState() {
+  function deriveStateFromMeters(reason = 'auto') {
     const now = Date.now();
-    if (model.manualOverrideActive && model.forcedState) return model.forcedState;
-    if (now < model.possessedUntil) return 'possessed';
+    if (now < model.possessedUntil) {
+      model.derivedState = 'possessed';
+      console.log(`[LanternOverlay] derived auto state: possessed (reason: possessed-hold/${reason})`);
+      return 'possessed';
+    }
 
     if (model.curseLevel >= config.thresholds.possessedCurse) {
       model.possessedUntil = now + config.thresholds.possessedDurationMs;
       model.curseLevel = clamp(model.curseLevel * 0.55);
+      model.derivedState = 'possessed';
+      console.log(`[LanternOverlay] derived auto state: possessed (reason: curse-threshold/${reason})`);
       return 'possessed';
     }
 
     const warmBias = model.warmLevel - model.chaosLevel;
     const chaosBias = model.chaosLevel - model.warmLevel;
 
+    let next = 'awake';
     if (model.activityLevel < config.thresholds.dormantActivity && model.warmLevel < 0.2 && model.chaosLevel < 0.2) {
-      return 'dormant';
+      next = 'dormant';
+    } else if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) {
+      next = 'warm';
+    } else if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) {
+      next = 'agitated';
     }
-    if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) return 'warm';
-    if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) return 'agitated';
-    return 'awake';
+
+    model.derivedState = next;
+    console.log(`[LanternOverlay] derived auto state: ${next} (reason: ${reason})`);
+    return next;
   }
 
-  function renderState(reason = 'unknown') {
-    const derived = getDerivedState();
-    setVisualClass(derived);
+  function render(reason = 'unknown') {
+    const stateToRender = model.manualOverride && model.manualState
+      ? model.manualState
+      : deriveStateFromMeters(reason);
 
-    if (derived === 'possessed') {
-      model.effects.thorns = true;
-      model.effects.smoke = true;
-    }
-    if (derived === 'dormant') {
-      model.effects.smoke = false;
-    }
-
-    updateVisualEffects();
+    const source = model.manualOverride && model.manualState ? 'manual override' : 'auto resolver';
+    setVisualClass(stateToRender);
+    updateVisualEffects(stateToRender);
     updateStatus();
-    console.log(`[LanternOverlay] state requested/applied: ${model.forcedState || derived} -> ${derived} (reason: ${reason})`);
+    console.log(`[LanternOverlay] final rendered state: ${stateToRender} (source: ${source}, reason: ${reason})`);
+  }
+
+  function stopDemo() {
+    if (!model.demoTimer) return;
+    clearInterval(model.demoTimer);
+    model.demoTimer = null;
+    model.isAutoDemo = false;
+  }
+
+  function setManualState(state, source = 'api') {
+    if (!config.states.includes(state)) return;
+    console.log(`[LanternOverlay] clicked state button: ${state} (${source})`);
+    stopDemo();
+    model.manualOverride = true;
+    model.manualState = state;
+    console.log(`[LanternOverlay] requested manual state: ${state}`);
+    console.log('[LanternOverlay] manual override enabled');
+    render('manual-state');
+  }
+
+  function resumeAutoMode() {
+    model.manualOverride = false;
+    model.manualState = null;
+    console.log('[LanternOverlay] manual override disabled; resumed auto mode');
+    render('resume-auto');
   }
 
   function emitParticle(type) {
@@ -137,31 +179,7 @@
 
   function addActivity(amount = 0.1) {
     model.activityLevel = clamp(model.activityLevel + amount * 0.1);
-    renderState('addActivity');
-  }
-
-  function stopDemo() {
-    if (!model.demoTimer) return;
-    clearInterval(model.demoTimer);
-    model.demoTimer = null;
-    model.isAutoDemo = false;
-  }
-
-  function setState(state, source = 'api') {
-    if (!config.states.includes(state)) return;
-    model.forcedState = state;
-    model.manualOverrideActive = true;
-    stopDemo();
-    console.log(`[LanternOverlay] clicked state: ${state} (${source})`);
-    console.log('[LanternOverlay] manual override enabled');
-    renderState('manual-setState');
-  }
-
-  function clearForcedState() {
-    model.forcedState = null;
-    model.manualOverrideActive = false;
-    console.log('[LanternOverlay] manual override disabled');
-    renderState('clearForcedState');
+    render('add-activity');
   }
 
   function toggleEffect(effect, value) {
@@ -192,7 +210,7 @@
     }
 
     pulseBurst(kind);
-    renderState(`triggerBurst:${kind}`);
+    render(`trigger-burst:${kind}`);
   }
 
   function parseChatText(text = '') {
@@ -214,48 +232,47 @@
     model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
     model.curseLevel = clamp(model.curseLevel - config.decay.curse);
 
-    if (model.currentState !== 'possessed' && model.curseLevel < 0.12 && !model.forcedState) {
-      model.effects.thorns = false;
-      if (!model.isAutoDemo) model.effects.smoke = true;
+    if (model.manualOverride) {
+      updateStatus();
+      return;
     }
 
-    renderState('decay');
+    render('decay');
   }
 
   function startAmbientLoop() {
     if (model.particleTimer) clearInterval(model.particleTimer);
     model.particleTimer = setInterval(() => {
-      if (model.currentState === 'warm') emitParticle('warm');
-      if (model.currentState === 'agitated') emitParticle('ash');
-      if (model.currentState === 'possessed') emitParticle('smoke');
-      if (model.currentState === 'awake' && Math.random() > 0.55) emitParticle('warm');
+      if (model.renderedState === 'warm') emitParticle('warm');
+      if (model.renderedState === 'agitated') emitParticle('ash');
+      if (model.renderedState === 'possessed') emitParticle('smoke');
+      if (model.renderedState === 'awake' && Math.random() > 0.55) emitParticle('warm');
     }, 340);
   }
 
   function toggleDemo() {
     if (model.demoTimer) {
       stopDemo();
-      model.forcedState = null;
-      model.manualOverrideActive = false;
-      renderState('demo-stopped');
+      resumeAutoMode();
       return;
     }
 
-    model.forcedState = null;
-    model.manualOverrideActive = false;
+    model.manualOverride = false;
+    model.manualState = null;
     model.isAutoDemo = true;
 
     const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
     let i = 0;
-    setVisualClass(seq[0]);
-    updateStatus();
+    model.manualOverride = true;
+    model.manualState = seq[0];
+    render('auto-demo-start');
 
     model.demoTimer = setInterval(() => {
       i = (i + 1) % seq.length;
       const step = seq[i];
-      model.forcedState = step;
-      model.manualOverrideActive = true;
-      renderState('auto-demo');
+      model.manualOverride = true;
+      model.manualState = step;
+      render('auto-demo-step');
       if (step === 'warm') pulseBurst('kind');
       if (step === 'agitated') pulseBurst('chaos');
       if (step === 'possessed') pulseBurst('curse');
@@ -264,7 +281,7 @@
 
   function receive(payload = {}) {
     const { type } = payload;
-    if (type === 'setState' && payload.state) setState(String(payload.state).toLowerCase(), 'receive');
+    if (type === 'setState' && payload.state) setManualState(String(payload.state).toLowerCase(), 'receive');
     if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
     if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
     if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
@@ -274,7 +291,7 @@
       model.warmLevel = clamp(Number(payload.warm ?? model.warmLevel));
       model.chaosLevel = clamp(Number(payload.chaos ?? model.chaosLevel));
       model.curseLevel = clamp(Number(payload.curse ?? model.curseLevel));
-      renderState('setIntensity');
+      render('set-intensity');
     }
   }
 
@@ -289,12 +306,12 @@
         const act = button.dataset.act;
         const value = button.dataset.value;
 
-        if (act === 'setState') setState(value, 'button');
+        if (act === 'setState') setManualState(value, 'button');
         if (act === 'activity') addActivity(Number(value));
         if (act === 'burst') triggerBurst(value);
         if (act === 'toggleEffect') toggleEffect(value);
         if (act === 'demo') toggleDemo();
-        if (act === 'force') clearForcedState();
+        if (act === 'force') resumeAutoMode();
 
         updateStatus();
       });
@@ -305,7 +322,7 @@
     if (!isTestMode) root.style.pointerEvents = 'none';
     setupTestMode();
     updateVisualEffects();
-    renderState('bootstrap');
+    render('bootstrap');
     startAmbientLoop();
     model.decayTimer = setInterval(applyDecayTick, 1300);
   }
@@ -313,8 +330,10 @@
   window.LanternOverlay = {
     config,
     receive,
-    setState,
-    clearForcedState,
+    setState: setManualState,
+    setManualState,
+    clearForcedState: resumeAutoMode,
+    resumeAutoMode,
     addActivity,
     triggerBurst,
     toggleEffect,
