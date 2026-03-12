@@ -2,61 +2,45 @@
   const overlayRoot = document.getElementById('overlay-root');
   const lantern = document.getElementById('lantern');
   const chatList = document.getElementById('chat-list');
-  const previewPanel = document.getElementById('preview-panel');
-  const previewStatus = document.getElementById('preview-status');
-  const showcaseToggle = document.getElementById('toggle-showcase');
+  const chatInputForm = document.getElementById('chat-input-form');
+  const chatInput = document.getElementById('chat-input');
+  const tinyStatus = document.getElementById('tiny-status');
 
   const params = new URLSearchParams(window.location.search);
-  const previewMode = params.get('preview') === '1' || params.get('mode') === 'preview';
+  const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
   const config = {
     states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    showcaseMs: 3000,
-    decayMs: 1400,
-    particleMs: 220,
-    showcaseSequence: [
-      { state: 'dormant', variant: 'base' },
-      { state: 'awake', variant: 'base' },
-      { state: 'warm', variant: 'warm-sparkles' },
-      { state: 'agitated', variant: 'agitated-spike' },
-      { state: 'possessed', variant: 'possessed-smoke' },
-      { state: 'possessed', variant: 'possessed-thorns' },
-      { state: 'possessed', variant: 'possessed-cracks' },
-      { state: 'possessed', variant: 'possessed-burst' }
-    ],
-    previewChat: [
-      { user: 'kindling', text: 'soft vibes tonight, stay cozy ember ✨', mood: 'kind' },
-      { user: 'raider', text: 'GO GO GO CHAOS PUSH', mood: 'chaos' },
-      { user: 'oracle', text: 'the sigil wakes. cursed eyes open.', mood: 'curse' },
-      { user: 'hearth', text: 'gentle lantern, keep us warm', mood: 'kind' },
-      { user: 'swarm', text: 'SPAM SPARKS SPAM SPARKS', mood: 'chaos' }
+    decayMs: 1300,
+    particleMs: 200,
+    keywords: {
+      warm: ['love', 'cute', 'cozy', 'safe', 'calm', 'soft', 'hug', 'sweet', 'gentle'],
+      neutral: ['hello', 'hi', 'watching', 'okay', 'hey', 'lurking'],
+      chaos: ['run', 'panic', 'insane', 'chaos', 'fast', 'scream', 'hunt', 'wild'],
+      curse: ['possessed', 'demon', 'hex', 'void', 'haunt', 'consume', 'hollow', 'rot', 'curse']
+    },
+    sampleMessages: [
+      { user: 'lantern', text: 'waiting for whispers...' },
+      { user: 'shade', text: 'chat can wake or curse the flame.' },
+      { user: 'ember', text: testingMode ? 'testing input is live below.' : 'connected to live chat soon.' }
     ]
   };
 
   const state = {
-    preview: {
-      enabled: previewMode,
-      showcaseOn: previewMode,
-      showcaseTimer: null,
-      showcaseIndex: 0,
-      showcaseState: 'awake',
-      showcaseVariant: 'base',
-      manualState: null,
-      manualVariant: 'base',
-      chatTimer: null,
-      chatIndex: 0
-    },
+    mode: { testing: testingMode },
     reactive: {
-      activity: 0.32,
-      warmth: 0.26,
-      chaos: 0.08,
-      curse: 0,
-      decayTimer: null
+      activity: 0.3,
+      warmth: 0.24,
+      chaos: 0.1,
+      curse: 0
     },
     render: {
       state: 'awake',
-      variant: 'base',
-      particleTimer: null
+      variant: 'base'
+    },
+    timers: {
+      decay: null,
+      particles: null
     }
   };
 
@@ -68,43 +52,31 @@
     return Math.random() * (max - min) + min;
   }
 
-  function activePreviewSource() {
-    if (state.preview.manualState) {
-      return { moodState: state.preview.manualState, variant: state.preview.manualVariant };
-    }
-
-    return { moodState: state.preview.showcaseState, variant: state.preview.showcaseVariant };
-  }
-
-  function getRenderSource() {
-    if (state.preview.enabled) {
-      return activePreviewSource();
-    }
-    return { moodState: deriveReactiveState(), variant: 'base' };
-  }
-
-  function updatePreviewStatus() {
-    if (!previewMode) return;
-
-    const manualLabel = state.preview.manualState || 'none';
-    const showcaseLabel = state.preview.showcaseOn ? 'running' : 'paused';
-    previewStatus.textContent = `Preview ON • showcase: ${showcaseLabel} • manual: ${manualLabel} • rendered: ${state.render.state}`;
-  }
-
-  function renderLantern(reason = 'unknown') {
-    const { moodState, variant } = getRenderSource();
+  function setStateVisual(nextState, variant = 'base', reason = 'render') {
     config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
-    lantern.classList.add(`state-${moodState}`);
+    lantern.classList.add(`state-${nextState}`);
     lantern.dataset.variant = variant;
+    overlayRoot.dataset.state = nextState;
 
-    state.render.state = moodState;
+    state.render.state = nextState;
     state.render.variant = variant;
-    overlayRoot.dataset.state = moodState;
 
-    updatePreviewStatus();
-    if (previewMode) {
-      console.log(`[LanternOverlay] rendered preview state: ${moodState} (variant: ${variant}, reason: ${reason})`);
-    }
+    console.log(`[LanternOverlay] rendered state: ${nextState} (variant: ${variant}, reason: ${reason})`);
+    updateTinyStatus();
+  }
+
+  function deriveReactiveState() {
+    const { activity, warmth, chaos, curse } = state.reactive;
+    if (curse > 0.68) return { mood: 'possessed', variant: 'possessed-smoke' };
+    if (chaos - warmth > 0.23 && activity > 0.26) return { mood: 'agitated', variant: 'agitated-spike' };
+    if (warmth - chaos > 0.22 && activity > 0.2) return { mood: 'warm', variant: 'warm-sparkles' };
+    if (activity < 0.16) return { mood: 'dormant', variant: 'base' };
+    return { mood: 'awake', variant: 'base' };
+  }
+
+  function renderFromReactive(reason = 'reactive') {
+    const { mood, variant } = deriveReactiveState();
+    setStateVisual(mood, variant, reason);
   }
 
   function pulseBurst() {
@@ -115,235 +87,192 @@
   function emitParticle(type) {
     const layer = lantern.querySelector(`.particle-layer.${type}`);
     if (!layer) return;
+
     const particle = document.createElement('span');
     particle.className = `particle ${type}`;
-    particle.style.left = `${random(82, 142)}px`;
-    particle.style.top = `${random(92, 140)}px`;
-    particle.style.setProperty('--dx', `${random(-22, 26)}px`);
-    particle.style.setProperty('--dy', `${random(-84, -38)}px`);
-    particle.style.animationDuration = `${random(1.4, 3.3)}s`;
+    particle.style.left = `${random(82, 146)}px`;
+    particle.style.top = `${random(90, 142)}px`;
+    particle.style.setProperty('--dx', `${random(-24, 28)}px`);
+    particle.style.setProperty('--dy', `${random(-88, -34)}px`);
+    particle.style.animationDuration = `${random(1.25, 3.4)}s`;
     layer.appendChild(particle);
-    setTimeout(() => particle.remove(), 3400);
+    setTimeout(() => particle.remove(), 3600);
   }
 
   function emitAmbientParticles() {
-    const mood = state.render.state;
+    const current = state.render.state;
     const variant = state.render.variant;
 
-    if (mood === 'dormant' && Math.random() > 0.98) emitParticle('ash');
-
-    if (mood === 'awake') {
-      if (Math.random() > 0.72) emitParticle('warm');
+    if (current === 'dormant') {
+      if (Math.random() > 0.995) emitParticle('ash');
+      return;
     }
 
-    if (mood === 'warm') {
+    if (current === 'awake') {
+      if (Math.random() > 0.75) emitParticle('warm');
+      return;
+    }
+
+    if (current === 'warm') {
       emitParticle('warm');
-      if (variant === 'warm-sparkles' || Math.random() > 0.4) emitParticle('warm');
+      if (variant === 'warm-sparkles' || Math.random() > 0.42) emitParticle('warm');
+      return;
     }
 
-    if (mood === 'agitated') {
+    if (current === 'agitated') {
       emitParticle('ash');
-      if (Math.random() > 0.35) emitParticle('warm');
-      if (variant === 'agitated-spike' && Math.random() > 0.55) pulseBurst();
+      if (Math.random() > 0.34) emitParticle('warm');
+      if (variant === 'agitated-spike' && Math.random() > 0.56) pulseBurst();
+      return;
     }
 
-    if (mood === 'possessed') {
+    if (current === 'possessed') {
       emitParticle('smoke');
-      if (Math.random() > 0.4) emitParticle('smoke');
-      if (variant === 'possessed-burst' && Math.random() > 0.45) {
-        emitParticle('ash');
-        pulseBurst();
-      }
+      emitParticle('smoke');
+      if (variant === 'possessed-burst' || Math.random() > 0.55) emitParticle('ash');
+      if (Math.random() > 0.74) pulseBurst();
     }
   }
 
-  function deriveReactiveState() {
-    const { activity, warmth, chaos, curse } = state.reactive;
-    if (curse > 0.72) return 'possessed';
-    if (chaos - warmth > 0.25 && activity > 0.28) return 'agitated';
-    if (warmth - chaos > 0.24 && activity > 0.22) return 'warm';
-    if (activity < 0.17) return 'dormant';
-    return 'awake';
+  function scoreMessage(text) {
+    const msg = String(text || '').toLowerCase();
+    const hits = (list) => list.reduce((acc, token) => acc + (msg.includes(token) ? 1 : 0), 0);
+
+    return {
+      warm: hits(config.keywords.warm),
+      neutral: hits(config.keywords.neutral),
+      chaos: hits(config.keywords.chaos),
+      curse: hits(config.keywords.curse)
+    };
   }
 
-  function applyMood(kind) {
-    if (kind === 'kind') {
-      state.reactive.warmth = clamp(state.reactive.warmth + 0.28);
-      state.reactive.chaos = clamp(state.reactive.chaos - 0.1);
-      state.reactive.activity = clamp(state.reactive.activity + 0.18);
+  function applyChatInfluence(text, source = 'chat') {
+    const score = scoreMessage(text);
+
+    if (score.warm) {
+      state.reactive.warmth = clamp(state.reactive.warmth + score.warm * 0.2);
+      state.reactive.chaos = clamp(state.reactive.chaos - score.warm * 0.06);
+      state.reactive.activity = clamp(state.reactive.activity + score.warm * 0.12);
     }
-    if (kind === 'chaos') {
-      state.reactive.chaos = clamp(state.reactive.chaos + 0.3);
-      state.reactive.warmth = clamp(state.reactive.warmth - 0.08);
-      state.reactive.activity = clamp(state.reactive.activity + 0.22);
+
+    if (score.neutral) {
+      state.reactive.activity = clamp((state.reactive.activity * 0.85) + 0.22);
+      state.reactive.warmth = clamp((state.reactive.warmth * 0.82) + 0.2);
+      state.reactive.chaos = clamp(state.reactive.chaos * 0.8);
+      state.reactive.curse = clamp(state.reactive.curse * 0.8);
     }
-    if (kind === 'curse') {
-      state.reactive.curse = clamp(state.reactive.curse + 0.36);
-      state.reactive.chaos = clamp(state.reactive.chaos + 0.12);
-      state.reactive.activity = clamp(state.reactive.activity + 0.2);
+
+    if (score.chaos) {
+      state.reactive.chaos = clamp(state.reactive.chaos + score.chaos * 0.22);
+      state.reactive.warmth = clamp(state.reactive.warmth - score.chaos * 0.08);
+      state.reactive.activity = clamp(state.reactive.activity + score.chaos * 0.18);
       pulseBurst();
     }
 
-    if (!state.preview.enabled) renderLantern('apply-mood');
+    if (score.curse) {
+      state.reactive.curse = clamp(state.reactive.curse + score.curse * 0.28);
+      state.reactive.chaos = clamp(state.reactive.chaos + score.curse * 0.1);
+      state.reactive.activity = clamp(state.reactive.activity + score.curse * 0.15);
+      pulseBurst();
+      lantern.dataset.variant = 'possessed-burst';
+    }
+
+    if (score.warm + score.neutral + score.chaos + score.curse === 0) {
+      state.reactive.activity = clamp(state.reactive.activity + 0.06);
+    }
+
+    renderFromReactive(`typed-${source}`);
   }
 
-  function appendChat(message) {
+  function appendChat(user, text) {
     const item = document.createElement('li');
-    item.innerHTML = `<span class="tag">${message.user}</span>${message.text}`;
+    item.innerHTML = `<span class="tag">${user}</span>${text}`;
     chatList.prepend(item);
-    while (chatList.children.length > 5) chatList.removeChild(chatList.lastChild);
+    while (chatList.children.length > 6) chatList.removeChild(chatList.lastChild);
   }
 
-  function stopShowcase(logReason = 'manual') {
-    state.preview.showcaseOn = false;
-    clearTimeout(state.preview.showcaseTimer);
-    console.log(`[LanternOverlay] showcase paused (${logReason})`);
-    if (showcaseToggle) showcaseToggle.textContent = 'Resume showcase';
+  function handleTypedMessage(rawText) {
+    const message = String(rawText || '').trim();
+    if (!message) return;
+
+    console.log(`[LanternOverlay] typed message: ${message}`);
+    appendChat('you', message);
+    applyChatInfluence(message, 'input');
   }
 
-  function showcaseStep() {
-    if (!state.preview.enabled || !state.preview.showcaseOn || state.preview.manualState) return;
-
-    const entry = config.showcaseSequence[state.preview.showcaseIndex % config.showcaseSequence.length];
-    state.preview.showcaseState = entry.state;
-    state.preview.showcaseVariant = entry.variant;
-    state.preview.showcaseIndex += 1;
-    renderLantern('showcase-step');
-
-    if (entry.variant === 'possessed-burst' || entry.variant === 'agitated-spike') {
-      pulseBurst();
-    }
-
-    state.preview.showcaseTimer = setTimeout(showcaseStep, config.showcaseMs);
+  function updateTinyStatus() {
+    if (!state.mode.testing) return;
+    tinyStatus.textContent = `TEST • rendered: ${state.render.state}`;
   }
 
-  function startShowcase(logReason = 'button') {
-    if (!state.preview.enabled) return;
-
-    state.preview.manualState = null;
-    state.preview.manualVariant = 'base';
-    state.preview.showcaseOn = true;
-    clearTimeout(state.preview.showcaseTimer);
-    console.log(`[LanternOverlay] showcase resumed (${logReason})`);
-    if (showcaseToggle) showcaseToggle.textContent = 'Pause showcase';
-    showcaseStep();
-  }
-
-  function setManualPreviewState(nextState) {
-    if (!state.preview.enabled || !config.states.includes(nextState)) return;
-
-    console.log(`[LanternOverlay] clicked preview button: ${nextState}`);
-    stopShowcase('preview-button-click');
-
-    state.preview.manualState = nextState;
-    state.preview.manualVariant = nextState === 'warm' ? 'warm-sparkles' : (nextState === 'agitated' ? 'agitated-spike' : 'base');
-
-    if (nextState === 'possessed') {
-      state.preview.manualVariant = 'possessed-thorns';
-      pulseBurst();
-    }
-
-    console.log(`[LanternOverlay] manual preview override enabled: ${nextState}`);
-    renderLantern('manual-preview-state');
-  }
-
-  function startPreviewChat() {
-    clearInterval(state.preview.chatTimer);
-    state.preview.chatTimer = setInterval(() => {
-      const message = config.previewChat[state.preview.chatIndex % config.previewChat.length];
-      state.preview.chatIndex += 1;
-      appendChat(message);
-
-      if (!state.preview.manualState) {
-        if (message.mood === 'kind') applyMood('kind');
-        if (message.mood === 'chaos') applyMood('chaos');
-        if (message.mood === 'curse') applyMood('curse');
-      }
-    }, 2100);
-  }
-
-  function startReactiveDecay() {
-    state.reactive.decayTimer = setInterval(() => {
-      if (state.preview.enabled) return;
-      state.reactive.activity = clamp(state.reactive.activity - 0.03);
-      state.reactive.warmth = clamp(state.reactive.warmth - 0.035);
-      state.reactive.chaos = clamp(state.reactive.chaos - 0.04);
-      state.reactive.curse = clamp(state.reactive.curse - 0.025);
-      renderLantern('reactive-decay');
+  function startDecayLoop() {
+    state.timers.decay = setInterval(() => {
+      state.reactive.activity = clamp(state.reactive.activity - 0.025);
+      state.reactive.warmth = clamp(state.reactive.warmth - 0.03);
+      state.reactive.chaos = clamp(state.reactive.chaos - 0.035);
+      state.reactive.curse = clamp(state.reactive.curse - 0.02);
+      renderFromReactive('decay');
     }, config.decayMs);
   }
 
-  function bindPreviewControls() {
-    if (!previewMode) return;
-    previewPanel.hidden = false;
-    overlayRoot.dataset.mode = 'preview';
+  function setupTestingInput() {
+    if (!state.mode.testing) return;
 
-    previewPanel.querySelectorAll('[data-state]').forEach((button) => {
-      button.addEventListener('click', () => {
-        setManualPreviewState(button.dataset.state);
-      });
+    overlayRoot.dataset.mode = 'test';
+    chatInputForm.hidden = false;
+    tinyStatus.hidden = false;
+
+    chatInputForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      handleTypedMessage(chatInput.value);
+      chatInput.value = '';
+      chatInput.focus();
     });
 
-    showcaseToggle.addEventListener('click', () => {
-      if (state.preview.showcaseOn) {
-        stopShowcase('toggle-button');
-        renderLantern('showcase-paused');
-      } else {
-        startShowcase('toggle-button');
+    chatInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleTypedMessage(chatInput.value);
+        chatInput.value = '';
       }
     });
+  }
+
+  function bootstrapChat() {
+    config.sampleMessages.forEach((msg) => appendChat(msg.user, msg.text));
   }
 
   function receive(event = {}) {
     if (!event || typeof event !== 'object') return;
-    const command = String(event.type || '').toLowerCase();
 
-    if (command === 'setstate' && config.states.includes(event.state) && !state.preview.enabled) {
-      state.reactive.activity = 0.4;
-      state.reactive.warmth = event.state === 'warm' ? 0.72 : 0.24;
-      state.reactive.chaos = event.state === 'agitated' ? 0.74 : 0.08;
-      state.reactive.curse = event.state === 'possessed' ? 0.9 : 0;
-      if (event.state === 'dormant') state.reactive.activity = 0.08;
-      renderLantern('api-setstate');
+    const type = String(event.type || '').toLowerCase();
+
+    if (type === 'chat' && event.user && event.text) {
+      appendChat(event.user, event.text);
+      applyChatInfluence(event.text, 'external-chat');
     }
 
-    if (command === 'addactivity' && !state.preview.enabled) {
+    if (type === 'setstate' && config.states.includes(event.state)) {
+      setStateVisual(String(event.state).toLowerCase(), 'base', 'api-setstate');
+    }
+
+    if (type === 'addactivity') {
       state.reactive.activity = clamp(state.reactive.activity + Number(event.value ?? 0.12));
-      renderLantern('api-addactivity');
+      renderFromReactive('api-addactivity');
     }
 
-    if (command === 'triggermood' && !state.preview.enabled) {
-      applyMood(String(event.mood || '').toLowerCase());
+    if (type === 'triggermood') {
+      applyChatInfluence(String(event.mood || ''), 'api-mood');
     }
-
-    if (command === 'chat' && event.user && event.text) {
-      appendChat({ user: event.user, text: event.text });
-      if (!state.preview.enabled && event.mood) applyMood(event.mood);
-    }
-  }
-
-  function bootstrapChat() {
-    const initial = [
-      { user: 'lantern', text: 'watching quietly...' },
-      { user: 'shade', text: 'all systems waiting for chat.' },
-      { user: 'ember', text: 'tip: use ?preview=1 for showcase mode.' }
-    ];
-    initial.forEach((msg) => appendChat(msg));
   }
 
   function bootstrap() {
-    bindPreviewControls();
     bootstrapChat();
+    setupTestingInput();
+    renderFromReactive('bootstrap');
+    startDecayLoop();
 
-    renderLantern('bootstrap');
-    state.render.particleTimer = setInterval(emitAmbientParticles, config.particleMs);
-
-    if (previewMode) {
-      startShowcase('bootstrap');
-      startPreviewChat();
-    } else {
-      startReactiveDecay();
-    }
+    state.timers.particles = setInterval(emitAmbientParticles, config.particleMs);
   }
 
   window.LanternOverlay = {
@@ -351,20 +280,8 @@
     setState: (stateName) => receive({ type: 'setState', state: stateName }),
     addActivity: (value = 0.12) => receive({ type: 'addActivity', value }),
     triggerMood: (mood) => receive({ type: 'triggerMood', mood }),
-    pushChat: (user, text, mood) => receive({ type: 'chat', user, text, mood }),
-    startShowcase: () => {
-      if (!state.preview.enabled) return;
-      startShowcase('api');
-    },
-    stopShowcase: () => {
-      if (!state.preview.enabled) return;
-      stopShowcase('api');
-      renderLantern('api-stop-showcase');
-    },
-    setPreviewState: (previewState) => {
-      if (!state.preview.enabled) return;
-      setManualPreviewState(String(previewState || '').toLowerCase());
-    }
+    pushChat: (user, text) => receive({ type: 'chat', user, text }),
+    sendLocalMessage: (text) => handleTypedMessage(text)
   };
 
   bootstrap();

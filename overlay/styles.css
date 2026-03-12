@@ -28,33 +28,27 @@ html, body {
   position: fixed;
   right: 18px;
   bottom: 18px;
-  width: 300px;
+  width: 306px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   pointer-events: none;
   z-index: 20;
 }
-
-.overlay-corner[data-mode='preview'] {
-  pointer-events: auto;
-}
+.overlay-corner[data-mode='test'] { pointer-events: auto; }
 
 .lantern {
   position: relative;
-  width: 230px;
-  height: 250px;
+  width: 232px;
+  height: 252px;
   transform-origin: 50% 14%;
   animation: float var(--float-speed) ease-in-out infinite;
   filter: drop-shadow(0 20px 18px rgba(0, 0, 0, 0.46));
   z-index: 2;
   pointer-events: none;
 }
-
-.lantern * {
-  pointer-events: none;
-}
+.lantern * { pointer-events: none; }
 
 .chain {
   position: absolute;
@@ -74,10 +68,10 @@ html, body {
 
 .lantern-halo {
   position: absolute;
-  left: 50px;
-  top: 38px;
-  width: 130px;
-  height: 154px;
+  left: 48px;
+  top: 34px;
+  width: 136px;
+  height: 162px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--glow-shadow) 0%, rgba(0, 0, 0, 0) 72%);
   opacity: var(--halo-opacity);
@@ -192,12 +186,7 @@ html, body {
   opacity: 0.9;
 }
 
-.particle-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-}
+.particle-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .particle {
   position: absolute;
   width: 4px;
@@ -208,12 +197,7 @@ html, body {
 }
 .particle.warm { background: #ffd89f; box-shadow: 0 0 8px rgba(255, 214, 152, 0.88); }
 .particle.ash { background: rgba(188, 172, 152, 0.72); }
-.particle.smoke {
-  width: 10px;
-  height: 10px;
-  background: var(--smoke-color);
-  filter: blur(0.8px);
-}
+.particle.smoke { width: 10px; height: 10px; background: var(--smoke-color); filter: blur(0.8px); }
 
 .burst-ring {
   position: absolute;
@@ -224,41 +208,36 @@ html, body {
   border-radius: 50%;
   border: 1px solid rgba(255, 206, 126, 0.62);
   opacity: 0;
-  pointer-events: none;
 }
 .lantern.burst .burst-ring { animation: burst 760ms ease-out; }
 
-.chat-panel {
-  width: 250px;
-  min-height: 118px;
-  border-radius: 12px;
-  border: 1px solid rgba(149, 132, 112, 0.38);
-  background: linear-gradient(180deg, rgba(17, 15, 21, 0.78), rgba(7, 8, 12, 0.78));
+.interaction-header {
+  width: 252px;
+  border-radius: 999px;
+  border: 1px solid rgba(192, 158, 110, 0.38);
+  background: linear-gradient(90deg, rgba(21, 17, 16, 0.75), rgba(38, 25, 20, 0.75), rgba(24, 20, 33, 0.75));
   backdrop-filter: blur(1.2px);
-  padding: 8px 9px;
-  z-index: 3;
-  pointer-events: none;
+  padding: 5px 12px;
+  box-shadow: 0 0 0 1px rgba(78, 56, 42, 0.3) inset;
 }
-
-.chat-panel header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 7px;
-}
-.chat-panel .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ffd091;
-  box-shadow: 0 0 8px rgba(255, 186, 89, 0.84);
-}
-.chat-panel p {
+.interaction-header p {
   margin: 0;
   font-size: 11px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #d6c6b2;
+  text-align: center;
+  color: #e7d4b8;
+}
+
+.chat-panel {
+  width: 252px;
+  border-radius: 14px;
+  border: 1px solid rgba(156, 126, 92, 0.44);
+  background: linear-gradient(180deg, rgba(16, 13, 20, 0.82), rgba(10, 9, 14, 0.82));
+  backdrop-filter: blur(1.4px);
+  padding: 9px;
+  z-index: 3;
+  box-shadow: 0 0 0 1px rgba(74, 56, 42, 0.34) inset, 0 -12px 34px rgba(10, 7, 18, 0.36);
 }
 #chat-list {
   margin: 0;
@@ -266,197 +245,156 @@ html, body {
   list-style: none;
   display: grid;
   gap: 5px;
+  max-height: 146px;
+  overflow: hidden;
 }
 #chat-list li {
   font-size: 11px;
   line-height: 1.35;
-  color: #efe9e0;
-  border-radius: 8px;
-  background: rgba(31, 27, 37, 0.72);
-  border: 1px solid rgba(122, 107, 88, 0.34);
+  color: #f1ece4;
+  border-radius: 9px;
+  background: rgba(32, 26, 36, 0.72);
+  border: 1px solid rgba(122, 102, 84, 0.34);
   padding: 4px 6px;
 }
 #chat-list .tag {
   font-weight: 700;
-  color: #bda5ff;
+  color: #cfb8ff;
   margin-right: 4px;
 }
 
-.preview-panel {
-  width: 250px;
-  border-radius: 10px;
-  border: 1px solid rgba(156, 139, 204, 0.46);
-  background: rgba(10, 10, 18, 0.9);
-  padding: 8px;
-  pointer-events: auto;
+.chat-input {
   display: grid;
+  grid-template-columns: 1fr auto;
   gap: 6px;
-  z-index: 60;
-}
-.preview-panel p {
-  margin: 0;
-  font-size: 11px;
-  color: #ece5ff;
-}
-.preview-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.preview-panel button {
+  margin-top: 7px;
   pointer-events: auto;
-  background: rgba(51, 43, 74, 0.95);
-  color: #f6f1ff;
-  border: 1px solid rgba(176, 154, 235, 0.52);
-  border-radius: 6px;
-  padding: 4px 6px;
+}
+.chat-input input {
+  min-width: 0;
   font-size: 11px;
+  padding: 7px 8px;
+  color: #f7f2e8;
+  border-radius: 8px;
+  border: 1px solid rgba(154, 128, 94, 0.45);
+  background: rgba(20, 17, 26, 0.92);
+  outline: none;
+}
+.chat-input input:focus {
+  border-color: rgba(225, 191, 125, 0.88);
+  box-shadow: 0 0 0 1px rgba(233, 197, 132, 0.45);
+}
+.chat-input button {
+  font-size: 11px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 148, 102, 0.6);
+  background: linear-gradient(180deg, rgba(93, 66, 45, 0.96), rgba(62, 46, 33, 0.96));
+  color: #f4ead9;
   cursor: pointer;
-  transition: transform 80ms ease, background-color 100ms ease, border-color 100ms ease;
 }
-.preview-panel button:hover {
-  background: rgba(86, 66, 132, 0.96);
-  border-color: rgba(216, 198, 255, 0.9);
-}
-.preview-panel button:active {
-  transform: translateY(1px) scale(0.98);
-  background: rgba(128, 78, 180, 0.96);
+.chat-input button:hover { filter: brightness(1.1); }
+.chat-input button:active { transform: translateY(1px); }
+
+.tiny-status {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(226, 211, 192, 0.86);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(145, 121, 103, 0.42);
+  background: rgba(14, 12, 18, 0.7);
 }
 
-/* state visuals - intentionally high contrast */
+/* state visuals - strongly distinct */
 .lantern.state-dormant {
-  --core-main: #ad6733;
-  --core-inner: #d8a173;
-  --glow-shadow: rgba(120, 60, 25, 0.11);
-  --halo-opacity: 0.08;
-  --core-scale: 0.42;
-  --flicker-speed: 4.4s;
-  --float-speed: 9s;
-  opacity: 0.62;
-  filter: saturate(0.55) brightness(0.58) drop-shadow(0 10px 10px rgba(0, 0, 0, 0.6));
+  --core-main: #9d5a2d;
+  --core-inner: #ca9770;
+  --glow-shadow: rgba(96, 46, 20, 0.08);
+  --halo-opacity: 0.06;
+  --core-scale: 0.34;
+  --flicker-speed: 4.9s;
+  --float-speed: 9.5s;
+  opacity: 0.56;
+  filter: saturate(0.5) brightness(0.52) drop-shadow(0 8px 9px rgba(0, 0, 0, 0.64));
 }
-.lantern.state-dormant .frame.body {
-  background: linear-gradient(145deg, rgba(78, 59, 49, 0.9), rgba(30, 26, 23, 0.96));
-}
-.lantern.state-dormant .flame-core {
-  width: 24px;
-  height: 30px;
-  top: 80px;
-  left: 36px;
-  border-radius: 54% 46% 60% 40% / 70% 58% 42% 30%;
-}
-.lantern.state-dormant .flame-inner { opacity: 0.32; }
+.lantern.state-dormant .frame.body { background: linear-gradient(145deg, rgba(73, 55, 45, 0.9), rgba(26, 23, 22, 0.97)); }
+.lantern.state-dormant .flame-core { width: 22px; height: 28px; top: 84px; left: 37px; }
+.lantern.state-dormant .flame-inner { opacity: 0.22; }
 
 .lantern.state-awake {
   --core-main: #ffd98f;
   --core-inner: #fff4d8;
-  --glow-shadow: rgba(248, 181, 95, 0.34);
+  --glow-shadow: rgba(248, 181, 95, 0.33);
   --core-scale: 1;
-  --flicker-speed: 1.6s;
-  --halo-opacity: 0.56;
+  --flicker-speed: 1.7s;
+  --halo-opacity: 0.54;
 }
-.lantern.state-awake .flame-core {
-  width: 40px;
-  height: 62px;
-  top: 48px;
-  left: 28px;
-}
+.lantern.state-awake .flame-core { width: 40px; height: 62px; top: 48px; left: 28px; }
 
 .lantern.state-warm {
-  --core-main: #ffe7ad;
-  --core-inner: #fff9ea;
-  --glow-shadow: rgba(255, 207, 124, 0.72);
-  --core-scale: 1.24;
+  --core-main: #ffe8b2;
+  --core-inner: #fffaf0;
+  --glow-shadow: rgba(255, 216, 141, 0.78);
+  --core-scale: 1.28;
   --halo-opacity: 1;
-  --flicker-speed: 2.3s;
-  filter: saturate(1.28) brightness(1.18) drop-shadow(0 28px 20px rgba(0, 0, 0, 0.37));
+  --flicker-speed: 2.4s;
+  filter: saturate(1.33) brightness(1.21) drop-shadow(0 30px 22px rgba(0, 0, 0, 0.35));
 }
-.lantern.state-warm .frame.body {
-  background: linear-gradient(145deg, rgba(156, 117, 83, 0.97), rgba(66, 47, 40, 0.97));
-}
-.lantern.state-warm .flame-core {
-  width: 50px;
-  height: 82px;
-  top: 34px;
-  left: 24px;
-  border-radius: 60% 40% 62% 38% / 62% 64% 36% 38%;
-}
-.lantern.state-warm .flame-inner {
-  width: 24px;
-  height: 38px;
-  left: 37px;
-  top: 57px;
-}
+.lantern.state-warm .frame.body { background: linear-gradient(145deg, rgba(162, 123, 87, 0.97), rgba(70, 51, 43, 0.98)); }
+.lantern.state-warm .flame-core { width: 52px; height: 84px; top: 32px; left: 23px; border-radius: 62% 38% 64% 36% / 62% 66% 34% 38%; }
+.lantern.state-warm .flame-inner { width: 25px; height: 40px; left: 37px; top: 55px; }
 
 .lantern.state-agitated {
-  --core-main: #ffd154;
+  --core-main: #ffd04a;
   --core-inner: #fffef1;
-  --glow-shadow: rgba(255, 103, 49, 0.74);
-  --core-scale: 1.05;
-  --flicker-speed: 0.28s;
-  --float-speed: 1.8s;
-  --tilt: -7deg;
-  --halo-opacity: 0.58;
-  filter: saturate(1.35) contrast(1.22) brightness(1.03) drop-shadow(0 26px 22px rgba(0, 0, 0, 0.56));
+  --glow-shadow: rgba(255, 99, 38, 0.8);
+  --core-scale: 1.08;
+  --flicker-speed: 0.24s;
+  --float-speed: 1.5s;
+  --tilt: -8deg;
+  --halo-opacity: 0.5;
+  filter: saturate(1.38) contrast(1.25) brightness(1.04) drop-shadow(0 26px 22px rgba(0, 0, 0, 0.58));
 }
-.lantern.state-agitated .frame.body {
-  background: linear-gradient(145deg, rgba(146, 102, 69, 0.95), rgba(42, 29, 26, 0.98));
-}
-.lantern.state-agitated .flame-core {
-  width: 45px;
-  height: 88px;
-  top: 26px;
-  left: 26px;
-  border-radius: 34% 66% 70% 30% / 72% 34% 66% 28%;
-}
+.lantern.state-agitated .frame.body { background: linear-gradient(145deg, rgba(140, 99, 67, 0.96), rgba(39, 28, 26, 0.99)); }
+.lantern.state-agitated .flame-core { width: 46px; height: 92px; top: 22px; left: 26px; border-radius: 30% 70% 72% 28% / 72% 30% 70% 28%; }
 
 .lantern.state-possessed {
-  --metal-mid: #262033;
-  --metal-light: #524367;
-  --core-main: #7a49f5;
-  --core-inner: #d8f6b8;
-  --glow-shadow: rgba(94, 225, 143, 0.75);
-  --smoke-color: rgba(10, 8, 16, 0.95);
-  --core-scale: 1.35;
-  --flicker-speed: 0.24s;
-  --tilt: -9deg;
+  --metal-mid: #211c2f;
+  --metal-light: #4f4168;
+  --core-main: #6c3ef0;
+  --core-inner: #d4f8b3;
+  --glow-shadow: rgba(84, 232, 146, 0.76);
+  --smoke-color: rgba(8, 7, 16, 0.97);
+  --core-scale: 1.4;
+  --flicker-speed: 0.2s;
+  --tilt: -10deg;
   --halo-opacity: 1;
-  filter: saturate(1.35) contrast(1.3) brightness(0.84) drop-shadow(0 34px 28px rgba(6, 1, 16, 0.92));
+  filter: saturate(1.4) contrast(1.35) brightness(0.8) drop-shadow(0 36px 30px rgba(6, 1, 16, 0.96));
 }
 .lantern.state-possessed .frame.body {
-  background: linear-gradient(150deg, rgba(83, 67, 109, 0.96), rgba(20, 15, 30, 0.98));
-  border-color: rgba(16, 10, 24, 0.95);
+  background: linear-gradient(150deg, rgba(82, 67, 112, 0.98), rgba(16, 13, 30, 0.99));
+  border-color: rgba(11, 8, 24, 0.98);
 }
 .lantern.state-possessed .glass {
-  background: linear-gradient(180deg, rgba(149, 124, 220, 0.24), rgba(24, 19, 35, 0.65));
-  border-color: rgba(152, 133, 223, 0.5);
+  background: linear-gradient(180deg, rgba(133, 114, 217, 0.28), rgba(20, 16, 36, 0.72));
+  border-color: rgba(145, 127, 223, 0.56);
 }
-.lantern.state-possessed .flame-core {
-  width: 54px;
-  height: 96px;
-  top: 18px;
-  left: 22px;
-  border-radius: 30% 70% 26% 74% / 70% 28% 72% 30%;
-}
-.lantern.state-possessed .flame-inner {
-  background: radial-gradient(circle at 48% 24%, #ebffe0 0%, #c7f5aa 45%, rgba(128, 255, 169, 0) 100%);
-}
-.lantern.state-possessed .sigil {
-  opacity: 0.72;
-  border-color: rgba(177, 255, 183, 0.72);
-}
+.lantern.state-possessed .flame-core { width: 56px; height: 100px; top: 14px; left: 21px; border-radius: 24% 76% 22% 78% / 70% 24% 76% 30%; }
+.lantern.state-possessed .flame-inner { background: radial-gradient(circle at 48% 24%, #efffe6 0%, #bbf4a7 45%, rgba(128, 255, 169, 0) 100%); }
+.lantern.state-possessed .sigil { opacity: 0.76; border-color: rgba(180, 255, 188, 0.72); }
 
-.lantern[data-variant='possessed-thorns'] .thorn-ring,
-.lantern[data-variant='possessed-cracks'] .thorn-ring,
+.lantern[data-variant='possessed-smoke'] .cracks,
+.lantern[data-variant='possessed-burst'] .cracks,
+.lantern.state-possessed .cracks { opacity: 1; }
+
+.lantern[data-variant='possessed-smoke'] .thorn-ring,
 .lantern[data-variant='possessed-burst'] .thorn-ring,
 .lantern.state-possessed .thorn-ring {
   opacity: 1;
   border-color: rgba(130, 196, 156, 0.84);
-}
-.lantern[data-variant='possessed-cracks'] .cracks,
-.lantern[data-variant='possessed-burst'] .cracks,
-.lantern.state-possessed .cracks {
-  opacity: 1;
 }
 
 .lantern.state-agitated .lantern-shell,
@@ -469,13 +407,13 @@ html, body {
   50% { transform: translateY(-5px) rotate(0.3deg); }
 }
 @keyframes haloPulse {
-  0%, 100% { transform: scale(0.92); opacity: calc(var(--halo-opacity) * 0.7); }
-  50% { transform: scale(1.08); opacity: var(--halo-opacity); }
+  0%, 100% { transform: scale(0.9); opacity: calc(var(--halo-opacity) * 0.7); }
+  50% { transform: scale(1.1); opacity: var(--halo-opacity); }
 }
 @keyframes flicker {
   0%, 100% { transform: translateX(0) scale(calc(var(--core-scale) * 0.96), calc(var(--core-scale) * 1.04)); }
-  30% { transform: translateX(-1.8px) scale(calc(var(--core-scale) * 1.11), calc(var(--core-scale) * 0.9)); }
-  60% { transform: translateX(1.8px) scale(calc(var(--core-scale) * 0.88), calc(var(--core-scale) * 1.12)); }
+  30% { transform: translateX(-1.8px) scale(calc(var(--core-scale) * 1.12), calc(var(--core-scale) * 0.88)); }
+  60% { transform: translateX(1.8px) scale(calc(var(--core-scale) * 0.86), calc(var(--core-scale) * 1.14)); }
 }
 @keyframes drift {
   0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
@@ -484,7 +422,7 @@ html, body {
 }
 @keyframes jitter {
   0%, 100% { transform: translate(0, 0); }
-  30% { transform: translate(1px, -1px); }
+  30% { transform: translate(1.2px, -1px); }
   70% { transform: translate(-1px, 1px); }
 }
 @keyframes burst {

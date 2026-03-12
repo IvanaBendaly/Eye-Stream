@@ -30,25 +30,20 @@
         <div class="burst-ring" aria-hidden="true"></div>
       </section>
 
+      <section class="interaction-header" aria-label="interaction header">
+        <p>Chat to stir the flame</p>
+      </section>
+
       <aside id="chat-panel" class="chat-panel" aria-label="Lantern companion chat panel">
-        <header>
-          <span class="dot"></span>
-          <p>Lantern Feed</p>
-        </header>
         <ol id="chat-list"></ol>
+
+        <form id="chat-input-form" class="chat-input" hidden>
+          <input id="chat-input" type="text" maxlength="140" placeholder="Type a message to test reactions..." autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
       </aside>
 
-      <section id="preview-panel" class="preview-panel" hidden>
-        <p id="preview-status">Preview ON • state: awake • showcase: on</p>
-        <div class="preview-buttons">
-          <button data-state="dormant">Dormant</button>
-          <button data-state="awake">Awake</button>
-          <button data-state="warm">Warm</button>
-          <button data-state="agitated">Agitated</button>
-          <button data-state="possessed">Possessed</button>
-        </div>
-        <button id="toggle-showcase" type="button">Pause showcase</button>
-      </section>
+      <p id="tiny-status" class="tiny-status" hidden></p>
     </main>
 
     <script src="app.js"></script>
