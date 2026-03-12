@@ -3,59 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cursed Lantern Familiar Overlay</title>
+    <title>Cursed Lantern Overlay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main id="overlay-root" class="overlay-corner" data-mode="overlay" data-state="awake">
+    <main id="overlay-root" class="overlay-corner" data-mode="live" data-state="awake">
       <section id="lantern" class="lantern state-awake" aria-label="Cursed flame companion">
         <div class="chain" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="lantern-halo"></div>
+        <div class="lantern-halo" aria-hidden="true"></div>
+
         <div class="lantern-shell">
           <span class="frame cap"></span>
           <span class="frame body"></span>
           <span class="frame base"></span>
           <span class="glass"></span>
           <span class="sigil"></span>
+          <span class="cracks"></span>
           <span class="thorn-ring"></span>
           <span class="flame-core"></span>
           <span class="flame-inner"></span>
         </div>
+
         <div class="particle-layer warm" aria-hidden="true"></div>
         <div class="particle-layer ash" aria-hidden="true"></div>
         <div class="particle-layer smoke" aria-hidden="true"></div>
         <div class="burst-ring" aria-hidden="true"></div>
       </section>
 
-
-      <div id="showcase-label" class="showcase-label" hidden>Showcase • Dormant</div>
-
-      <aside id="test-ui" class="test-ui" hidden>
-        <div class="state-buttons">
-          <button data-act="setState" data-value="dormant">Dormant</button>
-          <button data-act="setState" data-value="awake">Awake</button>
-          <button data-act="setState" data-value="warm">Warm/Fond</button>
-          <button data-act="setState" data-value="agitated">Agitated</button>
-          <button data-act="setState" data-value="possessed">Possessed</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="activity" data-value="1">+ Activity</button>
-          <button data-act="activity" data-value="-1">- Activity</button>
-          <button data-act="burst" data-value="kind">Kind Burst</button>
-          <button data-act="burst" data-value="chaos">Chaos Burst</button>
-          <button data-act="burst" data-value="curse">Curse Burst</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="toggleEffect" data-value="particles">Toggle particles</button>
-          <button data-act="toggleEffect" data-value="smoke">Toggle smoke</button>
-          <button data-act="toggleEffect" data-value="thorns">Toggle thorns/cracks</button>
-          <button data-act="demo" data-value="toggle">Auto demo</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="force" data-value="clear">Resume auto mood</button>
-        </div>
-        <p id="test-status">state: awake • activity: 0.20 • warm: 0.00 • chaos: 0.00 • curse: 0.00</p>
+      <aside id="chat-panel" class="chat-panel" aria-label="Lantern companion chat panel">
+        <header>
+          <span class="dot"></span>
+          <p>Lantern Feed</p>
+        </header>
+        <ol id="chat-list"></ol>
       </aside>
+
+      <section id="preview-panel" class="preview-panel" hidden>
+        <p id="preview-status">Preview ON • state: awake • showcase: on</p>
+        <div class="preview-buttons">
+          <button data-state="dormant">Dormant</button>
+          <button data-state="awake">Awake</button>
+          <button data-state="warm">Warm</button>
+          <button data-state="agitated">Agitated</button>
+          <button data-state="possessed">Possessed</button>
+        </div>
+        <button id="toggle-showcase" type="button">Pause showcase</button>
+      </section>
     </main>
 
     <script src="app.js"></script>

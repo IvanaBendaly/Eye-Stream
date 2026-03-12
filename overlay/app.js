@@ -1,423 +1,310 @@
 (function () {
-  const config = {
-    states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    decay: { activity: 0.03, warm: 0.045, chaos: 0.05, curse: 0.022 },
-    keywords: {
-      warm: ['love', 'cute', 'safe', 'cozy', 'gentle', 'calm', 'hug', 'lovely', 'sweet'],
-      chaos: ['run', 'chaos', 'panic', 'fast', 'insane', 'scream', 'cursed', 'hunt', 'wild'],
-      curse: ['void', 'possessed', 'demon', 'hex', 'rot', 'bleed', 'haunt', 'watcher', 'consume', 'hollow']
-    },
-    thresholds: {
-      dormantActivity: 0.18,
-      warmDelta: 0.18,
-      agitatedDelta: 0.2,
-      possessedCurse: 0.84,
-      possessedDurationMs: 12000
-    }
-  };
-
-  const root = document.getElementById('overlay-root');
+  const overlayRoot = document.getElementById('overlay-root');
   const lantern = document.getElementById('lantern');
-  const testUi = document.getElementById('test-ui');
-  const testStatus = document.getElementById('test-status');
-  const showcaseLabel = document.getElementById('showcase-label');
+  const chatList = document.getElementById('chat-list');
+  const previewPanel = document.getElementById('preview-panel');
+  const previewStatus = document.getElementById('preview-status');
+  const showcaseToggle = document.getElementById('toggle-showcase');
 
   const params = new URLSearchParams(window.location.search);
-  const isTestMode = params.get('mode') === 'test' || params.get('test') === '1';
-  const isShowcaseMode = params.get('mode') === 'showcase' || params.get('showcase') === '1';
-  root.dataset.mode = isShowcaseMode ? 'showcase' : (isTestMode ? 'test' : 'overlay');
+  const previewMode = params.get('preview') === '1' || params.get('mode') === 'preview';
 
-  const model = {
-    currentState: 'awake',
-    derivedState: 'awake',
-    renderedState: 'awake',
-    activityLevel: 0.2,
-    warmLevel: 0,
-    chaosLevel: 0,
-    curseLevel: 0,
-    possessedUntil: 0,
-    manualOverride: false,
-    manualState: null,
-    isAutoDemo: false,
-    isShowcase: false,
-    effects: { particles: true, smoke: true, thorns: false },
-    demoTimer: null,
-    decayTimer: null,
-    particleTimer: null,
-    showcaseTimer: null,
-    showcaseStep: 0
+  const config = {
+    states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
+    showcaseMs: 2600,
+    decayMs: 1400,
+    particleMs: 280,
+    showcaseSequence: [
+      { state: 'dormant', variant: 'base', label: 'Dormant' },
+      { state: 'awake', variant: 'base', label: 'Awake' },
+      { state: 'warm', variant: 'warm-sparkles', label: 'Warm / Fond' },
+      { state: 'agitated', variant: 'agitated-spike', label: 'Agitated / Chaotic' },
+      { state: 'possessed', variant: 'possessed-smoke', label: 'Possessed / Cursed' },
+      { state: 'possessed', variant: 'possessed-thorns', label: 'Possessed + Thorns' },
+      { state: 'possessed', variant: 'possessed-cracks', label: 'Possessed + Cracks' },
+      { state: 'possessed', variant: 'possessed-burst', label: 'Possessed + Curse Burst' }
+    ],
+    previewChat: [
+      { user: 'kindling', text: 'soft vibes tonight, stay cozy ember ✨', mood: 'kind' },
+      { user: 'raider', text: 'GO GO GO CHAOS PUSH', mood: 'chaos' },
+      { user: 'oracle', text: 'the sigil wakes. cursed eyes open.', mood: 'curse' },
+      { user: 'hearth', text: 'gentle lantern, keep us warm', mood: 'kind' },
+      { user: 'swarm', text: 'SPAM SPARKS SPAM SPARKS', mood: 'chaos' }
+    ]
   };
 
-  const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
-  const random = (min, max) => Math.random() * (max - min) + min;
+  const state = {
+    preview: {
+      enabled: previewMode,
+      forcedState: 'awake',
+      variant: 'base',
+      showcaseOn: previewMode,
+      showcaseTimer: null,
+      showcaseIndex: 0,
+      chatTimer: null,
+      chatIndex: 0
+    },
+    reactive: {
+      activity: 0.32,
+      warmth: 0.26,
+      chaos: 0.08,
+      curse: 0,
+      decayTimer: null
+    },
+    render: {
+      state: 'awake',
+      variant: 'base',
+      particleTimer: null
+    }
+  };
 
-  function setVisualClass(state) {
+  function clamp(value, min = 0, max = 1) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function getRenderSource() {
+    if (state.preview.enabled) {
+      return { moodState: state.preview.forcedState, variant: state.preview.variant };
+    }
+    return { moodState: deriveReactiveState(), variant: 'base' };
+  }
+
+  function renderLantern() {
+    const { moodState, variant } = getRenderSource();
     config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
-    lantern.classList.add(`state-${state}`);
-    root.dataset.state = state;
-    model.currentState = state;
-    model.renderedState = state;
-    console.log(`[LanternOverlay] render updated: ${state}`);
-  }
+    lantern.classList.add(`state-${moodState}`);
+    lantern.dataset.variant = variant;
 
-  function applyStateEffects(state = model.renderedState, override = null) {
-    if (override) {
-      model.effects.particles = override.particles;
-      model.effects.smoke = override.smoke;
-      model.effects.thorns = override.thorns;
-    } else if (state === 'possessed') {
-      model.effects.thorns = true;
-      model.effects.smoke = true;
-    } else if (state === 'dormant' && !model.manualOverride) {
-      model.effects.smoke = false;
-      model.effects.thorns = false;
-    } else if (!model.manualOverride && state === 'awake') {
-      model.effects.thorns = false;
-      model.effects.smoke = true;
+    state.render.state = moodState;
+    state.render.variant = variant;
+
+    overlayRoot.dataset.state = moodState;
+    if (previewMode) {
+      previewStatus.textContent = `Preview ON • state: ${moodState} • showcase: ${state.preview.showcaseOn ? 'on' : 'off'}`;
     }
-
-    lantern.dataset.particles = model.effects.particles ? 'on' : 'off';
-    lantern.dataset.smoke = model.effects.smoke ? 'on' : 'off';
-    lantern.dataset.thorns = model.effects.thorns ? 'on' : 'off';
   }
 
-  function updateStatus() {
-    if (!isTestMode || !testStatus) return;
-    testStatus.textContent = [
-      `manualOverride: ${model.manualOverride ? 'on' : 'off'}`,
-      `manualState: ${model.manualState || '-'}`,
-      `showcase: ${model.isShowcase ? 'on' : 'off'}`,
-      `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
-      `derivedState: ${model.derivedState}`,
-      `renderedState: ${model.renderedState}`
-    ].join(' • ');
-  }
-
-  function setShowcaseLabel(text) {
-    if (!showcaseLabel) return;
-    showcaseLabel.textContent = `Showcase • ${text}`;
-  }
-
-  function deriveStateFromMeters(reason = 'auto') {
-    const now = Date.now();
-    if (now < model.possessedUntil) {
-      model.derivedState = 'possessed';
-      console.log(`[LanternOverlay] derived auto state: possessed (reason: possessed-hold/${reason})`);
-      return 'possessed';
-    }
-
-    if (model.curseLevel >= config.thresholds.possessedCurse) {
-      model.possessedUntil = now + config.thresholds.possessedDurationMs;
-      model.curseLevel = clamp(model.curseLevel * 0.55);
-      model.derivedState = 'possessed';
-      console.log(`[LanternOverlay] derived auto state: possessed (reason: curse-threshold/${reason})`);
-      return 'possessed';
-    }
-
-    const warmBias = model.warmLevel - model.chaosLevel;
-    const chaosBias = model.chaosLevel - model.warmLevel;
-
-    let next = 'awake';
-    if (model.activityLevel < config.thresholds.dormantActivity && model.warmLevel < 0.2 && model.chaosLevel < 0.2) {
-      next = 'dormant';
-    } else if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) {
-      next = 'warm';
-    } else if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) {
-      next = 'agitated';
-    }
-
-    model.derivedState = next;
-    console.log(`[LanternOverlay] derived auto state: ${next} (reason: ${reason})`);
-    return next;
-  }
-
-  function forceRenderState(state, options = {}) {
-    const effects = options.effects || null;
-    setVisualClass(state);
-    applyStateEffects(state, effects);
-    if (showcaseLabel && model.isShowcase) setShowcaseLabel(options.label || state);
-    updateStatus();
-    console.log(`[LanternOverlay] force rendered state: ${state}${options.label ? ` (${options.label})` : ''}`);
-    if (options.burst) pulseBurst(options.burst);
-  }
-
-  function render(reason = 'unknown') {
-    if (model.isShowcase) return;
-
-    const stateToRender = model.manualOverride && model.manualState
-      ? model.manualState
-      : deriveStateFromMeters(reason);
-
-    const source = model.manualOverride && model.manualState ? 'manual override' : 'auto resolver';
-    setVisualClass(stateToRender);
-    applyStateEffects(stateToRender);
-    updateStatus();
-    console.log(`[LanternOverlay] final rendered state: ${stateToRender} (source: ${source}, reason: ${reason})`);
-  }
-
-  function stopDemo() {
-    if (!model.demoTimer) return;
-    clearInterval(model.demoTimer);
-    model.demoTimer = null;
-    model.isAutoDemo = false;
-  }
-
-  function stopShowcase() {
-    if (model.showcaseTimer) {
-      clearTimeout(model.showcaseTimer);
-      model.showcaseTimer = null;
-    }
-    model.isShowcase = false;
-    model.showcaseStep = 0;
-    if (showcaseLabel) showcaseLabel.hidden = true;
-  }
-
-  function startShowcase() {
-    stopDemo();
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    model.isShowcase = true;
-    root.dataset.mode = 'showcase';
-    if (showcaseLabel) showcaseLabel.hidden = false;
-
-    const sequence = [
-      { state: 'dormant', label: 'Dormant', ms: 2800, effects: { particles: false, smoke: false, thorns: false } },
-      { state: 'awake', label: 'Awake', ms: 2700, effects: { particles: true, smoke: true, thorns: false } },
-      { state: 'warm', label: 'Warm/Fond', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
-      { state: 'agitated', label: 'Agitated', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
-      { state: 'possessed', label: 'Possessed', ms: 3200, effects: { particles: true, smoke: true, thorns: true } },
-      { state: 'warm', label: 'Warm/Fond + Particles', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'kind' },
-      { state: 'agitated', label: 'Agitated + Sharp Flicker', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'chaos' },
-      { state: 'possessed', label: 'Possessed + Smoke', ms: 2600, effects: { particles: true, smoke: true, thorns: false } },
-      { state: 'possessed', label: 'Possessed + Thorns/Cracks', ms: 2600, effects: { particles: true, smoke: true, thorns: true } },
-      { state: 'possessed', label: 'Possessed + Curse Burst', ms: 2800, effects: { particles: true, smoke: true, thorns: true }, burst: 'curse' }
-    ];
-
-    const runStep = () => {
-      if (!model.isShowcase) return;
-      const step = sequence[model.showcaseStep % sequence.length];
-      model.showcaseStep += 1;
-      forceRenderState(step.state, step);
-      model.showcaseTimer = setTimeout(runStep, step.ms);
-    };
-
-    runStep();
-  }
-
-  function setManualState(state, source = 'api') {
-    if (!config.states.includes(state)) return;
-    if (model.isShowcase) return;
-    console.log(`[LanternOverlay] clicked state button: ${state} (${source})`);
-    stopDemo();
-    model.manualOverride = true;
-    model.manualState = state;
-    console.log(`[LanternOverlay] requested manual state: ${state}`);
-    console.log('[LanternOverlay] manual override enabled');
-    render('manual-state');
-  }
-
-  function resumeAutoMode() {
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    root.dataset.mode = isTestMode ? 'test' : 'overlay';
-    console.log('[LanternOverlay] manual override disabled; resumed auto mode');
-    render('resume-auto');
+  function pulseBurst() {
+    lantern.classList.remove('burst');
+    requestAnimationFrame(() => lantern.classList.add('burst'));
   }
 
   function emitParticle(type) {
-    if ((type === 'smoke' && !model.effects.smoke) || (!model.effects.particles && type !== 'smoke')) return;
     const layer = lantern.querySelector(`.particle-layer.${type}`);
     if (!layer) return;
-
-    const p = document.createElement('span');
-    p.className = `particle ${type}`;
-    p.style.left = `${random(82, 138)}px`;
-    p.style.top = `${random(96, 138)}px`;
-    p.style.setProperty('--dx', `${random(-16, 20)}px`);
-    p.style.setProperty('--dy', `${random(-72, -36)}px`);
-    p.style.animationDuration = `${random(1.6, 3.4)}s`;
-    layer.appendChild(p);
-    setTimeout(() => p.remove(), 3800);
+    const particle = document.createElement('span');
+    particle.className = `particle ${type}`;
+    particle.style.left = `${random(82, 142)}px`;
+    particle.style.top = `${random(92, 138)}px`;
+    particle.style.setProperty('--dx', `${random(-18, 20)}px`);
+    particle.style.setProperty('--dy', `${random(-74, -36)}px`);
+    layer.appendChild(particle);
+    setTimeout(() => particle.remove(), 3000);
   }
 
-  function pulseBurst(kind) {
-    lantern.classList.remove('burst');
-    requestAnimationFrame(() => lantern.classList.add('burst'));
-    if (kind === 'kind') for (let i = 0; i < 5; i += 1) setTimeout(() => emitParticle('warm'), i * 65);
-    if (kind === 'chaos') for (let i = 0; i < 6; i += 1) setTimeout(() => emitParticle('ash'), i * 50);
-    if (kind === 'curse') for (let i = 0; i < 7; i += 1) setTimeout(() => emitParticle('smoke'), i * 55);
+  function emitAmbientParticles() {
+    const mood = state.render.state;
+    const variant = state.render.variant;
+
+    if (mood === 'dormant' && Math.random() > 0.85) emitParticle('ash');
+    if (mood === 'awake' && Math.random() > 0.6) emitParticle('warm');
+    if (mood === 'warm') {
+      emitParticle('warm');
+      if (variant === 'warm-sparkles' && Math.random() > 0.5) emitParticle('warm');
+    }
+    if (mood === 'agitated') {
+      emitParticle('ash');
+      if (variant === 'agitated-spike') emitParticle('warm');
+    }
+    if (mood === 'possessed') {
+      emitParticle('smoke');
+      if (variant === 'possessed-burst' && Math.random() > 0.45) emitParticle('ash');
+    }
   }
 
-  function addActivity(amount = 0.1) {
-    model.activityLevel = clamp(model.activityLevel + amount * 0.1);
-    render('add-activity');
+  function deriveReactiveState() {
+    const { activity, warmth, chaos, curse } = state.reactive;
+    if (curse > 0.72) return 'possessed';
+    if (chaos - warmth > 0.25 && activity > 0.28) return 'agitated';
+    if (warmth - chaos > 0.24 && activity > 0.22) return 'warm';
+    if (activity < 0.17) return 'dormant';
+    return 'awake';
   }
 
-  function toggleEffect(effect, value) {
-    if (!(effect in model.effects)) return;
-    model.effects[effect] = typeof value === 'boolean' ? value : !model.effects[effect];
-    applyStateEffects(model.renderedState);
-    updateStatus();
-  }
-
-  function triggerBurst(kind, options = {}) {
-    const amount = options.amount ?? 0.12;
+  function applyMood(kind) {
     if (kind === 'kind') {
-      model.warmLevel = clamp(model.warmLevel + amount * 1.35);
-      model.chaosLevel = clamp(model.chaosLevel - amount * 0.28);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.25);
+      state.reactive.warmth = clamp(state.reactive.warmth + 0.28);
+      state.reactive.chaos = clamp(state.reactive.chaos - 0.1);
+      state.reactive.activity = clamp(state.reactive.activity + 0.18);
     }
     if (kind === 'chaos') {
-      model.chaosLevel = clamp(model.chaosLevel + amount * 1.45);
-      model.warmLevel = clamp(model.warmLevel - amount * 0.2);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.38);
+      state.reactive.chaos = clamp(state.reactive.chaos + 0.3);
+      state.reactive.warmth = clamp(state.reactive.warmth - 0.08);
+      state.reactive.activity = clamp(state.reactive.activity + 0.22);
     }
     if (kind === 'curse') {
-      model.curseLevel = clamp(model.curseLevel + amount * 1.5);
-      model.chaosLevel = clamp(model.chaosLevel + amount * 0.5);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.4);
-      model.effects.thorns = true;
-      applyStateEffects();
+      state.reactive.curse = clamp(state.reactive.curse + 0.36);
+      state.reactive.chaos = clamp(state.reactive.chaos + 0.12);
+      state.reactive.activity = clamp(state.reactive.activity + 0.2);
+      pulseBurst();
     }
 
-    pulseBurst(kind);
-    render(`trigger-burst:${kind}`);
+    if (!state.preview.enabled) renderLantern();
   }
 
-  function parseChatText(text = '') {
-    const msg = String(text).toLowerCase();
-    const scoreKeyword = (list) => list.reduce((acc, token) => acc + (msg.includes(token) ? 1 : 0), 0);
-    const warmHits = scoreKeyword(config.keywords.warm);
-    const chaosHits = scoreKeyword(config.keywords.chaos);
-    const curseHits = scoreKeyword(config.keywords.curse);
-
-    if (warmHits + chaosHits + curseHits === 0) addActivity(0.4);
-    if (warmHits) triggerBurst('kind', { amount: warmHits * 0.11 });
-    if (chaosHits) triggerBurst('chaos', { amount: chaosHits * 0.11 });
-    if (curseHits) triggerBurst('curse', { amount: curseHits * 0.14 });
+  function appendChat(message) {
+    const item = document.createElement('li');
+    item.innerHTML = `<span class="tag">${message.user}</span>${message.text}`;
+    chatList.prepend(item);
+    while (chatList.children.length > 5) chatList.removeChild(chatList.lastChild);
   }
 
-  function applyDecayTick() {
-    model.activityLevel = clamp(model.activityLevel - config.decay.activity);
-    model.warmLevel = clamp(model.warmLevel - config.decay.warm);
-    model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
-    model.curseLevel = clamp(model.curseLevel - config.decay.curse);
+  function showcaseStep() {
+    if (!state.preview.enabled || !state.preview.showcaseOn) return;
+    const entry = config.showcaseSequence[state.preview.showcaseIndex % config.showcaseSequence.length];
+    state.preview.showcaseIndex += 1;
+    state.preview.forcedState = entry.state;
+    state.preview.variant = entry.variant;
+    renderLantern();
 
-    if (model.manualOverride || model.isShowcase) {
-      updateStatus();
-      return;
+    if (entry.variant === 'possessed-burst' || entry.variant === 'agitated-spike') {
+      pulseBurst();
     }
 
-    render('decay');
+    state.preview.showcaseTimer = setTimeout(showcaseStep, config.showcaseMs);
   }
 
-  function startAmbientLoop() {
-    if (model.particleTimer) clearInterval(model.particleTimer);
-    model.particleTimer = setInterval(() => {
-      if (model.renderedState === 'warm') emitParticle('warm');
-      if (model.renderedState === 'agitated') emitParticle('ash');
-      if (model.renderedState === 'possessed') emitParticle('smoke');
-      if (model.renderedState === 'awake' && Math.random() > 0.55) emitParticle('warm');
-    }, 340);
+  function startShowcase() {
+    state.preview.showcaseOn = true;
+    clearTimeout(state.preview.showcaseTimer);
+    showcaseStep();
   }
 
-  function toggleDemo() {
-    if (model.demoTimer) {
-      stopDemo();
-      resumeAutoMode();
-      return;
-    }
-
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    model.isAutoDemo = true;
-
-    const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
-    let i = 0;
-    model.manualOverride = true;
-    model.manualState = seq[0];
-    render('auto-demo-start');
-
-    model.demoTimer = setInterval(() => {
-      i = (i + 1) % seq.length;
-      const step = seq[i];
-      model.manualOverride = true;
-      model.manualState = step;
-      render('auto-demo-step');
-      if (step === 'warm') pulseBurst('kind');
-      if (step === 'agitated') pulseBurst('chaos');
-      if (step === 'possessed') pulseBurst('curse');
-    }, 2400);
+  function stopShowcase() {
+    state.preview.showcaseOn = false;
+    clearTimeout(state.preview.showcaseTimer);
+    renderLantern();
   }
 
-  function receive(payload = {}) {
-    const { type } = payload;
-    if (type === 'setState' && payload.state) setManualState(String(payload.state).toLowerCase(), 'receive');
-    if (type === 'startShowcase') startShowcase();
-    if (type === 'stopShowcase') resumeAutoMode();
-    if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
-    if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
-    if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
-    if (type === 'chat' && payload.text) parseChatText(payload.text);
-    if (type === 'setIntensity') {
-      model.activityLevel = clamp(Number(payload.activity ?? model.activityLevel));
-      model.warmLevel = clamp(Number(payload.warm ?? model.warmLevel));
-      model.chaosLevel = clamp(Number(payload.chaos ?? model.chaosLevel));
-      model.curseLevel = clamp(Number(payload.curse ?? model.curseLevel));
-      render('set-intensity');
-    }
+  function startPreviewChat() {
+    clearInterval(state.preview.chatTimer);
+    state.preview.chatTimer = setInterval(() => {
+      const message = config.previewChat[state.preview.chatIndex % config.previewChat.length];
+      state.preview.chatIndex += 1;
+      appendChat(message);
+
+      if (message.mood === 'kind') applyMood('kind');
+      if (message.mood === 'chaos') applyMood('chaos');
+      if (message.mood === 'curse') applyMood('curse');
+    }, 2100);
   }
 
-  function setupTestMode() {
-    if (!isTestMode) return;
-    root.dataset.mode = 'test';
-    root.style.pointerEvents = 'auto';
-    testUi.hidden = false;
+  function startReactiveDecay() {
+    state.reactive.decayTimer = setInterval(() => {
+      if (state.preview.enabled) return;
+      state.reactive.activity = clamp(state.reactive.activity - 0.03);
+      state.reactive.warmth = clamp(state.reactive.warmth - 0.035);
+      state.reactive.chaos = clamp(state.reactive.chaos - 0.04);
+      state.reactive.curse = clamp(state.reactive.curse - 0.025);
+      renderLantern();
+    }, config.decayMs);
+  }
 
-    testUi.querySelectorAll('button').forEach((button) => {
+  function bindPreviewControls() {
+    if (!previewMode) return;
+    previewPanel.hidden = false;
+    overlayRoot.dataset.mode = 'preview';
+
+    previewPanel.querySelectorAll('[data-state]').forEach((button) => {
       button.addEventListener('click', () => {
-        const act = button.dataset.act;
-        const value = button.dataset.value;
-
-        if (act === 'setState') setManualState(value, 'button');
-        if (act === 'activity') addActivity(Number(value));
-        if (act === 'burst') triggerBurst(value);
-        if (act === 'toggleEffect') toggleEffect(value);
-        if (act === 'demo') toggleDemo();
-        if (act === 'force') resumeAutoMode();
-
-        updateStatus();
+        stopShowcase();
+        state.preview.forcedState = button.dataset.state;
+        state.preview.variant = 'base';
+        renderLantern();
       });
+    });
+
+    showcaseToggle.addEventListener('click', () => {
+      if (state.preview.showcaseOn) {
+        stopShowcase();
+        showcaseToggle.textContent = 'Resume showcase';
+      } else {
+        startShowcase();
+        showcaseToggle.textContent = 'Pause showcase';
+      }
     });
   }
 
+  function receive(event = {}) {
+    if (!event || typeof event !== 'object') return;
+    const command = String(event.type || '').toLowerCase();
+
+    if (command === 'setstate' && config.states.includes(event.state) && !state.preview.enabled) {
+      state.reactive.activity = 0.4;
+      state.reactive.warmth = event.state === 'warm' ? 0.72 : 0.24;
+      state.reactive.chaos = event.state === 'agitated' ? 0.74 : 0.08;
+      state.reactive.curse = event.state === 'possessed' ? 0.9 : 0;
+      if (event.state === 'dormant') state.reactive.activity = 0.08;
+      renderLantern();
+    }
+
+    if (command === 'addactivity' && !state.preview.enabled) {
+      state.reactive.activity = clamp(state.reactive.activity + Number(event.value ?? 0.12));
+      renderLantern();
+    }
+
+    if (command === 'triggermood' && !state.preview.enabled) {
+      applyMood(String(event.mood || '').toLowerCase());
+    }
+
+    if (command === 'chat' && event.user && event.text) {
+      appendChat({ user: event.user, text: event.text });
+      if (!state.preview.enabled && event.mood) applyMood(event.mood);
+    }
+  }
+
+  function bootstrapChat() {
+    const initial = [
+      { user: 'lantern', text: 'watching quietly...' },
+      { user: 'shade', text: 'all systems waiting for chat.' },
+      { user: 'ember', text: 'tip: use ?preview=1 for showcase mode.' }
+    ];
+    initial.forEach((msg) => appendChat(msg));
+  }
+
   function bootstrap() {
-    if (!isTestMode) root.style.pointerEvents = 'none';
-    setupTestMode();
-    applyStateEffects();
-    render('bootstrap');
-    startAmbientLoop();
-    model.decayTimer = setInterval(applyDecayTick, 1300);
-    if (isShowcaseMode) startShowcase();
+    bindPreviewControls();
+    bootstrapChat();
+
+    renderLantern();
+    state.render.particleTimer = setInterval(emitAmbientParticles, config.particleMs);
+
+    if (previewMode) {
+      startShowcase();
+      startPreviewChat();
+    } else {
+      startReactiveDecay();
+    }
   }
 
   window.LanternOverlay = {
-    config,
     receive,
-    setState: setManualState,
-    setManualState,
-    clearForcedState: resumeAutoMode,
-    resumeAutoMode,
-    startShowcase,
-    stopShowcase: resumeAutoMode,
-    addActivity,
-    triggerBurst,
-    toggleEffect,
-    parseChatText,
-    setIntensity: (values) => receive({ type: 'setIntensity', ...values })
+    setState: (stateName) => receive({ type: 'setState', state: stateName }),
+    addActivity: (value = 0.12) => receive({ type: 'addActivity', value }),
+    triggerMood: (mood) => receive({ type: 'triggerMood', mood }),
+    pushChat: (user, text, mood) => receive({ type: 'chat', user, text, mood }),
+    startShowcase: () => {
+      if (!state.preview.enabled) return;
+      startShowcase();
+    },
+    stopShowcase: () => {
+      if (!state.preview.enabled) return;
+      stopShowcase();
+    }
   };
 
   bootstrap();
