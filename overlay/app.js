@@ -1,6 +1,6 @@
 (function () {
   const overlayRoot = document.getElementById('overlay-root');
-  const lantern = document.getElementById('lantern');
+  const eyeRoot = document.getElementById('lantern');
   const chatList = document.getElementById('chat-list');
   const chatInputForm = document.getElementById('chat-input-form');
   const chatInput = document.getElementById('chat-input');
@@ -9,179 +9,138 @@
   const params = new URLSearchParams(window.location.search);
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
-  const config = {
-    states: ['asleep', 'awake', 'warm', 'agitated', 'breaking', 'cursed', 'dead', 'overgrown'],
-    decayMs: 1600,
-    particleMs: 170,
-    sampleMessages: [
-      { user: 'lantern', text: 'whisper to wake the flame.' },
-      { user: 'shade', text: 'kind words warm it, chaos breaks it.' },
-      { user: 'root', text: testingMode ? 'testing input is enabled.' : 'awaiting live chat link.' }
-    ],
-    keywordToState: {
-      asleep: ['sleepy', 'rest', 'quiet', 'calm down', 'sleep'],
-      awake: ['hello', 'hi', 'hey', 'wake', 'watching'],
-      warm: ['love', 'cute', 'cozy', 'gentle', 'safe', 'sweet', 'hug', 'lovely', 'warm'],
-      agitated: ['angry', 'rage', 'burn', 'fire', 'mad', 'chaos', 'scream', 'explode', 'wild'],
-      breaking: ['crack', 'break', 'shatter', 'overload', 'too much', 'pressure', 'burst'],
-      cursed: ['cursed', 'demon', 'hex', 'void', 'haunt', 'possessed', 'consume', 'hollow', 'rot'],
-      dead: ['dead', 'gone', 'empty', 'extinguish', 'cold', 'faded'],
-      overgrown: ['vine', 'roots', 'overgrown', 'bloom', 'ivy', 'thorn', 'leaves', 'reclaim']
-    },
-    stateVariants: {
-      asleep: 'asleep-ember',
-      awake: 'base',
-      warm: 'warm-sparkles',
-      agitated: 'agitated-flare',
-      breaking: 'breaking-flash',
-      cursed: 'cursed-haze',
-      dead: 'dead-smolder',
-      overgrown: 'overgrown-vines'
-    }
+  const SCORE_MAX = 10;
+  const STATE_ORDER = ['awakened', 'overgrown', 'corrupted', 'rotten'];
+  const STATE_ALIAS = { alive: 'awakened', alert: 'overgrown', zombified: 'rotten' };
+
+  const keywords = {
+    corrupt: ['ghost', 'demon', 'cursed', 'run', 'hunt'],
+    heal: ['chill', 'safe', 'love', 'okay', 'cute'],
+    reset: ['wake', 'blink', 'revive']
   };
 
   const state = {
-    mode: { testing: testingMode },
-    reactive: {
-      state: 'awake',
-      holdMs: 0,
-      lastChange: Date.now()
-    },
-    render: {
-      state: 'awake',
-      variant: 'base'
-    },
+    testingMode,
+    corruptionScore: 0,
+    renderedState: 'awakened',
+    look: 'center',
     timers: {
-      decay: null,
-      particles: null
+      particles: null,
+      blinkCleanup: null,
+      bloomCleanup: null
     }
   };
 
-  function random(min, max) {
-    return Math.random() * (max - min) + min;
+  function clampScore(value) {
+    return Math.max(0, Math.min(SCORE_MAX, Math.round(value)));
   }
 
-  function setStateVisual(nextState, reason = 'render') {
-    if (!config.states.includes(nextState)) return;
-    const variant = config.stateVariants[nextState] || 'base';
-
-    config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
-    lantern.classList.add(`state-${nextState}`);
-    lantern.dataset.variant = variant;
-    overlayRoot.dataset.state = nextState;
-
-    state.render.state = nextState;
-    state.render.variant = variant;
-
-    if (nextState === 'agitated' || nextState === 'breaking' || nextState === 'cursed') pulseBurst();
-
-    console.log(`[LanternOverlay] rendered state: ${nextState} (variant: ${variant}, reason: ${reason})`);
-    updateTinyStatus();
+  function deriveStateFromScore(score = state.corruptionScore) {
+    if (score <= 1) return 'awakened';
+    if (score <= 3) return 'overgrown';
+    if (score <= 5) return 'corrupted';
+    return 'rotten';
   }
 
-  function pulseBurst() {
-    lantern.classList.remove('burst');
-    requestAnimationFrame(() => lantern.classList.add('burst'));
+  function stateToScore(nextState) {
+    if (nextState === 'awakened') return 0;
+    if (nextState === 'overgrown') return 2;
+    if (nextState === 'corrupted') return 4;
+    return 6;
   }
 
-  function emitParticle(type) {
-    const layer = lantern.querySelector(`.particle-layer.${type}`);
-    if (!layer) return;
-
-    const particle = document.createElement('span');
-    particle.className = `particle ${type}`;
-    particle.style.left = `${random(80, 148)}px`;
-    particle.style.top = `${random(88, 142)}px`;
-    particle.style.setProperty('--dx', `${random(-24, 30)}px`);
-    particle.style.setProperty('--dy', `${random(-92, -36)}px`);
-    particle.style.animationDuration = `${random(1.2, 3.5)}s`;
-    layer.appendChild(particle);
-    setTimeout(() => particle.remove(), 3600);
+  function render(reason = 'render') {
+    const derivedState = deriveStateFromScore();
+    STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
+    eyeRoot.classList.add(`state-${derivedState}`);
+    overlayRoot.dataset.state = derivedState;
+    state.renderedState = derivedState;
+    updateStatus();
+    console.log(`[ChatEye] render state=${derivedState} score=${state.corruptionScore} reason=${reason}`);
   }
 
-  function emitAmbientParticles() {
-    const current = state.render.state;
-
-    if (current === 'asleep') {
-      if (Math.random() > 0.996) emitParticle('ash');
-      return;
-    }
-
-    if (current === 'awake') {
-      if (Math.random() > 0.78) emitParticle('warm');
-      return;
-    }
-
-    if (current === 'warm') {
-      emitParticle('warm');
-      if (Math.random() > 0.45) emitParticle('warm');
-      return;
-    }
-
-    if (current === 'agitated') {
-      emitParticle('ash');
-      emitParticle('warm');
-      if (Math.random() > 0.52) pulseBurst();
-      return;
-    }
-
-    if (current === 'breaking') {
-      emitParticle('ash');
-      emitParticle('ash');
-      if (Math.random() > 0.55) emitParticle('warm');
-      if (Math.random() > 0.5) pulseBurst();
-      return;
-    }
-
-    if (current === 'cursed') {
-      emitParticle('smoke');
-      emitParticle('smoke');
-      if (Math.random() > 0.58) emitParticle('ash');
-      return;
-    }
-
-    if (current === 'dead') {
-      if (Math.random() > 0.9) emitParticle('smoke');
-      return;
-    }
-
-    if (current === 'overgrown') {
-      emitParticle('leaves');
-      if (Math.random() > 0.63) emitParticle('smoke');
-    }
+  function updateStatus() {
+    if (!testingMode) return;
+    tinyStatus.textContent = `TEST • score: ${state.corruptionScore} • state: ${state.renderedState}`;
   }
 
-  function detectStateFromText(text) {
-    const msg = String(text || '').toLowerCase();
-    for (const moodState of config.states) {
-      const tokens = config.keywordToState[moodState] || [];
-      if (tokens.some((token) => msg.includes(token))) {
-        return moodState;
-      }
+  function burst(type = 'pulse') {
+    eyeRoot.classList.remove('burst');
+    eyeRoot.classList.remove('stress');
+    if (type === 'stress') {
+      requestAnimationFrame(() => eyeRoot.classList.add('stress'));
+      return;
     }
-    return null;
+    requestAnimationFrame(() => eyeRoot.classList.add('burst'));
   }
 
-  function applyChatInfluence(text, source = 'chat') {
-    const directState = detectStateFromText(text);
+  function blink() {
+    eyeRoot.classList.remove('blink');
+    requestAnimationFrame(() => eyeRoot.classList.add('blink'));
+    clearTimeout(state.timers.blinkCleanup);
+    state.timers.blinkCleanup = setTimeout(() => eyeRoot.classList.remove('blink'), 500);
+  }
 
-    if (directState) {
-      state.reactive.state = directState;
-      state.reactive.lastChange = Date.now();
-      state.reactive.holdMs = state.mode.testing ? 9000 : 5200;
-      setStateVisual(directState, `typed-${source}`);
+  function bloom() {
+    eyeRoot.classList.remove('bloom');
+    requestAnimationFrame(() => eyeRoot.classList.add('bloom'));
+    clearTimeout(state.timers.bloomCleanup);
+    state.timers.bloomCleanup = setTimeout(() => eyeRoot.classList.remove('bloom'), 900);
+  }
+
+  function setLook(direction) {
+    const next = ['left', 'right', 'center'].includes(direction) ? direction : 'center';
+    state.look = next;
+    eyeRoot.dataset.look = next;
+  }
+
+  function mutateScore(delta, reason) {
+    state.corruptionScore = clampScore(state.corruptionScore + delta);
+    render(reason);
+  }
+
+  function setScore(value, reason = 'setScore') {
+    state.corruptionScore = clampScore(value);
+    render(reason);
+  }
+
+  function setState(nextStateRaw, reason = 'setState') {
+    const alias = String(nextStateRaw || '').toLowerCase();
+    const normalized = STATE_ALIAS[alias] || alias;
+    if (!STATE_ORDER.includes(normalized)) return;
+    setScore(stateToScore(normalized), reason);
+  }
+
+  function tokenize(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  function applyMessageTriggers(text, source = 'chat') {
+    const words = tokenize(text);
+    let delta = 0;
+    let sawReset = false;
+
+    for (const word of words) {
+      if (keywords.corrupt.includes(word)) delta += 1;
+      if (keywords.heal.includes(word)) delta -= 1;
+      if (keywords.reset.includes(word)) sawReset = true;
+    }
+
+    if (sawReset) {
+      setScore(0, `${source}:reset`);
+      bloom();
+      blink();
       return;
     }
 
-    if (state.mode.testing) {
-      setStateVisual('awake', `typed-${source}-fallback`);
-      return;
+    if (delta !== 0) {
+      mutateScore(delta, `${source}:delta(${delta})`);
+      if (delta > 0) burst(state.corruptionScore >= 6 ? 'stress' : 'pulse');
     }
-
-    state.reactive.state = 'awake';
-    state.reactive.lastChange = Date.now();
-    state.reactive.holdMs = 1600;
-    setStateVisual('awake', `typed-${source}-fallback`);
   }
 
   function appendChat(user, text) {
@@ -191,33 +150,71 @@
     while (chatList.children.length > 6) chatList.removeChild(chatList.lastChild);
   }
 
+  function emitParticle(type) {
+    const layer = eyeRoot.querySelector(`.particle-layer.${type}`);
+    if (!layer) return;
+    const p = document.createElement('span');
+    p.className = `particle ${type}`;
+    p.style.left = `${80 + Math.random() * 65}px`;
+    p.style.top = `${86 + Math.random() * 56}px`;
+    p.style.setProperty('--dx', `${-22 + Math.random() * 44}px`);
+    p.style.setProperty('--dy', `${-88 + Math.random() * 52}px`);
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 3200);
+  }
+
+  function ambient() {
+    if (state.renderedState === 'awakened' && Math.random() > 0.75) emitParticle('warm');
+    if (state.renderedState === 'overgrown') {
+      emitParticle('leaves');
+      if (Math.random() > 0.7) emitParticle('warm');
+    }
+    if (state.renderedState === 'corrupted') {
+      emitParticle('ash');
+      if (Math.random() > 0.6) emitParticle('smoke');
+    }
+    if (state.renderedState === 'rotten') {
+      emitParticle('smoke');
+      if (Math.random() > 0.55) emitParticle('ash');
+    }
+  }
+
+  function action(name) {
+    const act = String(name || '').toLowerCase();
+    if (act === 'blink') blink();
+    if (act === 'lookleft') setLook('left');
+    if (act === 'lookright') setLook('right');
+    if (act === 'corrupt') mutateScore(1, 'action:corrupt');
+    if (act === 'heal') mutateScore(-1, 'action:heal');
+    if (act === 'reset') {
+      setScore(0, 'action:reset');
+      bloom();
+      blink();
+    }
+  }
+
+  function receive(payload = {}) {
+    const type = String(payload.type || '').toLowerCase();
+
+    if (type === 'chat' && payload.text) {
+      appendChat(payload.user || 'chat', payload.text);
+      applyMessageTriggers(payload.text, 'receive:chat');
+    }
+
+    if (type === 'action' && payload.action) action(payload.action);
+    if (type === 'setscore') setScore(Number(payload.value ?? 0), 'receive:setScore');
+    if (type === 'setstate' && payload.state) setState(payload.state, 'receive:setState');
+  }
+
   function handleTypedMessage(rawText) {
-    const message = String(rawText || '').trim();
-    if (!message) return;
-
-    appendChat('you', message);
-    applyChatInfluence(message, 'input');
-  }
-
-  function updateTinyStatus() {
-    if (!state.mode.testing) return;
-    tinyStatus.textContent = `TEST • rendered: ${state.render.state}`;
-  }
-
-  function startDecayLoop() {
-    state.timers.decay = setInterval(() => {
-      if (Date.now() - state.reactive.lastChange > state.reactive.holdMs) {
-        if (state.render.state !== 'awake') {
-          state.reactive.state = 'awake';
-          setStateVisual('awake', 'decay-reset');
-        }
-      }
-    }, config.decayMs);
+    const text = String(rawText || '').trim();
+    if (!text) return;
+    appendChat('you', text);
+    applyMessageTriggers(text, 'local-input');
   }
 
   function setupTestingInput() {
-    if (!state.mode.testing) return;
-
+    if (!testingMode) return;
     overlayRoot.dataset.mode = 'test';
     chatInputForm.hidden = false;
     tinyStatus.hidden = false;
@@ -228,58 +225,27 @@
       chatInput.value = '';
       chatInput.focus();
     });
-
-    chatInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        handleTypedMessage(chatInput.value);
-        chatInput.value = '';
-      }
-    });
   }
 
   function bootstrapChat() {
-    config.sampleMessages.forEach((msg) => appendChat(msg.user, msg.text));
-  }
-
-  function receive(event = {}) {
-    if (!event || typeof event !== 'object') return;
-
-    const type = String(event.type || '').toLowerCase();
-
-    if (type === 'chat' && event.user && event.text) {
-      appendChat(event.user, event.text);
-      applyChatInfluence(event.text, 'external-chat');
-    }
-
-    if (type === 'setstate' && config.states.includes(String(event.state).toLowerCase())) {
-      const nextState = String(event.state).toLowerCase();
-      state.reactive.state = nextState;
-      state.reactive.lastChange = Date.now();
-      state.reactive.holdMs = 6000;
-      setStateVisual(nextState, 'api-setstate');
-    }
-
-    if (type === 'triggermood') {
-      applyChatInfluence(String(event.mood || ''), 'api-mood');
-    }
+    appendChat('ivy-eye', 'chat can heal or corrupt me.');
+    if (testingMode) appendChat('ivy-eye', 'type words like: demon / love / wake');
   }
 
   function bootstrap() {
-    bootstrapChat();
     setupTestingInput();
-    setStateVisual('awake', 'bootstrap');
-    startDecayLoop();
-
-    state.timers.particles = setInterval(emitAmbientParticles, config.particleMs);
+    bootstrapChat();
+    setLook('center');
+    render('bootstrap');
+    state.timers.particles = setInterval(ambient, 180);
   }
 
-  window.LanternOverlay = {
+  window.ChatEye = {
     receive,
-    setState: (stateName) => receive({ type: 'setState', state: stateName }),
-    triggerMood: (mood) => receive({ type: 'triggerMood', mood }),
-    pushChat: (user, text) => receive({ type: 'chat', user, text }),
-    sendLocalMessage: (text) => handleTypedMessage(text)
+    setScore: (value) => setScore(value, 'api:setScore'),
+    setState: (name) => setState(name, 'api:setState'),
+    action,
+    sendLocalMessage: handleTypedMessage
   };
 
   bootstrap();
