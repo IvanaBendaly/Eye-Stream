@@ -39,6 +39,7 @@ html, body {
   animation: float 5.4s ease-in-out infinite;
   filter: drop-shadow(0 20px 18px rgba(0, 0, 0, 0.46));
   transform-origin: 50% 20%;
+  transition: transform 180ms ease, filter 180ms ease;
 }
 .lantern, .lantern * { pointer-events: none; }
 
@@ -145,8 +146,6 @@ html, body {
   transform-origin: center;
   transition: all 200ms ease;
 }
-
-/* flame-first baseline */
 .flame-core {
   left: 28px;
   top: 42px;
@@ -202,29 +201,33 @@ html, body {
 .lantern.blink .flame-inner { transform: scale(0.1); opacity: 0; }
 .lantern.bloom .lantern-halo { transform: scale(1.18); }
 
+/* per-trigger feedback */
+.lantern.react-heal { transform: scale(1.045); }
+.lantern.react-heal .lantern-halo { filter: brightness(1.25) saturate(1.2); }
+.lantern.react-heal .flame-core { transform: scale(1.06, 0.94); }
+
+.lantern.react-corrupt { transform: scale(1.03) rotate(-1deg); }
+.lantern.react-corrupt .flame-core { filter: hue-rotate(25deg) saturate(1.2); }
+.lantern.react-corrupt .glass::after { opacity: 0.9; }
+
+.lantern.react-ivy { transform: scale(1.06); }
+.lantern.react-ivy .vine-wrap { opacity: 1; transform: scale(1.14); }
+
 /* ivy buildup levels */
 .lantern.ivy-level-1,
-.lantern.ivy-level-2 {
-  transform: scale(1.01);
-}
+.lantern.ivy-level-2 { transform: scale(1.01); }
 .lantern.ivy-level-1 .vine-wrap,
 .lantern.ivy-level-2 .vine-wrap { opacity: 0.28; }
-.lantern.ivy-level-1 .lantern-halo,
-.lantern.ivy-level-2 .lantern-halo { filter: hue-rotate(24deg); }
 
 .lantern.ivy-level-3,
-.lantern.ivy-level-4 {
-  transform: scale(1.03);
-}
+.lantern.ivy-level-4 { transform: scale(1.03); }
 .lantern.ivy-level-3 .vine-wrap,
 .lantern.ivy-level-4 .vine-wrap { opacity: 0.45; transform: scale(1.03); }
 .lantern.ivy-level-3 .thorn-ring,
 .lantern.ivy-level-4 .thorn-ring { opacity: 0.4; }
 
 .lantern.ivy-level-5,
-.lantern.ivy-level-6 {
-  transform: scale(1.05);
-}
+.lantern.ivy-level-6 { transform: scale(1.05); }
 .lantern.ivy-level-5 .cracks,
 .lantern.ivy-level-6 .cracks { opacity: 0.45; }
 .lantern.ivy-level-5 .vine-wrap,
@@ -251,12 +254,9 @@ html, body {
 .lantern.ivy-level-9 .vine-wrap { opacity: 0.98; transform: scale(1.12); }
 .lantern.ivy-level-9 .lantern-halo { transform: scale(1.14); }
 
-.lantern.ivy-level-10 {
-  transform: scale(1.16);
-}
+.lantern.ivy-level-10 { transform: scale(1.16); }
 
-/* explosion phase classes */
-.lantern.explode { pointer-events: none; }
+/* explosion phases */
 .lantern.explode-charge {
   animation: overloadCharge 260ms ease-in-out infinite alternate;
 }
@@ -265,30 +265,39 @@ html, body {
 .lantern.explode-charge .vine-wrap { opacity: 1 !important; }
 .lantern.explode-charge .lantern-halo { transform: scale(1.25); }
 
-.lantern.explode-shatter {
-  animation: explodeShake 110ms linear 4;
+.lantern.explode-ignition {
+  animation: igniteStretch 220ms ease-in-out infinite alternate;
 }
-.lantern.explode-shatter .glass {
-  filter: brightness(1.5) contrast(1.5);
+.lantern.explode-ignition .flame-core {
+  height: 112px;
+  top: -2px;
+  width: 62px;
+  left: 18px;
+}
+
+.lantern.explode-explosion {
+  animation: explodeShake 110ms linear 5;
+}
+.lantern.explode-explosion .glass {
+  filter: brightness(1.65) contrast(1.55);
   border-color: rgba(255, 232, 219, 0.88);
 }
-.lantern.explode-shatter .cracks { opacity: 1 !important; }
-
-.lantern.explode-burst .burst-ring {
+.lantern.explode-explosion .burst-ring {
   opacity: 1;
   border-width: 2px;
   border-color: rgba(198, 255, 187, 0.98);
   animation: burst 420ms ease-out;
 }
-.lantern.explode-burst .vine-wrap { opacity: 1 !important; transform: scale(1.24) rotate(3deg); }
+.lantern.explode-explosion .vine-wrap { opacity: 1 !important; transform: scale(1.24) rotate(3deg); }
 
 .lantern.explode-aftermath {
-  filter: saturate(0.72) brightness(0.68);
+  filter: saturate(0.72) brightness(0.62);
 }
-.lantern.explode-aftermath .glass { opacity: 0.58; }
+.lantern.explode-aftermath .glass { opacity: 0.5; }
+.lantern.explode-aftermath .flame-core { opacity: 0.7; }
 
 .lantern.explode-rebirth .lantern-halo {
-  animation: rebirthHalo 480ms ease-out;
+  animation: rebirthHalo 520ms ease-out;
 }
 
 .interaction-header,
@@ -418,38 +427,14 @@ html, body {
 
 @keyframes float { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-5px);} }
 @keyframes pulse { 0%,100% { transform: scale(0.95);} 50% { transform: scale(1.05);} }
-@keyframes flameFlicker {
-  0%,100% { transform: scale(0.98, 1.02) translateX(0); }
-  35% { transform: scale(1.06, 0.95) translateX(-1px); }
-  65% { transform: scale(0.92, 1.08) translateX(1px); }
-}
-@keyframes cursedDrift {
-  0%,100% { transform: translate(0,0) scale(1); }
-  35% { transform: translate(-1px, 1px) scale(1.03, 0.98); }
-  70% { transform: translate(1px, -1px) scale(0.96, 1.03); }
-}
-@keyframes pupilTwitch {
-  0%,100% { transform: scale(1) translate(0,0); }
-  42% { transform: scale(0.86, 1.08) translate(1px,0); }
-  77% { transform: scale(1.12, 0.9) translate(-1px,0); }
-}
-@keyframes deadPulse {
-  0%,100% { transform: scale(1); opacity: 0.88; }
-  50% { transform: scale(0.95); opacity: 0.72; }
-}
-@keyframes deadTwitch {
-  0%,92%,100% { transform: translate(0,0); }
-  94% { transform: translate(1px,-1px); }
-  96% { transform: translate(-1px,1px); }
-}
-@keyframes overloadCharge {
-  0% { transform: scale(1.08); }
-  100% { transform: scale(1.17); }
-}
-@keyframes rebirthHalo {
-  0% { transform: scale(0.88); opacity: 0.3; }
-  100% { transform: scale(1.18); opacity: 1; }
-}
+@keyframes flameFlicker { 0%,100% { transform: scale(0.98, 1.02) translateX(0); } 35% { transform: scale(1.06, 0.95) translateX(-1px); } 65% { transform: scale(0.92, 1.08) translateX(1px); } }
+@keyframes cursedDrift { 0%,100% { transform: translate(0,0) scale(1); } 35% { transform: translate(-1px,1px) scale(1.03,0.98); } 70% { transform: translate(1px,-1px) scale(0.96,1.03); } }
+@keyframes pupilTwitch { 0%,100% { transform: scale(1) translate(0,0); } 42% { transform: scale(0.86,1.08) translate(1px,0); } 77% { transform: scale(1.12,0.9) translate(-1px,0); } }
+@keyframes deadPulse { 0%,100% { transform: scale(1); opacity: 0.88; } 50% { transform: scale(0.95); opacity: 0.72; } }
+@keyframes deadTwitch { 0%,92%,100% { transform: translate(0,0); } 94% { transform: translate(1px,-1px); } 96% { transform: translate(-1px,1px); } }
+@keyframes overloadCharge { 0% { transform: scale(1.08); } 100% { transform: scale(1.17); } }
+@keyframes igniteStretch { 0% { transform: scale(1); } 100% { transform: scale(1.06, 1.18); } }
+@keyframes rebirthHalo { 0% { transform: scale(0.88); opacity: 0.3; } 100% { transform: scale(1.18); opacity: 1; } }
 @keyframes drift { 0% { transform: translate(0,0) scale(0.8); opacity: 0;} 15% { opacity: 0.8;} 100% { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0;} }
 @keyframes burst { 0% { opacity: 0.9; transform: scale(0.6);} 100% { opacity: 0; transform: scale(1.6);} }
 @keyframes explodeShake {
