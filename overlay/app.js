@@ -1,423 +1,442 @@
 (function () {
-  const config = {
-    states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    decay: { activity: 0.03, warm: 0.045, chaos: 0.05, curse: 0.022 },
-    keywords: {
-      warm: ['love', 'cute', 'safe', 'cozy', 'gentle', 'calm', 'hug', 'lovely', 'sweet'],
-      chaos: ['run', 'chaos', 'panic', 'fast', 'insane', 'scream', 'cursed', 'hunt', 'wild'],
-      curse: ['void', 'possessed', 'demon', 'hex', 'rot', 'bleed', 'haunt', 'watcher', 'consume', 'hollow']
-    },
-    thresholds: {
-      dormantActivity: 0.18,
-      warmDelta: 0.18,
-      agitatedDelta: 0.2,
-      possessedCurse: 0.84,
-      possessedDurationMs: 12000
-    }
-  };
-
-  const root = document.getElementById('overlay-root');
-  const lantern = document.getElementById('lantern');
-  const testUi = document.getElementById('test-ui');
-  const testStatus = document.getElementById('test-status');
-  const showcaseLabel = document.getElementById('showcase-label');
+  const overlayRoot = document.getElementById('overlay-root');
+  const eyeRoot = document.getElementById('lantern');
+  const chatList = document.getElementById('chat-list');
+  const chatInputForm = document.getElementById('chat-input-form');
+  const chatInput = document.getElementById('chat-input');
+  const tinyStatus = document.getElementById('tiny-status');
+  const interactionHeader = document.getElementById('interaction-header');
+  const explosionField = document.getElementById('explosion-field');
 
   const params = new URLSearchParams(window.location.search);
-  const isTestMode = params.get('mode') === 'test' || params.get('test') === '1';
-  const isShowcaseMode = params.get('mode') === 'showcase' || params.get('showcase') === '1';
-  root.dataset.mode = isShowcaseMode ? 'showcase' : (isTestMode ? 'test' : 'overlay');
+  const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
-  const model = {
-    currentState: 'awake',
-    derivedState: 'awake',
-    renderedState: 'awake',
-    activityLevel: 0.2,
-    warmLevel: 0,
-    chaosLevel: 0,
-    curseLevel: 0,
-    possessedUntil: 0,
-    manualOverride: false,
-    manualState: null,
-    isAutoDemo: false,
-    isShowcase: false,
-    effects: { particles: true, smoke: true, thorns: false },
-    demoTimer: null,
-    decayTimer: null,
-    particleTimer: null,
-    showcaseTimer: null,
-    showcaseStep: 0
+  const IVY_THRESHOLD = 10;
+  const STATE_ORDER = ['blissful', 'awakened', 'curious', 'disturbed', 'corrupted', 'rotting', 'dead'];
+  const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
+
+  const matchConfig = {
+    corruptWords: ['ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death', 'blood', 'kill', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession', 'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'angry', 'burn', 'chaos', 'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness', 'violent', 'insane', 'mad', 'destroy', 'ruin', 'pain', 'torment', 'sinister', 'malicious', 'unholy', 'infected', 'plague', 'parasite', 'zombie', 'hollow'],
+    healWords: ['love', 'lovely', 'cute', 'cozy', 'calm', 'gentle', 'safe', 'okay', 'sweet', 'warm', 'bloom', 'light', 'hope', 'kind', 'peaceful', 'peace', 'comfort', 'serene', 'tranquil', 'pretty', 'soft', 'hug', 'healing', 'heal', 'rest', 'home', 'alive', 'smile', 'happy', 'joy', 'joyful', 'bright', 'angel', 'sunshine', 'breathe', 'relax', 'adorable', 'tender', 'clean', 'comfy'],
+    resetWords: ['wake', 'awaken', 'revive', 'reborn', 'reset', 'blink', 'return', 'restore', 'renew', 'rebirth'],
+    healPhrases: ['calm down', 'safe place'],
+    corruptPhrases: ['fall apart', 'give in']
   };
 
-  const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
-  const random = (min, max) => Math.random() * (max - min) + min;
+  const state = {
+    testingMode,
+    corruptionScore: 0,
+    ivyCounter: 0,
+    renderedState: 'awakened',
+    ivySurgeActive: false,
+    ivyPhase: 'charging',
+    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
+    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null, lookReset: null, peekReveal: null }
+  };
 
-  function setVisualClass(state) {
-    config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
-    lantern.classList.add(`state-${state}`);
-    root.dataset.state = state;
-    model.currentState = state;
-    model.renderedState = state;
-    console.log(`[LanternOverlay] render updated: ${state}`);
+  const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
+
+  function deriveStateFromScore(score = state.corruptionScore) {
+    if (score <= -2) return 'blissful';
+    if (score <= 1) return 'awakened';
+    if (score <= 3) return 'curious';
+    if (score <= 5) return 'disturbed';
+    if (score <= 7) return 'corrupted';
+    if (score <= 9) return 'rotting';
+    return 'dead';
   }
 
-  function applyStateEffects(state = model.renderedState, override = null) {
-    if (override) {
-      model.effects.particles = override.particles;
-      model.effects.smoke = override.smoke;
-      model.effects.thorns = override.thorns;
-    } else if (state === 'possessed') {
-      model.effects.thorns = true;
-      model.effects.smoke = true;
-    } else if (state === 'dormant' && !model.manualOverride) {
-      model.effects.smoke = false;
-      model.effects.thorns = false;
-    } else if (!model.manualOverride && state === 'awake') {
-      model.effects.thorns = false;
-      model.effects.smoke = true;
-    }
+  function stateToScore(nextState) {
+    if (nextState === 'blissful') return -2;
+    if (nextState === 'awakened') return 0;
+    if (nextState === 'curious') return 2;
+    if (nextState === 'disturbed') return 4;
+    if (nextState === 'corrupted') return 6;
+    if (nextState === 'rotting') return 8;
+    return 10;
+  }
 
-    lantern.dataset.particles = model.effects.particles ? 'on' : 'off';
-    lantern.dataset.smoke = model.effects.smoke ? 'on' : 'off';
-    lantern.dataset.thorns = model.effects.thorns ? 'on' : 'off';
+  function deriveIvyPhase() {
+    if (state.ivySurgeActive) return state.ivyPhase;
+    if (state.ivyCounter >= IVY_THRESHOLD - 2) return 'warning';
+    return 'charging';
+  }
+
+  function resetDebug() {
+    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 };
   }
 
   function updateStatus() {
-    if (!isTestMode || !testStatus) return;
-    testStatus.textContent = [
-      `manualOverride: ${model.manualOverride ? 'on' : 'off'}`,
-      `manualState: ${model.manualState || '-'}`,
-      `showcase: ${model.isShowcase ? 'on' : 'off'}`,
-      `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
-      `derivedState: ${model.derivedState}`,
-      `renderedState: ${model.renderedState}`
-    ].join(' • ');
-  }
+    if (!testingMode) return;
 
-  function setShowcaseLabel(text) {
-    if (!showcaseLabel) return;
-    showcaseLabel.textContent = `Showcase • ${text}`;
-  }
-
-  function deriveStateFromMeters(reason = 'auto') {
-    const now = Date.now();
-    if (now < model.possessedUntil) {
-      model.derivedState = 'possessed';
-      console.log(`[LanternOverlay] derived auto state: possessed (reason: possessed-hold/${reason})`);
-      return 'possessed';
+    const phase = deriveIvyPhase().toUpperCase();
+    if (state.ivySurgeActive) {
+      tinyStatus.textContent = `TEST • IVY PEEK ACTIVE • PHASE: ${phase}`;
+      return;
     }
 
-    if (model.curseLevel >= config.thresholds.possessedCurse) {
-      model.possessedUntil = now + config.thresholds.possessedDurationMs;
-      model.curseLevel = clamp(model.curseLevel * 0.55);
-      model.derivedState = 'possessed';
-      console.log(`[LanternOverlay] derived auto state: possessed (reason: curse-threshold/${reason})`);
-      return 'possessed';
-    }
-
-    const warmBias = model.warmLevel - model.chaosLevel;
-    const chaosBias = model.chaosLevel - model.warmLevel;
-
-    let next = 'awake';
-    if (model.activityLevel < config.thresholds.dormantActivity && model.warmLevel < 0.2 && model.chaosLevel < 0.2) {
-      next = 'dormant';
-    } else if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) {
-      next = 'warm';
-    } else if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) {
-      next = 'agitated';
-    }
-
-    model.derivedState = next;
-    console.log(`[LanternOverlay] derived auto state: ${next} (reason: ${reason})`);
-    return next;
+    const c = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
+    const h = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
+    const d = state.debug.delta > 0 ? `+${state.debug.delta}` : `${state.debug.delta}`;
+    tinyStatus.textContent = `TEST • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
   }
 
-  function forceRenderState(state, options = {}) {
-    const effects = options.effects || null;
-    setVisualClass(state);
-    applyStateEffects(state, effects);
-    if (showcaseLabel && model.isShowcase) setShowcaseLabel(options.label || state);
+  function render(reason = 'render') {
+    const derived = deriveStateFromScore();
+    STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
+    eyeRoot.classList.add(`state-${derived}`);
+    overlayRoot.dataset.state = derived;
+    state.renderedState = derived;
+
+    for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
+    eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
+
+    eyeRoot.classList.remove('ivy-charge', 'ivy-warning', 'ivy-surge', 'ivy-cooldown');
+    const phase = deriveIvyPhase();
+    if (phase === 'charging') eyeRoot.classList.add('ivy-charge');
+    if (phase === 'warning') eyeRoot.classList.add('ivy-warning');
+    if (phase === 'surge') eyeRoot.classList.add('ivy-surge');
+    if (phase === 'cooldown') eyeRoot.classList.add('ivy-cooldown');
+
     updateStatus();
-    console.log(`[LanternOverlay] force rendered state: ${state}${options.label ? ` (${options.label})` : ''}`);
-    if (options.burst) pulseBurst(options.burst);
+    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ivyPhase=${phase} reason=${reason}`);
   }
 
-  function render(reason = 'unknown') {
-    if (model.isShowcase) return;
-
-    const stateToRender = model.manualOverride && model.manualState
-      ? model.manualState
-      : deriveStateFromMeters(reason);
-
-    const source = model.manualOverride && model.manualState ? 'manual override' : 'auto resolver';
-    setVisualClass(stateToRender);
-    applyStateEffects(stateToRender);
-    updateStatus();
-    console.log(`[LanternOverlay] final rendered state: ${stateToRender} (source: ${source}, reason: ${reason})`);
+  function blink() {
+    eyeRoot.classList.remove('blink');
+    requestAnimationFrame(() => eyeRoot.classList.add('blink'));
+    clearTimeout(state.timers.blinkCleanup);
+    state.timers.blinkCleanup = setTimeout(() => eyeRoot.classList.remove('blink'), 460);
   }
 
-  function stopDemo() {
-    if (!model.demoTimer) return;
-    clearInterval(model.demoTimer);
-    model.demoTimer = null;
-    model.isAutoDemo = false;
+  function bloom() {
+    eyeRoot.classList.remove('bloom');
+    requestAnimationFrame(() => eyeRoot.classList.add('bloom'));
+    clearTimeout(state.timers.bloomCleanup);
+    state.timers.bloomCleanup = setTimeout(() => eyeRoot.classList.remove('bloom'), 900);
   }
 
-  function stopShowcase() {
-    if (model.showcaseTimer) {
-      clearTimeout(model.showcaseTimer);
-      model.showcaseTimer = null;
+  function burst(type = 'pulse') {
+    eyeRoot.classList.remove('burst', 'stress');
+    requestAnimationFrame(() => eyeRoot.classList.add(type === 'stress' ? 'stress' : 'burst'));
+  }
+
+  function triggerReaction(kind = 'heal') {
+    eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral');
+    const cls = kind === 'corrupt' ? 'react-corrupt' : (kind === 'ivy' ? 'react-ivy' : 'react-heal');
+    requestAnimationFrame(() => eyeRoot.classList.add(cls));
+    clearTimeout(state.timers.reactionCleanup);
+    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral'), 420);
+  }
+
+
+  function glance(kind = 'neutral') {
+    if (kind === 'heal') eyeRoot.dataset.look = Math.random() > 0.5 ? 'left' : 'right';
+    else if (kind === 'corrupt') eyeRoot.dataset.look = Math.random() > 0.5 ? 'right' : 'left';
+    else eyeRoot.dataset.look = Math.random() > 0.55 ? 'left' : (Math.random() > 0.5 ? 'right' : 'center');
+
+    clearTimeout(state.timers.lookReset);
+    state.timers.lookReset = setTimeout(() => {
+      eyeRoot.dataset.look = 'center';
+    }, 300);
+  }
+
+  function triggerMessageResponse(kind = 'neutral') {
+    eyeRoot.classList.remove('message-ping');
+    requestAnimationFrame(() => eyeRoot.classList.add('message-ping'));
+    burst('pulse');
+    glance(kind);
+    clearTimeout(state.timers.messageCleanup);
+    state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 320);
+
+    if (kind === 'ivy') {
+      triggerReaction('ivy');
+      burst('stress');
+      blink();
+      return;
     }
-    model.isShowcase = false;
-    model.showcaseStep = 0;
-    if (showcaseLabel) showcaseLabel.hidden = true;
+
+    if (kind === 'corrupt') {
+      triggerReaction('corrupt');
+      burst('pulse');
+      return;
+    }
+
+    if (kind === 'heal') {
+      triggerReaction('heal');
+      bloom();
+      return;
+    }
+
+    eyeRoot.classList.remove('react-neutral');
+    requestAnimationFrame(() => eyeRoot.classList.add('react-neutral'));
+    blink();
   }
 
-  function startShowcase() {
-    stopDemo();
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    model.isShowcase = true;
-    root.dataset.mode = 'showcase';
-    if (showcaseLabel) showcaseLabel.hidden = false;
-
-    const sequence = [
-      { state: 'dormant', label: 'Dormant', ms: 2800, effects: { particles: false, smoke: false, thorns: false } },
-      { state: 'awake', label: 'Awake', ms: 2700, effects: { particles: true, smoke: true, thorns: false } },
-      { state: 'warm', label: 'Warm/Fond', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
-      { state: 'agitated', label: 'Agitated', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
-      { state: 'possessed', label: 'Possessed', ms: 3200, effects: { particles: true, smoke: true, thorns: true } },
-      { state: 'warm', label: 'Warm/Fond + Particles', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'kind' },
-      { state: 'agitated', label: 'Agitated + Sharp Flicker', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'chaos' },
-      { state: 'possessed', label: 'Possessed + Smoke', ms: 2600, effects: { particles: true, smoke: true, thorns: false } },
-      { state: 'possessed', label: 'Possessed + Thorns/Cracks', ms: 2600, effects: { particles: true, smoke: true, thorns: true } },
-      { state: 'possessed', label: 'Possessed + Curse Burst', ms: 2800, effects: { particles: true, smoke: true, thorns: true }, burst: 'curse' }
-    ];
-
-    const runStep = () => {
-      if (!model.isShowcase) return;
-      const step = sequence[model.showcaseStep % sequence.length];
-      model.showcaseStep += 1;
-      forceRenderState(step.state, step);
-      model.showcaseTimer = setTimeout(runStep, step.ms);
-    };
-
-    runStep();
+  function emitExternalDebris(amount = 24) {
+    if (!explosionField) return;
+    for (let i = 0; i < amount; i += 1) {
+      const r = Math.random();
+      const type = r > 0.72 ? 'ember' : (r > 0.42 ? 'spore' : 'smoke');
+      const d = document.createElement('span');
+      d.className = `debris ${type}`;
+      d.style.left = `${108 + (Math.random() * 30 - 15)}px`;
+      d.style.top = `${102 + (Math.random() * 18 - 9)}px`;
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 84}px`);
+      d.style.setProperty('--dy', `${(Math.random() * -86) - 10}px`);
+      d.style.animationDuration = `${920 + Math.random() * 760}ms`;
+      explosionField.appendChild(d);
+      setTimeout(() => d.remove(), 1900);
+    }
   }
 
-  function setManualState(state, source = 'api') {
-    if (!config.states.includes(state)) return;
-    if (model.isShowcase) return;
-    console.log(`[LanternOverlay] clicked state button: ${state} (${source})`);
-    stopDemo();
-    model.manualOverride = true;
-    model.manualState = state;
-    console.log(`[LanternOverlay] requested manual state: ${state}`);
-    console.log('[LanternOverlay] manual override enabled');
-    render('manual-state');
+  function triggerIvyHitFeedback(intensity = 1) {
+    triggerReaction('ivy');
+    eyeRoot.classList.remove('ivy-surge-hit');
+    requestAnimationFrame(() => eyeRoot.classList.add('ivy-surge-hit'));
+    clearTimeout(state.timers.ivyHitCleanup);
+    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 440);
+
+    const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
+    burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
+    emitParticle('warm');
+    if (Math.random() > 0.45 || nearing) emitParticle('ash');
+    if (Math.random() > 0.65 || nearing) emitParticle('smoke');
   }
 
-  function resumeAutoMode() {
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    root.dataset.mode = isTestMode ? 'test' : 'overlay';
-    console.log('[LanternOverlay] manual override disabled; resumed auto mode');
-    render('resume-auto');
+  function setScore(value, reason = 'setScore') {
+    state.corruptionScore = clampScore(value);
+    render(reason);
+  }
+
+  function mutateScore(delta, reason = 'mutate') {
+    setScore(state.corruptionScore + delta, reason);
+  }
+
+  function setState(nextStateRaw, reason = 'setState') {
+    const alias = String(nextStateRaw || '').toLowerCase();
+    const normalized = STATE_ALIAS[alias] || alias;
+    if (!STATE_ORDER.includes(normalized)) return;
+    setScore(stateToScore(normalized), reason);
+  }
+
+  function tokenize(text) {
+    return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  }
+
+  function performIvySurge(source = 'ivySurge') {
+    if (state.ivySurgeActive) return;
+
+    state.ivySurgeActive = true;
+    state.debug.surgeActive = true;
+
+    state.ivyPhase = 'surge';
+    eyeRoot.classList.remove('ivy-peek-open');
+    render(`${source}:surge`);
+    blink();
+    burst('stress');
+    emitExternalDebris(10);
+
+    clearTimeout(state.timers.peekReveal);
+    state.timers.peekReveal = setTimeout(() => {
+      eyeRoot.classList.add('ivy-peek-open');
+    }, 260);
+
+    clearTimeout(state.timers.ritualStep);
+    state.timers.ritualStep = setTimeout(() => {
+      state.ivyPhase = 'cooldown';
+      state.ivyCounter = 0;
+      eyeRoot.classList.remove('ivy-peek-open');
+      render(`${source}:cooldown`);
+      emitExternalDebris(4);
+    }, 2300);
+
+    clearTimeout(state.timers.ritualCleanup);
+    state.timers.ritualCleanup = setTimeout(() => {
+      state.ivySurgeActive = false;
+      state.ivyPhase = 'charging';
+      eyeRoot.classList.remove('ivy-peek-open');
+      state.debug.surgeActive = false;
+      render(`${source}:reset`);
+      updateStatus();
+    }, 3200);
+  }
+
+  function applyPhraseMatches(normalizedText) {
+    for (const phrase of matchConfig.healPhrases) {
+      if (normalizedText.includes(phrase)) {
+        state.debug.matchedHeal.push(phrase);
+        state.debug.delta -= 1;
+      }
+    }
+    for (const phrase of matchConfig.corruptPhrases) {
+      if (normalizedText.includes(phrase)) {
+        state.debug.matchedCorrupt.push(phrase);
+        state.debug.delta += 1;
+      }
+    }
+  }
+
+  function applyMessageTriggers(text, source = 'chat') {
+    resetDebug();
+    const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
+    const words = tokenize(normalizedText);
+    applyPhraseMatches(normalizedText);
+
+    for (const word of words) {
+      if (word === 'ivy') {
+        state.debug.ivyHits += 1;
+        continue;
+      }
+      if (matchConfig.corruptWords.includes(word)) {
+        state.debug.matchedCorrupt.push(word);
+        state.debug.delta += 1;
+      }
+      if (matchConfig.healWords.includes(word)) {
+        state.debug.matchedHeal.push(word);
+        state.debug.delta -= 1;
+      }
+      if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
+    }
+
+    let messageKind = 'neutral';
+
+    if (state.debug.ivyHits > 0) {
+      if (!state.ivySurgeActive) {
+        state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
+      }
+      triggerIvyHitFeedback(state.debug.ivyHits);
+      messageKind = 'ivy';
+    }
+
+    if (state.debug.resetTriggered) {
+      setScore(0, `${source}:resetWord`);
+      bloom();
+      blink();
+      if (messageKind === 'neutral') messageKind = 'heal';
+    } else if (state.debug.delta !== 0) {
+      mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
+      if (state.debug.delta > 0) {
+        messageKind = messageKind === 'ivy' ? 'ivy' : 'corrupt';
+      }
+      if (state.debug.delta < 0) {
+        if (messageKind === 'neutral') messageKind = 'heal';
+      }
+    }
+
+    triggerMessageResponse(messageKind);
+
+    if (state.ivyCounter >= IVY_THRESHOLD && !state.ivySurgeActive) {
+      performIvySurge(`${source}:ivy`);
+      return;
+    }
+
+    render(`${source}:post`);
+  }
+
+  function appendChat(user, text) {
+    const item = document.createElement('li');
+    item.innerHTML = `<span class="tag">${user}</span>${text}`;
+    chatList.prepend(item);
+    while (chatList.children.length > 6) chatList.removeChild(chatList.lastChild);
   }
 
   function emitParticle(type) {
-    if ((type === 'smoke' && !model.effects.smoke) || (!model.effects.particles && type !== 'smoke')) return;
-    const layer = lantern.querySelector(`.particle-layer.${type}`);
+    const layer = eyeRoot.querySelector(`.particle-layer.${type}`);
     if (!layer) return;
-
     const p = document.createElement('span');
     p.className = `particle ${type}`;
-    p.style.left = `${random(82, 138)}px`;
-    p.style.top = `${random(96, 138)}px`;
-    p.style.setProperty('--dx', `${random(-16, 20)}px`);
-    p.style.setProperty('--dy', `${random(-72, -36)}px`);
-    p.style.animationDuration = `${random(1.6, 3.4)}s`;
+    p.style.left = `${80 + Math.random() * 65}px`;
+    p.style.top = `${86 + Math.random() * 56}px`;
+    p.style.setProperty('--dx', `${-22 + Math.random() * 44}px`);
+    p.style.setProperty('--dy', `${-88 + Math.random() * 52}px`);
     layer.appendChild(p);
-    setTimeout(() => p.remove(), 3800);
+    setTimeout(() => p.remove(), 3200);
   }
 
-  function pulseBurst(kind) {
-    lantern.classList.remove('burst');
-    requestAnimationFrame(() => lantern.classList.add('burst'));
-    if (kind === 'kind') for (let i = 0; i < 5; i += 1) setTimeout(() => emitParticle('warm'), i * 65);
-    if (kind === 'chaos') for (let i = 0; i < 6; i += 1) setTimeout(() => emitParticle('ash'), i * 50);
-    if (kind === 'curse') for (let i = 0; i < 7; i += 1) setTimeout(() => emitParticle('smoke'), i * 55);
-  }
-
-  function addActivity(amount = 0.1) {
-    model.activityLevel = clamp(model.activityLevel + amount * 0.1);
-    render('add-activity');
-  }
-
-  function toggleEffect(effect, value) {
-    if (!(effect in model.effects)) return;
-    model.effects[effect] = typeof value === 'boolean' ? value : !model.effects[effect];
-    applyStateEffects(model.renderedState);
-    updateStatus();
-  }
-
-  function triggerBurst(kind, options = {}) {
-    const amount = options.amount ?? 0.12;
-    if (kind === 'kind') {
-      model.warmLevel = clamp(model.warmLevel + amount * 1.35);
-      model.chaosLevel = clamp(model.chaosLevel - amount * 0.28);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.25);
-    }
-    if (kind === 'chaos') {
-      model.chaosLevel = clamp(model.chaosLevel + amount * 1.45);
-      model.warmLevel = clamp(model.warmLevel - amount * 0.2);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.38);
-    }
-    if (kind === 'curse') {
-      model.curseLevel = clamp(model.curseLevel + amount * 1.5);
-      model.chaosLevel = clamp(model.chaosLevel + amount * 0.5);
-      model.activityLevel = clamp(model.activityLevel + amount * 1.4);
-      model.effects.thorns = true;
-      applyStateEffects();
-    }
-
-    pulseBurst(kind);
-    render(`trigger-burst:${kind}`);
-  }
-
-  function parseChatText(text = '') {
-    const msg = String(text).toLowerCase();
-    const scoreKeyword = (list) => list.reduce((acc, token) => acc + (msg.includes(token) ? 1 : 0), 0);
-    const warmHits = scoreKeyword(config.keywords.warm);
-    const chaosHits = scoreKeyword(config.keywords.chaos);
-    const curseHits = scoreKeyword(config.keywords.curse);
-
-    if (warmHits + chaosHits + curseHits === 0) addActivity(0.4);
-    if (warmHits) triggerBurst('kind', { amount: warmHits * 0.11 });
-    if (chaosHits) triggerBurst('chaos', { amount: chaosHits * 0.11 });
-    if (curseHits) triggerBurst('curse', { amount: curseHits * 0.14 });
-  }
-
-  function applyDecayTick() {
-    model.activityLevel = clamp(model.activityLevel - config.decay.activity);
-    model.warmLevel = clamp(model.warmLevel - config.decay.warm);
-    model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
-    model.curseLevel = clamp(model.curseLevel - config.decay.curse);
-
-    if (model.manualOverride || model.isShowcase) {
-      updateStatus();
+  function ambient() {
+    if (state.ivySurgeActive) {
+      emitParticle('warm');
+      if (Math.random() > 0.45) emitParticle('smoke');
       return;
     }
 
-    render('decay');
-  }
-
-  function startAmbientLoop() {
-    if (model.particleTimer) clearInterval(model.particleTimer);
-    model.particleTimer = setInterval(() => {
-      if (model.renderedState === 'warm') emitParticle('warm');
-      if (model.renderedState === 'agitated') emitParticle('ash');
-      if (model.renderedState === 'possessed') emitParticle('smoke');
-      if (model.renderedState === 'awake' && Math.random() > 0.55) emitParticle('warm');
-    }, 340);
-  }
-
-  function toggleDemo() {
-    if (model.demoTimer) {
-      stopDemo();
-      resumeAutoMode();
-      return;
+    if (['blissful', 'awakened'].includes(state.renderedState)) {
+      if (Math.random() > 0.65) emitParticle('warm');
+    } else if (['curious', 'disturbed'].includes(state.renderedState)) {
+      emitParticle('warm');
+      if (Math.random() > 0.7) emitParticle('ash');
+    } else {
+      emitParticle('smoke');
+      if (Math.random() > 0.48) emitParticle('ash');
+      if (Math.random() > 0.84) blink();
     }
+  }
 
-    stopShowcase();
-    model.manualOverride = false;
-    model.manualState = null;
-    model.isAutoDemo = true;
-
-    const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
-    let i = 0;
-    model.manualOverride = true;
-    model.manualState = seq[0];
-    render('auto-demo-start');
-
-    model.demoTimer = setInterval(() => {
-      i = (i + 1) % seq.length;
-      const step = seq[i];
-      model.manualOverride = true;
-      model.manualState = step;
-      render('auto-demo-step');
-      if (step === 'warm') pulseBurst('kind');
-      if (step === 'agitated') pulseBurst('chaos');
-      if (step === 'possessed') pulseBurst('curse');
-    }, 2400);
+  function action(name) {
+    const act = String(name || '').toLowerCase();
+    if (act === 'blink') blink();
+    if (act === 'lookleft') eyeRoot.dataset.look = 'left';
+    if (act === 'lookright') eyeRoot.dataset.look = 'right';
+    if (act === 'corrupt') { mutateScore(1, 'action:corrupt'); triggerReaction('corrupt'); }
+    if (act === 'heal') { mutateScore(-1, 'action:heal'); triggerReaction('heal'); }
+    if (act === 'reset') { resetDebug(); setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
+    if (act === 'explode' || act === 'ivyburst') performIvySurge(`action:${act}`);
   }
 
   function receive(payload = {}) {
-    const { type } = payload;
-    if (type === 'setState' && payload.state) setManualState(String(payload.state).toLowerCase(), 'receive');
-    if (type === 'startShowcase') startShowcase();
-    if (type === 'stopShowcase') resumeAutoMode();
-    if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
-    if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
-    if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
-    if (type === 'chat' && payload.text) parseChatText(payload.text);
-    if (type === 'setIntensity') {
-      model.activityLevel = clamp(Number(payload.activity ?? model.activityLevel));
-      model.warmLevel = clamp(Number(payload.warm ?? model.warmLevel));
-      model.chaosLevel = clamp(Number(payload.chaos ?? model.chaosLevel));
-      model.curseLevel = clamp(Number(payload.curse ?? model.curseLevel));
-      render('set-intensity');
+    const type = String(payload.type || '').toLowerCase();
+    if (type === 'chat' && payload.text) {
+      appendChat(payload.user || 'chat', payload.text);
+      applyMessageTriggers(payload.text, 'receive:chat');
     }
+    if (type === 'action' && payload.action) action(payload.action);
+    if (type === 'setscore') setScore(Number(payload.value ?? 0), 'receive:setScore');
+    if (type === 'setstate' && payload.state) setState(payload.state, 'receive:setState');
   }
 
-  function setupTestMode() {
-    if (!isTestMode) return;
-    root.dataset.mode = 'test';
-    root.style.pointerEvents = 'auto';
-    testUi.hidden = false;
+  function handleTypedMessage(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text) return;
+    appendChat('you', text);
+    applyMessageTriggers(text, 'local-input');
+  }
 
-    testUi.querySelectorAll('button').forEach((button) => {
-      button.addEventListener('click', () => {
-        const act = button.dataset.act;
-        const value = button.dataset.value;
-
-        if (act === 'setState') setManualState(value, 'button');
-        if (act === 'activity') addActivity(Number(value));
-        if (act === 'burst') triggerBurst(value);
-        if (act === 'toggleEffect') toggleEffect(value);
-        if (act === 'demo') toggleDemo();
-        if (act === 'force') resumeAutoMode();
-
-        updateStatus();
-      });
+  function setupTestingInput() {
+    if (!testingMode) {
+      interactionHeader.hidden = true;
+      return;
+    }
+    overlayRoot.dataset.mode = 'test';
+    chatInputForm.hidden = false;
+    tinyStatus.hidden = false;
+    chatInputForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      handleTypedMessage(chatInput.value);
+      chatInput.value = '';
+      chatInput.focus();
     });
   }
 
-  function bootstrap() {
-    if (!isTestMode) root.style.pointerEvents = 'none';
-    setupTestMode();
-    applyStateEffects();
-    render('bootstrap');
-    startAmbientLoop();
-    model.decayTimer = setInterval(applyDecayTick, 1300);
-    if (isShowcaseMode) startShowcase();
+  function bootstrapChat() {
+    appendChat('ivy-eye', 'be kind, be cursed, or spam ivy to summon a peek.');
+    if (testingMode) appendChat('ivy-eye', 'test: comfort it / corrupt it / ivy x10');
   }
 
-  window.LanternOverlay = {
-    config,
+  function bootstrap() {
+    setupTestingInput();
+    bootstrapChat();
+    eyeRoot.dataset.look = 'center';
+    render('bootstrap');
+    state.timers.particles = setInterval(ambient, 170);
+  }
+
+  window.ChatEye = {
     receive,
-    setState: setManualState,
-    setManualState,
-    clearForcedState: resumeAutoMode,
-    resumeAutoMode,
-    startShowcase,
-    stopShowcase: resumeAutoMode,
-    addActivity,
-    triggerBurst,
-    toggleEffect,
-    parseChatText,
-    setIntensity: (values) => receive({ type: 'setIntensity', ...values })
+    setScore: (value) => setScore(value, 'api:setScore'),
+    setState: (name) => setState(name, 'api:setState'),
+    action,
+    sendLocalMessage: handleTypedMessage
   };
 
   bootstrap();

@@ -3,59 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cursed Lantern Familiar Overlay</title>
+    <title>Ivy Eye Overlay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main id="overlay-root" class="overlay-corner" data-mode="overlay" data-state="awake">
-      <section id="lantern" class="lantern state-awake" aria-label="Cursed flame companion">
+    <main id="overlay-root" class="overlay-corner" data-mode="live" data-state="awakened">
+      <section id="lantern" class="lantern state-awakened" aria-label="Haunted lantern companion">
         <div class="chain" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="lantern-halo"></div>
+        <div class="lantern-halo" aria-hidden="true"></div>
+
         <div class="lantern-shell">
           <span class="frame cap"></span>
           <span class="frame body"></span>
           <span class="frame base"></span>
           <span class="glass"></span>
-          <span class="sigil"></span>
-          <span class="thorn-ring"></span>
-          <span class="flame-core"></span>
-          <span class="flame-inner"></span>
+          <span class="cracks"></span>
+          <span class="entity-wrap">
+            <span class="flame-core"></span>
+            <span class="flame-inner"></span>
+            <span class="ivy-peeker"><span class="peeker-eye"></span></span>
+          </span>
         </div>
+
         <div class="particle-layer warm" aria-hidden="true"></div>
         <div class="particle-layer ash" aria-hidden="true"></div>
         <div class="particle-layer smoke" aria-hidden="true"></div>
         <div class="burst-ring" aria-hidden="true"></div>
+        <div id="explosion-field" class="explosion-field" aria-hidden="true"></div>
+
+        <div class="ritual-layer" aria-hidden="true">
+          <div class="ritual-ring"></div>
+          <div class="ritual-sigil"></div>
+                  </div>
       </section>
 
+      <section id="interaction-header" class="interaction-header" aria-label="interaction header">
+        <p>Comfort it • Corrupt it • Ivy to summon</p>
+      </section>
 
-      <div id="showcase-label" class="showcase-label" hidden>Showcase • Dormant</div>
+      <aside id="chat-panel" class="chat-panel" aria-label="Lantern chat panel">
+        <ol id="chat-list"></ol>
 
-      <aside id="test-ui" class="test-ui" hidden>
-        <div class="state-buttons">
-          <button data-act="setState" data-value="dormant">Dormant</button>
-          <button data-act="setState" data-value="awake">Awake</button>
-          <button data-act="setState" data-value="warm">Warm/Fond</button>
-          <button data-act="setState" data-value="agitated">Agitated</button>
-          <button data-act="setState" data-value="possessed">Possessed</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="activity" data-value="1">+ Activity</button>
-          <button data-act="activity" data-value="-1">- Activity</button>
-          <button data-act="burst" data-value="kind">Kind Burst</button>
-          <button data-act="burst" data-value="chaos">Chaos Burst</button>
-          <button data-act="burst" data-value="curse">Curse Burst</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="toggleEffect" data-value="particles">Toggle particles</button>
-          <button data-act="toggleEffect" data-value="smoke">Toggle smoke</button>
-          <button data-act="toggleEffect" data-value="thorns">Toggle thorns/cracks</button>
-          <button data-act="demo" data-value="toggle">Auto demo</button>
-        </div>
-        <div class="control-buttons">
-          <button data-act="force" data-value="clear">Resume auto mood</button>
-        </div>
-        <p id="test-status">state: awake • activity: 0.20 • warm: 0.00 • chaos: 0.00 • curse: 0.00</p>
+        <form id="chat-input-form" class="chat-input" hidden>
+          <input id="chat-input" type="text" maxlength="180" placeholder="Try: love joy / ghost demon / ivy ivy ..." autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
       </aside>
+
+      <p id="tiny-status" class="tiny-status" hidden></p>
     </main>
 
     <script src="app.js"></script>
