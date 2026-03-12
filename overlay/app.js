@@ -99,7 +99,7 @@
     if (phase === 'cooldown') eyeRoot.classList.add('ivy-cooldown');
 
     updateStatus();
-    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ritual=${phase} reason=${reason}`);
+    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ivyPhase=${phase} reason=${reason}`);
   }
 
   function blink() {
@@ -366,7 +366,7 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'the lantern creature is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: ivy ivy ivy / love / ghost / ivy x10 ritual');
+    if (testingMode) appendChat('ivy-eye', 'test: ivy ivy ivy / love / ghost / ivy x10 surge');
   }
 
   function bootstrap() {
