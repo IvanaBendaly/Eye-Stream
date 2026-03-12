@@ -144,28 +144,14 @@
       d.className = `debris ${type}`;
       d.style.left = `${108 + (Math.random() * 32 - 16)}px`;
       d.style.top = `${98 + (Math.random() * 20 - 10)}px`;
-      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 220}px`);
-      d.style.setProperty('--dy', `${(Math.random() * -190) - 15}px`);
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 96}px`);
+      d.style.setProperty('--dy', `${(Math.random() * -110) - 12}px`);
       d.style.animationDuration = `${1000 + Math.random() * 1000}ms`;
       explosionField.appendChild(d);
       setTimeout(() => d.remove(), 2300);
     }
   }
 
-  function emitRubblePieces(amount = 16) {
-    if (!explosionField) return;
-    for (let i = 0; i < amount; i += 1) {
-      const d = document.createElement('span');
-      d.className = 'debris rubble';
-      d.style.left = `${96 + (Math.random() * 56 - 18)}px`;
-      d.style.top = `${172 + Math.random() * 16}px`;
-      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 28}px`);
-      d.style.setProperty('--dy', `${20 + Math.random() * 14}px`);
-      d.style.animationDuration = `${1400 + Math.random() * 800}ms`;
-      explosionField.appendChild(d);
-      setTimeout(() => d.remove(), 4200);
-    }
-  }
 
   function performIvyExplosion(source = 'ivyOverload') {
     if (state.exploding) return;
@@ -193,19 +179,16 @@
     setTimeout(() => {
       phase('detonation', 'explode-detonation');
       burst('stress');
-      emitExternalDebris(52);
-      emitRubblePieces(10);
+      emitExternalDebris(34);
     }, 980);
 
     setTimeout(() => {
       phase('afterflash', 'explode-afterflash');
-      emitExternalDebris(16);
-      emitRubblePieces(4);
+      emitExternalDebris(10);
     }, 1480);
 
     setTimeout(() => {
       phase('aftermath', 'explode-aftermath');
-      emitRubblePieces(3);
     }, 2060);
 
     clearTimeout(state.timers.explosionCleanup);
