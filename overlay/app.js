@@ -16,9 +16,9 @@
   const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
 
   const matchConfig = {
-    corruptWords: ['ghost','demon','cursed','curse','haunted','haunt','hex','rot','rotten','decay','dead','death','blood','kill','scream','nightmare','hunt','run','shadow','void','evil','possessed','possession','monster','creep','creepy','horror','break','shatter','crack','rage','anger','angry','burn','chaos','abyss','doom','fear','panic','wrath','dark','darkness','violent','insane','mad','destroy','ruin','pain','torment','sinister','malicious','unholy','infected','plague','parasite'],
-    healWords: ['love','lovely','cute','cozy','calm','gentle','safe','okay','sweet','warm','bloom','light','hope','kind','peaceful','peace','comfort','serene','tranquil','pretty','soft','hug','healing','heal','rest','home','alive','smile','happy','joy','joyful','bright','angel','sunshine','breathe','relax','adorable','tender','clean'],
-    resetWords: ['wake','awaken','revive','reborn','reset','blink','return','restore','renew','rebirth'],
+    corruptWords: ['ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death', 'blood', 'kill', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession', 'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'angry', 'burn', 'chaos', 'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness', 'violent', 'insane', 'mad', 'destroy', 'ruin', 'pain', 'torment', 'sinister', 'malicious', 'unholy', 'infected', 'plague', 'parasite'],
+    healWords: ['love', 'lovely', 'cute', 'cozy', 'calm', 'gentle', 'safe', 'okay', 'sweet', 'warm', 'bloom', 'light', 'hope', 'kind', 'peaceful', 'peace', 'comfort', 'serene', 'tranquil', 'pretty', 'soft', 'hug', 'healing', 'heal', 'rest', 'home', 'alive', 'smile', 'happy', 'joy', 'joyful', 'bright', 'angel', 'sunshine', 'breathe', 'relax', 'adorable', 'tender', 'clean'],
+    resetWords: ['wake', 'awaken', 'revive', 'reborn', 'reset', 'blink', 'return', 'restore', 'renew', 'rebirth'],
     healPhrases: ['calm down', 'safe place'],
     corruptPhrases: ['fall apart', 'give in']
   };
@@ -28,11 +28,10 @@
     corruptionScore: 0,
     ivyCounter: 0,
     renderedState: 'awakened',
-    exploding: false,
-    overloadPhase: null,
-    pendingMessages: [],
-    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, explosionTriggered: false, delta: 0 },
-    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, explosionCleanup: null }
+    ritualActive: false,
+    ritualPhase: 'charging',
+    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, climaxActive: false, delta: 0 },
+    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null }
   };
 
   const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
@@ -57,24 +56,32 @@
     return 10;
   }
 
+  function deriveRitualPhase() {
+    if (state.ritualActive) return state.ritualPhase;
+    if (state.ivyCounter >= IVY_THRESHOLD - 2) return 'warning';
+    return 'charging';
+  }
+
   function resetDebug() {
-    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, explosionTriggered: false, delta: 0 };
+    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, climaxActive: false, delta: 0 };
   }
 
   function updateStatus() {
     if (!testingMode) return;
-    if (state.overloadPhase) {
-      tinyStatus.textContent = `TEST • IVY OVERLOAD • PHASE: ${state.overloadPhase.toUpperCase()}`;
+
+    const phase = deriveRitualPhase().toUpperCase();
+    if (state.ritualActive) {
+      tinyStatus.textContent = `TEST • IVY RITUAL COMPLETE • PHASE: ${phase}`;
       return;
     }
+
     const c = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
     const h = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
     const d = state.debug.delta > 0 ? `+${state.debug.delta}` : `${state.debug.delta}`;
-    tinyStatus.textContent = `TEST • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • IVY: ${state.ivyCounter}/${IVY_THRESHOLD} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • RESET: ${state.debug.resetTriggered ? 'yes' : 'no'} • EXPLODE: ${state.debug.explosionTriggered ? 'yes' : 'no'} • DELTA: ${d}`;
+    tinyStatus.textContent = `TEST • IVY RITUAL ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
   }
 
   function render(reason = 'render') {
-    if (state.exploding) return;
     const derived = deriveStateFromScore();
     STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
     eyeRoot.classList.add(`state-${derived}`);
@@ -84,8 +91,15 @@
     for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
     eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
 
+    eyeRoot.classList.remove('ritual-charge', 'ritual-warning', 'ritual-climax', 'ritual-cooldown');
+    const phase = deriveRitualPhase();
+    if (phase === 'charging') eyeRoot.classList.add('ritual-charge');
+    if (phase === 'warning') eyeRoot.classList.add('ritual-warning');
+    if (phase === 'climax') eyeRoot.classList.add('ritual-climax');
+    if (phase === 'cooldown') eyeRoot.classList.add('ritual-cooldown');
+
     updateStatus();
-    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} reason=${reason}`);
+    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ritual=${phase} reason=${reason}`);
   }
 
   function blink() {
@@ -115,6 +129,34 @@
     state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy'), 420);
   }
 
+  function emitExternalDebris(amount = 24) {
+    if (!explosionField) return;
+    for (let i = 0; i < amount; i += 1) {
+      const r = Math.random();
+      const type = r > 0.72 ? 'ember' : (r > 0.42 ? 'spore' : 'smoke');
+      const d = document.createElement('span');
+      d.className = `debris ${type}`;
+      d.style.left = `${108 + (Math.random() * 30 - 15)}px`;
+      d.style.top = `${102 + (Math.random() * 18 - 9)}px`;
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 84}px`);
+      d.style.setProperty('--dy', `${(Math.random() * -86) - 10}px`);
+      d.style.animationDuration = `${920 + Math.random() * 760}ms`;
+      explosionField.appendChild(d);
+      setTimeout(() => d.remove(), 1900);
+    }
+  }
+
+  function triggerIvyHitFeedback(intensity = 1) {
+    triggerReaction('ivy');
+    eyeRoot.classList.remove('ivy-hit');
+    requestAnimationFrame(() => eyeRoot.classList.add('ivy-hit'));
+    clearTimeout(state.timers.ivyHitCleanup);
+    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-hit'), 320);
+    burst(intensity > 1 ? 'stress' : 'pulse');
+    if (Math.random() > 0.3) emitParticle('warm');
+    if (state.ivyCounter >= IVY_THRESHOLD - 2 || intensity > 1) emitParticle('smoke');
+  }
+
   function setScore(value, reason = 'setScore') {
     state.corruptionScore = clampScore(value);
     render(reason);
@@ -135,81 +177,36 @@
     return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   }
 
-  function emitExternalDebris(amount = 30) {
-    if (!explosionField) return;
-    for (let i = 0; i < amount; i += 1) {
-      const r = Math.random();
-      const type = r > 0.7 ? 'ember' : (r > 0.35 ? 'shard' : (r > 0.12 ? 'spore' : 'smoke'));
-      const d = document.createElement('span');
-      d.className = `debris ${type}`;
-      d.style.left = `${108 + (Math.random() * 32 - 16)}px`;
-      d.style.top = `${98 + (Math.random() * 20 - 10)}px`;
-      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 96}px`);
-      d.style.setProperty('--dy', `${(Math.random() * -110) - 12}px`);
-      d.style.animationDuration = `${1000 + Math.random() * 1000}ms`;
-      explosionField.appendChild(d);
-      setTimeout(() => d.remove(), 2300);
-    }
-  }
+  function performIvyRitual(source = 'ivyRitual') {
+    if (state.ritualActive) return;
 
-
-  function performIvyExplosion(source = 'ivyOverload') {
-    if (state.exploding) return;
-    state.exploding = true;
-    state.debug.explosionTriggered = true;
-    state.overloadPhase = 'charge';
-    updateStatus();
-
-    eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
-    eyeRoot.classList.add('explode-charge');
+    state.ritualActive = true;
+    state.ritualPhase = 'climax';
+    state.debug.climaxActive = true;
+    render(`${source}:climax`);
     burst('stress');
+    bloom();
+    blink();
+    emitExternalDebris(34);
 
-    const phase = (name, className) => {
-      state.overloadPhase = name;
-      updateStatus();
-      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
-      eyeRoot.classList.add(className);
-    };
-
-    setTimeout(() => {
-      phase('overload', 'explode-overload');
-      burst('stress');
-    }, 430);
-
-    setTimeout(() => {
-      phase('detonation', 'explode-detonation');
-      burst('stress');
-      emitExternalDebris(34);
-    }, 980);
-
-    setTimeout(() => {
-      phase('afterflash', 'explode-afterflash');
-      emitExternalDebris(10);
-    }, 1480);
-
-    setTimeout(() => {
-      phase('aftermath', 'explode-aftermath');
-    }, 2060);
-
-    clearTimeout(state.timers.explosionCleanup);
-    state.timers.explosionCleanup = setTimeout(() => {
-      phase('rebirth', 'explode-rebirth');
-      state.corruptionScore = 0;
+    clearTimeout(state.timers.ritualStep);
+    state.timers.ritualStep = setTimeout(() => {
+      state.ritualPhase = 'cooldown';
       state.ivyCounter = 0;
-      state.exploding = false;
-      state.overloadPhase = null;
-      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
-      render(`${source}:rebirth`);
+      render(`${source}:cooldown`);
+      emitExternalDebris(12);
+    }, 1900);
+
+    clearTimeout(state.timers.ritualCleanup);
+    state.timers.ritualCleanup = setTimeout(() => {
+      state.ritualActive = false;
+      state.ritualPhase = 'charging';
+      state.debug.climaxActive = false;
+      render(`${source}:reset`);
       bloom();
       blink();
       updateStatus();
-
-      if (state.pendingMessages.length) {
-        const queued = [...state.pendingMessages];
-        state.pendingMessages = [];
-        queued.forEach((msg) => applyMessageTriggers(msg, 'queued'));
-      }
-    }, 3380);
+    }, 3100);
   }
 
   function applyPhraseMatches(normalizedText) {
@@ -228,11 +225,6 @@
   }
 
   function applyMessageTriggers(text, source = 'chat') {
-    if (state.exploding) {
-      state.pendingMessages.push(String(text || ''));
-      return;
-    }
-
     resetDebug();
     const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
     const words = tokenize(normalizedText);
@@ -240,9 +232,7 @@
 
     for (const word of words) {
       if (word === 'ivy') {
-        state.ivyCounter += 1;
         state.debug.ivyHits += 1;
-        triggerReaction('ivy');
         continue;
       }
       if (matchConfig.corruptWords.includes(word)) {
@@ -254,6 +244,13 @@
         state.debug.delta -= 1;
       }
       if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
+    }
+
+    if (state.debug.ivyHits > 0) {
+      if (!state.ritualActive) {
+        state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
+      }
+      triggerIvyHitFeedback(state.debug.ivyHits);
     }
 
     if (state.debug.resetTriggered) {
@@ -272,8 +269,8 @@
       }
     }
 
-    if (state.ivyCounter >= IVY_THRESHOLD) {
-      performIvyExplosion(`${source}:ivy`);
+    if (state.ivyCounter >= IVY_THRESHOLD && !state.ritualActive) {
+      performIvyRitual(`${source}:ivy`);
       return;
     }
 
@@ -301,7 +298,12 @@
   }
 
   function ambient() {
-    if (state.exploding) return;
+    if (state.ritualActive) {
+      emitParticle('warm');
+      if (Math.random() > 0.45) emitParticle('smoke');
+      return;
+    }
+
     if (['blissful', 'awakened'].includes(state.renderedState)) {
       if (Math.random() > 0.65) emitParticle('warm');
     } else if (['curious', 'disturbed'].includes(state.renderedState)) {
@@ -321,8 +323,8 @@
     if (act === 'lookright') eyeRoot.dataset.look = 'right';
     if (act === 'corrupt') { mutateScore(1, 'action:corrupt'); triggerReaction('corrupt'); }
     if (act === 'heal') { mutateScore(-1, 'action:heal'); triggerReaction('heal'); }
-    if (act === 'reset') { resetDebug(); state.debug.resetTriggered = true; setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
-    if (act === 'explode' || act === 'ivyburst') performIvyExplosion(`action:${act}`);
+    if (act === 'reset') { resetDebug(); setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
+    if (act === 'explode' || act === 'ivyburst') performIvyRitual(`action:${act}`);
   }
 
   function receive(payload = {}) {
@@ -361,7 +363,7 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'the lantern creature is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: love love / shadow ghost / ivy ivy ivy / wake');
+    if (testingMode) appendChat('ivy-eye', 'test: ivy ivy ivy / love / ghost / ivy x10 ritual');
   }
 
   function bootstrap() {
