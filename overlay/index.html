@@ -8,7 +8,7 @@
   </head>
   <body>
     <main id="overlay-root" class="overlay-corner" data-mode="live" data-state="awake">
-      <section id="lantern" class="lantern state-awake" aria-label="Cursed flame companion">
+      <section id="lantern" class="lantern state-awake" aria-label="Reactive lantern companion">
         <div class="chain" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="lantern-halo" aria-hidden="true"></div>
 
@@ -20,6 +20,7 @@
           <span class="sigil"></span>
           <span class="cracks"></span>
           <span class="thorn-ring"></span>
+          <span class="vine-wrap"></span>
           <span class="flame-core"></span>
           <span class="flame-inner"></span>
         </div>
@@ -27,6 +28,7 @@
         <div class="particle-layer warm" aria-hidden="true"></div>
         <div class="particle-layer ash" aria-hidden="true"></div>
         <div class="particle-layer smoke" aria-hidden="true"></div>
+        <div class="particle-layer leaves" aria-hidden="true"></div>
         <div class="burst-ring" aria-hidden="true"></div>
       </section>
 
@@ -38,7 +40,7 @@
         <ol id="chat-list"></ol>
 
         <form id="chat-input-form" class="chat-input" hidden>
-          <input id="chat-input" type="text" maxlength="140" placeholder="Type a message to test reactions..." autocomplete="off" />
+          <input id="chat-input" type="text" maxlength="140" placeholder="Type to trigger states (love, burn, crack, cursed, dead, vine...)" autocomplete="off" />
           <button type="submit">Send</button>
         </form>
       </aside>

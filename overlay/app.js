@@ -10,29 +10,42 @@
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
   const config = {
-    states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    decayMs: 1300,
-    particleMs: 200,
-    keywords: {
-      warm: ['love', 'cute', 'cozy', 'safe', 'calm', 'soft', 'hug', 'sweet', 'gentle'],
-      neutral: ['hello', 'hi', 'watching', 'okay', 'hey', 'lurking'],
-      chaos: ['run', 'panic', 'insane', 'chaos', 'fast', 'scream', 'hunt', 'wild'],
-      curse: ['possessed', 'demon', 'hex', 'void', 'haunt', 'consume', 'hollow', 'rot', 'curse']
-    },
+    states: ['asleep', 'awake', 'warm', 'agitated', 'breaking', 'cursed', 'dead', 'overgrown'],
+    decayMs: 1600,
+    particleMs: 170,
     sampleMessages: [
-      { user: 'lantern', text: 'waiting for whispers...' },
-      { user: 'shade', text: 'chat can wake or curse the flame.' },
-      { user: 'ember', text: testingMode ? 'testing input is live below.' : 'connected to live chat soon.' }
-    ]
+      { user: 'lantern', text: 'whisper to wake the flame.' },
+      { user: 'shade', text: 'kind words warm it, chaos breaks it.' },
+      { user: 'root', text: testingMode ? 'testing input is enabled.' : 'awaiting live chat link.' }
+    ],
+    keywordToState: {
+      asleep: ['sleepy', 'rest', 'quiet', 'calm down', 'sleep'],
+      awake: ['hello', 'hi', 'hey', 'wake', 'watching'],
+      warm: ['love', 'cute', 'cozy', 'gentle', 'safe', 'sweet', 'hug', 'lovely', 'warm'],
+      agitated: ['angry', 'rage', 'burn', 'fire', 'mad', 'chaos', 'scream', 'explode', 'wild'],
+      breaking: ['crack', 'break', 'shatter', 'overload', 'too much', 'pressure', 'burst'],
+      cursed: ['cursed', 'demon', 'hex', 'void', 'haunt', 'possessed', 'consume', 'hollow', 'rot'],
+      dead: ['dead', 'gone', 'empty', 'extinguish', 'cold', 'faded'],
+      overgrown: ['vine', 'roots', 'overgrown', 'bloom', 'ivy', 'thorn', 'leaves', 'reclaim']
+    },
+    stateVariants: {
+      asleep: 'asleep-ember',
+      awake: 'base',
+      warm: 'warm-sparkles',
+      agitated: 'agitated-flare',
+      breaking: 'breaking-flash',
+      cursed: 'cursed-haze',
+      dead: 'dead-smolder',
+      overgrown: 'overgrown-vines'
+    }
   };
 
   const state = {
     mode: { testing: testingMode },
     reactive: {
-      activity: 0.3,
-      warmth: 0.24,
-      chaos: 0.1,
-      curse: 0
+      state: 'awake',
+      holdMs: 0,
+      lastChange: Date.now()
     },
     render: {
       state: 'awake',
@@ -44,15 +57,14 @@
     }
   };
 
-  function clamp(value, min = 0, max = 1) {
-    return Math.max(min, Math.min(max, value));
-  }
-
   function random(min, max) {
     return Math.random() * (max - min) + min;
   }
 
-  function setStateVisual(nextState, variant = 'base', reason = 'render') {
+  function setStateVisual(nextState, reason = 'render') {
+    if (!config.states.includes(nextState)) return;
+    const variant = config.stateVariants[nextState] || 'base';
+
     config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
     lantern.classList.add(`state-${nextState}`);
     lantern.dataset.variant = variant;
@@ -61,22 +73,10 @@
     state.render.state = nextState;
     state.render.variant = variant;
 
+    if (nextState === 'agitated' || nextState === 'breaking' || nextState === 'cursed') pulseBurst();
+
     console.log(`[LanternOverlay] rendered state: ${nextState} (variant: ${variant}, reason: ${reason})`);
     updateTinyStatus();
-  }
-
-  function deriveReactiveState() {
-    const { activity, warmth, chaos, curse } = state.reactive;
-    if (curse > 0.68) return { mood: 'possessed', variant: 'possessed-smoke' };
-    if (chaos - warmth > 0.23 && activity > 0.26) return { mood: 'agitated', variant: 'agitated-spike' };
-    if (warmth - chaos > 0.22 && activity > 0.2) return { mood: 'warm', variant: 'warm-sparkles' };
-    if (activity < 0.16) return { mood: 'dormant', variant: 'base' };
-    return { mood: 'awake', variant: 'base' };
-  }
-
-  function renderFromReactive(reason = 'reactive') {
-    const { mood, variant } = deriveReactiveState();
-    setStateVisual(mood, variant, reason);
   }
 
   function pulseBurst() {
@@ -90,98 +90,98 @@
 
     const particle = document.createElement('span');
     particle.className = `particle ${type}`;
-    particle.style.left = `${random(82, 146)}px`;
-    particle.style.top = `${random(90, 142)}px`;
-    particle.style.setProperty('--dx', `${random(-24, 28)}px`);
-    particle.style.setProperty('--dy', `${random(-88, -34)}px`);
-    particle.style.animationDuration = `${random(1.25, 3.4)}s`;
+    particle.style.left = `${random(80, 148)}px`;
+    particle.style.top = `${random(88, 142)}px`;
+    particle.style.setProperty('--dx', `${random(-24, 30)}px`);
+    particle.style.setProperty('--dy', `${random(-92, -36)}px`);
+    particle.style.animationDuration = `${random(1.2, 3.5)}s`;
     layer.appendChild(particle);
     setTimeout(() => particle.remove(), 3600);
   }
 
   function emitAmbientParticles() {
     const current = state.render.state;
-    const variant = state.render.variant;
 
-    if (current === 'dormant') {
-      if (Math.random() > 0.995) emitParticle('ash');
+    if (current === 'asleep') {
+      if (Math.random() > 0.996) emitParticle('ash');
       return;
     }
 
     if (current === 'awake') {
-      if (Math.random() > 0.75) emitParticle('warm');
+      if (Math.random() > 0.78) emitParticle('warm');
       return;
     }
 
     if (current === 'warm') {
       emitParticle('warm');
-      if (variant === 'warm-sparkles' || Math.random() > 0.42) emitParticle('warm');
+      if (Math.random() > 0.45) emitParticle('warm');
       return;
     }
 
     if (current === 'agitated') {
       emitParticle('ash');
-      if (Math.random() > 0.34) emitParticle('warm');
-      if (variant === 'agitated-spike' && Math.random() > 0.56) pulseBurst();
+      emitParticle('warm');
+      if (Math.random() > 0.52) pulseBurst();
       return;
     }
 
-    if (current === 'possessed') {
+    if (current === 'breaking') {
+      emitParticle('ash');
+      emitParticle('ash');
+      if (Math.random() > 0.55) emitParticle('warm');
+      if (Math.random() > 0.5) pulseBurst();
+      return;
+    }
+
+    if (current === 'cursed') {
       emitParticle('smoke');
       emitParticle('smoke');
-      if (variant === 'possessed-burst' || Math.random() > 0.55) emitParticle('ash');
-      if (Math.random() > 0.74) pulseBurst();
+      if (Math.random() > 0.58) emitParticle('ash');
+      return;
+    }
+
+    if (current === 'dead') {
+      if (Math.random() > 0.9) emitParticle('smoke');
+      return;
+    }
+
+    if (current === 'overgrown') {
+      emitParticle('leaves');
+      if (Math.random() > 0.63) emitParticle('smoke');
     }
   }
 
-  function scoreMessage(text) {
+  function detectStateFromText(text) {
     const msg = String(text || '').toLowerCase();
-    const hits = (list) => list.reduce((acc, token) => acc + (msg.includes(token) ? 1 : 0), 0);
-
-    return {
-      warm: hits(config.keywords.warm),
-      neutral: hits(config.keywords.neutral),
-      chaos: hits(config.keywords.chaos),
-      curse: hits(config.keywords.curse)
-    };
+    for (const moodState of config.states) {
+      const tokens = config.keywordToState[moodState] || [];
+      if (tokens.some((token) => msg.includes(token))) {
+        return moodState;
+      }
+    }
+    return null;
   }
 
   function applyChatInfluence(text, source = 'chat') {
-    const score = scoreMessage(text);
+    const directState = detectStateFromText(text);
 
-    if (score.warm) {
-      state.reactive.warmth = clamp(state.reactive.warmth + score.warm * 0.2);
-      state.reactive.chaos = clamp(state.reactive.chaos - score.warm * 0.06);
-      state.reactive.activity = clamp(state.reactive.activity + score.warm * 0.12);
+    if (directState) {
+      state.reactive.state = directState;
+      state.reactive.lastChange = Date.now();
+      state.reactive.holdMs = state.mode.testing ? 9000 : 5200;
+      setStateVisual(directState, `typed-${source}`);
+      return;
     }
 
-    if (score.neutral) {
-      state.reactive.activity = clamp((state.reactive.activity * 0.85) + 0.22);
-      state.reactive.warmth = clamp((state.reactive.warmth * 0.82) + 0.2);
-      state.reactive.chaos = clamp(state.reactive.chaos * 0.8);
-      state.reactive.curse = clamp(state.reactive.curse * 0.8);
+    if (state.mode.testing) {
+      setStateVisual('awake', `typed-${source}-fallback`);
+      return;
     }
 
-    if (score.chaos) {
-      state.reactive.chaos = clamp(state.reactive.chaos + score.chaos * 0.22);
-      state.reactive.warmth = clamp(state.reactive.warmth - score.chaos * 0.08);
-      state.reactive.activity = clamp(state.reactive.activity + score.chaos * 0.18);
-      pulseBurst();
-    }
-
-    if (score.curse) {
-      state.reactive.curse = clamp(state.reactive.curse + score.curse * 0.28);
-      state.reactive.chaos = clamp(state.reactive.chaos + score.curse * 0.1);
-      state.reactive.activity = clamp(state.reactive.activity + score.curse * 0.15);
-      pulseBurst();
-      lantern.dataset.variant = 'possessed-burst';
-    }
-
-    if (score.warm + score.neutral + score.chaos + score.curse === 0) {
-      state.reactive.activity = clamp(state.reactive.activity + 0.06);
-    }
-
-    renderFromReactive(`typed-${source}`);
+    state.reactive.state = 'awake';
+    state.reactive.lastChange = Date.now();
+    state.reactive.holdMs = 1600;
+    setStateVisual('awake', `typed-${source}-fallback`);
   }
 
   function appendChat(user, text) {
@@ -195,7 +195,6 @@
     const message = String(rawText || '').trim();
     if (!message) return;
 
-    console.log(`[LanternOverlay] typed message: ${message}`);
     appendChat('you', message);
     applyChatInfluence(message, 'input');
   }
@@ -207,11 +206,12 @@
 
   function startDecayLoop() {
     state.timers.decay = setInterval(() => {
-      state.reactive.activity = clamp(state.reactive.activity - 0.025);
-      state.reactive.warmth = clamp(state.reactive.warmth - 0.03);
-      state.reactive.chaos = clamp(state.reactive.chaos - 0.035);
-      state.reactive.curse = clamp(state.reactive.curse - 0.02);
-      renderFromReactive('decay');
+      if (Date.now() - state.reactive.lastChange > state.reactive.holdMs) {
+        if (state.render.state !== 'awake') {
+          state.reactive.state = 'awake';
+          setStateVisual('awake', 'decay-reset');
+        }
+      }
     }, config.decayMs);
   }
 
@@ -252,13 +252,12 @@
       applyChatInfluence(event.text, 'external-chat');
     }
 
-    if (type === 'setstate' && config.states.includes(event.state)) {
-      setStateVisual(String(event.state).toLowerCase(), 'base', 'api-setstate');
-    }
-
-    if (type === 'addactivity') {
-      state.reactive.activity = clamp(state.reactive.activity + Number(event.value ?? 0.12));
-      renderFromReactive('api-addactivity');
+    if (type === 'setstate' && config.states.includes(String(event.state).toLowerCase())) {
+      const nextState = String(event.state).toLowerCase();
+      state.reactive.state = nextState;
+      state.reactive.lastChange = Date.now();
+      state.reactive.holdMs = 6000;
+      setStateVisual(nextState, 'api-setstate');
     }
 
     if (type === 'triggermood') {
@@ -269,7 +268,7 @@
   function bootstrap() {
     bootstrapChat();
     setupTestingInput();
-    renderFromReactive('bootstrap');
+    setStateVisual('awake', 'bootstrap');
     startDecayLoop();
 
     state.timers.particles = setInterval(emitAmbientParticles, config.particleMs);
@@ -278,7 +277,6 @@
   window.LanternOverlay = {
     receive,
     setState: (stateName) => receive({ type: 'setState', state: stateName }),
-    addActivity: (value = 0.12) => receive({ type: 'addActivity', value }),
     triggerMood: (mood) => receive({ type: 'triggerMood', mood }),
     pushChat: (user, text) => receive({ type: 'chat', user, text }),
     sendLocalMessage: (text) => handleTypedMessage(text)

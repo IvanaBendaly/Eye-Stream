@@ -34,7 +34,6 @@ html, body {
   align-items: center;
   gap: 8px;
   pointer-events: none;
-  z-index: 20;
 }
 .overlay-corner[data-mode='test'] { pointer-events: auto; }
 
@@ -45,26 +44,12 @@ html, body {
   transform-origin: 50% 14%;
   animation: float var(--float-speed) ease-in-out infinite;
   filter: drop-shadow(0 20px 18px rgba(0, 0, 0, 0.46));
-  z-index: 2;
   pointer-events: none;
 }
 .lantern * { pointer-events: none; }
 
-.chain {
-  position: absolute;
-  left: 106px;
-  top: 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.chain span {
-  width: 14px;
-  height: 8px;
-  border: 2px solid #6f5d49;
-  border-radius: 12px;
-  opacity: 0.72;
-}
+.chain { position: absolute; left: 106px; top: 2px; display: flex; flex-direction: column; gap: 4px; }
+.chain span { width: 14px; height: 8px; border: 2px solid #6f5d49; border-radius: 12px; opacity: 0.72; }
 
 .lantern-halo {
   position: absolute;
@@ -78,14 +63,7 @@ html, body {
   animation: haloPulse calc(var(--flicker-speed) * 2) ease-in-out infinite;
 }
 
-.lantern-shell {
-  position: absolute;
-  left: 66px;
-  top: 44px;
-  width: 98px;
-  height: 156px;
-  transform: rotate(var(--tilt));
-}
+.lantern-shell { position: absolute; left: 66px; top: 44px; width: 98px; height: 156px; transform: rotate(var(--tilt)); }
 
 .frame {
   position: absolute;
@@ -141,11 +119,11 @@ html, body {
   width: 56px;
   height: 80px;
   opacity: 0;
-  transition: opacity 220ms ease;
+  transition: opacity 180ms ease;
   background:
-    linear-gradient(162deg, transparent 46%, rgba(23, 14, 29, 0.74) 46%, rgba(23, 14, 29, 0.74) 51%, transparent 51%),
-    linear-gradient(198deg, transparent 58%, rgba(23, 14, 29, 0.72) 58%, rgba(23, 14, 29, 0.72) 63%, transparent 63%),
-    linear-gradient(140deg, transparent 68%, rgba(23, 14, 29, 0.68) 68%, rgba(23, 14, 29, 0.68) 72%, transparent 72%);
+    linear-gradient(162deg, transparent 46%, rgba(19, 13, 18, 0.82) 46%, rgba(19, 13, 18, 0.82) 51%, transparent 51%),
+    linear-gradient(198deg, transparent 58%, rgba(19, 13, 18, 0.8) 58%, rgba(19, 13, 18, 0.8) 63%, transparent 63%),
+    linear-gradient(140deg, transparent 68%, rgba(19, 13, 18, 0.78) 68%, rgba(19, 13, 18, 0.78) 72%, transparent 72%);
 }
 
 .thorn-ring {
@@ -158,6 +136,18 @@ html, body {
   border: 1px dashed rgba(74, 52, 43, 0.65);
   opacity: 0;
   transition: opacity 280ms ease;
+}
+
+.vine-wrap {
+  position: absolute;
+  inset: 20px 8px 20px 8px;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  background:
+    radial-gradient(circle at 10% 15%, rgba(104, 171, 97, 0.9) 0 3px, transparent 3px),
+    radial-gradient(circle at 85% 35%, rgba(132, 201, 124, 0.84) 0 3px, transparent 3px),
+    linear-gradient(130deg, transparent 40%, rgba(49, 95, 57, 0.86) 42%, rgba(49, 95, 57, 0.86) 47%, transparent 49%),
+    linear-gradient(210deg, transparent 62%, rgba(36, 73, 44, 0.88) 64%, rgba(36, 73, 44, 0.88) 69%, transparent 70%);
 }
 
 .flame-core,
@@ -196,8 +186,9 @@ html, body {
   animation: drift 2.8s linear forwards;
 }
 .particle.warm { background: #ffd89f; box-shadow: 0 0 8px rgba(255, 214, 152, 0.88); }
-.particle.ash { background: rgba(188, 172, 152, 0.72); }
+.particle.ash { background: rgba(219, 104, 62, 0.8); }
 .particle.smoke { width: 10px; height: 10px; background: var(--smoke-color); filter: blur(0.8px); }
+.particle.leaves { width: 6px; height: 6px; background: rgba(143, 214, 130, 0.9); border-radius: 35% 65% 41% 59%; }
 
 .burst-ring {
   position: absolute;
@@ -216,9 +207,7 @@ html, body {
   border-radius: 999px;
   border: 1px solid rgba(192, 158, 110, 0.38);
   background: linear-gradient(90deg, rgba(21, 17, 16, 0.75), rgba(38, 25, 20, 0.75), rgba(24, 20, 33, 0.75));
-  backdrop-filter: blur(1.2px);
   padding: 5px 12px;
-  box-shadow: 0 0 0 1px rgba(78, 56, 42, 0.3) inset;
 }
 .interaction-header p {
   margin: 0;
@@ -234,20 +223,9 @@ html, body {
   border-radius: 14px;
   border: 1px solid rgba(156, 126, 92, 0.44);
   background: linear-gradient(180deg, rgba(16, 13, 20, 0.82), rgba(10, 9, 14, 0.82));
-  backdrop-filter: blur(1.4px);
   padding: 9px;
-  z-index: 3;
-  box-shadow: 0 0 0 1px rgba(74, 56, 42, 0.34) inset, 0 -12px 34px rgba(10, 7, 18, 0.36);
 }
-#chat-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 5px;
-  max-height: 146px;
-  overflow: hidden;
-}
+#chat-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; max-height: 146px; overflow: hidden; }
 #chat-list li {
   font-size: 11px;
   line-height: 1.35;
@@ -257,19 +235,9 @@ html, body {
   border: 1px solid rgba(122, 102, 84, 0.34);
   padding: 4px 6px;
 }
-#chat-list .tag {
-  font-weight: 700;
-  color: #cfb8ff;
-  margin-right: 4px;
-}
+#chat-list .tag { font-weight: 700; color: #cfb8ff; margin-right: 4px; }
 
-.chat-input {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px;
-  margin-top: 7px;
-  pointer-events: auto;
-}
+.chat-input { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 7px; pointer-events: auto; }
 .chat-input input {
   min-width: 0;
   font-size: 11px;
@@ -280,10 +248,7 @@ html, body {
   background: rgba(20, 17, 26, 0.92);
   outline: none;
 }
-.chat-input input:focus {
-  border-color: rgba(225, 191, 125, 0.88);
-  box-shadow: 0 0 0 1px rgba(233, 197, 132, 0.45);
-}
+.chat-input input:focus { border-color: rgba(225, 191, 125, 0.88); box-shadow: 0 0 0 1px rgba(233, 197, 132, 0.45); }
 .chat-input button {
   font-size: 11px;
   padding: 0 10px;
@@ -293,8 +258,6 @@ html, body {
   color: #f4ead9;
   cursor: pointer;
 }
-.chat-input button:hover { filter: brightness(1.1); }
-.chat-input button:active { transform: translateY(1px); }
 
 .tiny-status {
   margin: 0;
@@ -308,21 +271,21 @@ html, body {
   background: rgba(14, 12, 18, 0.7);
 }
 
-/* state visuals - strongly distinct */
-.lantern.state-dormant {
-  --core-main: #9d5a2d;
-  --core-inner: #ca9770;
-  --glow-shadow: rgba(96, 46, 20, 0.08);
-  --halo-opacity: 0.06;
-  --core-scale: 0.34;
-  --flicker-speed: 4.9s;
-  --float-speed: 9.5s;
-  opacity: 0.56;
-  filter: saturate(0.5) brightness(0.52) drop-shadow(0 8px 9px rgba(0, 0, 0, 0.64));
+/* expressive states */
+.lantern.state-asleep {
+  --core-main: #95572e;
+  --core-inner: #bf8c61;
+  --glow-shadow: rgba(88, 43, 20, 0.08);
+  --halo-opacity: 0.04;
+  --core-scale: 0.28;
+  --flicker-speed: 5.4s;
+  --float-speed: 10s;
+  opacity: 0.5;
+  filter: saturate(0.45) brightness(0.5);
 }
-.lantern.state-dormant .frame.body { background: linear-gradient(145deg, rgba(73, 55, 45, 0.9), rgba(26, 23, 22, 0.97)); }
-.lantern.state-dormant .flame-core { width: 22px; height: 28px; top: 84px; left: 37px; }
-.lantern.state-dormant .flame-inner { opacity: 0.22; }
+.lantern.state-asleep .frame.body { background: linear-gradient(145deg, rgba(66, 50, 41, 0.9), rgba(23, 20, 19, 0.98)); }
+.lantern.state-asleep .flame-core { width: 18px; height: 24px; top: 88px; left: 39px; }
+.lantern.state-asleep .flame-inner { opacity: 0.16; }
 
 .lantern.state-awake {
   --core-main: #ffd98f;
@@ -332,100 +295,100 @@ html, body {
   --flicker-speed: 1.7s;
   --halo-opacity: 0.54;
 }
-.lantern.state-awake .flame-core { width: 40px; height: 62px; top: 48px; left: 28px; }
 
 .lantern.state-warm {
   --core-main: #ffe8b2;
   --core-inner: #fffaf0;
-  --glow-shadow: rgba(255, 216, 141, 0.78);
-  --core-scale: 1.28;
+  --glow-shadow: rgba(255, 216, 141, 0.82);
+  --core-scale: 1.32;
   --halo-opacity: 1;
-  --flicker-speed: 2.4s;
-  filter: saturate(1.33) brightness(1.21) drop-shadow(0 30px 22px rgba(0, 0, 0, 0.35));
+  --flicker-speed: 2.6s;
+  filter: saturate(1.35) brightness(1.22);
 }
-.lantern.state-warm .frame.body { background: linear-gradient(145deg, rgba(162, 123, 87, 0.97), rgba(70, 51, 43, 0.98)); }
-.lantern.state-warm .flame-core { width: 52px; height: 84px; top: 32px; left: 23px; border-radius: 62% 38% 64% 36% / 62% 66% 34% 38%; }
-.lantern.state-warm .flame-inner { width: 25px; height: 40px; left: 37px; top: 55px; }
+.lantern.state-warm .flame-core { width: 54px; height: 88px; top: 30px; left: 22px; border-radius: 62% 38% 64% 36% / 62% 66% 34% 38%; }
+.lantern.state-warm .flame-inner { width: 26px; height: 42px; left: 36px; top: 54px; }
 
 .lantern.state-agitated {
-  --core-main: #ffd04a;
-  --core-inner: #fffef1;
-  --glow-shadow: rgba(255, 99, 38, 0.8);
-  --core-scale: 1.08;
-  --flicker-speed: 0.24s;
-  --float-speed: 1.5s;
-  --tilt: -8deg;
-  --halo-opacity: 0.5;
-  filter: saturate(1.38) contrast(1.25) brightness(1.04) drop-shadow(0 26px 22px rgba(0, 0, 0, 0.58));
+  --core-main: #ff6a32;
+  --core-inner: #ffefdb;
+  --glow-shadow: rgba(255, 63, 35, 0.92);
+  --core-scale: 1.45;
+  --flicker-speed: 0.16s;
+  --float-speed: 1.2s;
+  --tilt: -10deg;
+  --halo-opacity: 0.76;
+  filter: saturate(1.5) contrast(1.35) brightness(1.08);
 }
-.lantern.state-agitated .frame.body { background: linear-gradient(145deg, rgba(140, 99, 67, 0.96), rgba(39, 28, 26, 0.99)); }
-.lantern.state-agitated .flame-core { width: 46px; height: 92px; top: 22px; left: 26px; border-radius: 30% 70% 72% 28% / 72% 30% 70% 28%; }
+.lantern.state-agitated .flame-core { width: 60px; height: 108px; top: 8px; left: 20px; border-radius: 22% 78% 72% 28% / 74% 22% 78% 26%; }
 
-.lantern.state-possessed {
+.lantern.state-breaking {
+  --core-main: #ff8f52;
+  --core-inner: #fff3de;
+  --glow-shadow: rgba(255, 120, 58, 0.95);
+  --core-scale: 1.58;
+  --flicker-speed: 0.11s;
+  --float-speed: 1s;
+  --tilt: -11deg;
+  --halo-opacity: 0.95;
+  filter: saturate(1.6) contrast(1.42) brightness(1.16);
+}
+.lantern.state-breaking .flame-core { width: 64px; height: 118px; top: 0; left: 18px; border-radius: 18% 82% 70% 30% / 80% 20% 80% 20%; }
+.lantern.state-breaking .cracks { opacity: 1; }
+.lantern.state-breaking .glass { box-shadow: inset 0 0 20px rgba(255, 124, 55, 0.45); }
+
+.lantern.state-cursed {
   --metal-mid: #211c2f;
   --metal-light: #4f4168;
   --core-main: #6c3ef0;
-  --core-inner: #d4f8b3;
-  --glow-shadow: rgba(84, 232, 146, 0.76);
-  --smoke-color: rgba(8, 7, 16, 0.97);
-  --core-scale: 1.4;
+  --core-inner: #c5ffb5;
+  --glow-shadow: rgba(72, 228, 138, 0.84);
+  --smoke-color: rgba(8, 7, 16, 0.98);
+  --core-scale: 1.42;
   --flicker-speed: 0.2s;
   --tilt: -10deg;
   --halo-opacity: 1;
-  filter: saturate(1.4) contrast(1.35) brightness(0.8) drop-shadow(0 36px 30px rgba(6, 1, 16, 0.96));
+  filter: saturate(1.42) contrast(1.36) brightness(0.78);
 }
-.lantern.state-possessed .frame.body {
-  background: linear-gradient(150deg, rgba(82, 67, 112, 0.98), rgba(16, 13, 30, 0.99));
-  border-color: rgba(11, 8, 24, 0.98);
-}
-.lantern.state-possessed .glass {
-  background: linear-gradient(180deg, rgba(133, 114, 217, 0.28), rgba(20, 16, 36, 0.72));
-  border-color: rgba(145, 127, 223, 0.56);
-}
-.lantern.state-possessed .flame-core { width: 56px; height: 100px; top: 14px; left: 21px; border-radius: 24% 76% 22% 78% / 70% 24% 76% 30%; }
-.lantern.state-possessed .flame-inner { background: radial-gradient(circle at 48% 24%, #efffe6 0%, #bbf4a7 45%, rgba(128, 255, 169, 0) 100%); }
-.lantern.state-possessed .sigil { opacity: 0.76; border-color: rgba(180, 255, 188, 0.72); }
+.lantern.state-cursed .flame-core { width: 56px; height: 102px; top: 12px; left: 21px; border-radius: 24% 76% 22% 78% / 70% 24% 76% 30%; }
+.lantern.state-cursed .flame-inner { background: radial-gradient(circle at 48% 24%, #efffe6 0%, #bbf4a7 45%, rgba(128, 255, 169, 0) 100%); }
+.lantern.state-cursed .cracks,
+.lantern.state-cursed .thorn-ring { opacity: 1; border-color: rgba(130, 196, 156, 0.84); }
 
-.lantern[data-variant='possessed-smoke'] .cracks,
-.lantern[data-variant='possessed-burst'] .cracks,
-.lantern.state-possessed .cracks { opacity: 1; }
+.lantern.state-dead {
+  --core-main: #636066;
+  --core-inner: #938f97;
+  --glow-shadow: rgba(120, 120, 132, 0.1);
+  --halo-opacity: 0.02;
+  --core-scale: 0.08;
+  --flicker-speed: 6.8s;
+  --float-speed: 8.5s;
+  filter: saturate(0.25) brightness(0.4);
+}
+.lantern.state-dead .flame-core { width: 8px; height: 10px; top: 102px; left: 46px; opacity: 0.25; }
+.lantern.state-dead .flame-inner { opacity: 0; }
+.lantern.state-dead .frame.body { background: linear-gradient(145deg, rgba(58, 56, 61, 0.9), rgba(23, 24, 27, 0.98)); }
 
-.lantern[data-variant='possessed-smoke'] .thorn-ring,
-.lantern[data-variant='possessed-burst'] .thorn-ring,
-.lantern.state-possessed .thorn-ring {
-  opacity: 1;
-  border-color: rgba(130, 196, 156, 0.84);
+.lantern.state-overgrown {
+  --core-main: #9ee27e;
+  --core-inner: #d5ffbf;
+  --glow-shadow: rgba(117, 214, 122, 0.52);
+  --core-scale: 0.78;
+  --flicker-speed: 3.2s;
+  --halo-opacity: 0.42;
+  --tilt: -3deg;
+  filter: saturate(1.18) brightness(0.88);
 }
+.lantern.state-overgrown .flame-core { width: 30px; height: 44px; top: 66px; left: 34px; }
+.lantern.state-overgrown .vine-wrap,
+.lantern.state-overgrown .thorn-ring { opacity: 1; }
+.lantern.state-overgrown .thorn-ring { border-color: rgba(100, 176, 92, 0.92); }
 
-.lantern.state-agitated .lantern-shell,
-.lantern.state-possessed .lantern-shell {
-  animation: jitter calc(var(--flicker-speed) * 1.8) steps(2, end) infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(-0.3deg); }
-  50% { transform: translateY(-5px) rotate(0.3deg); }
-}
-@keyframes haloPulse {
-  0%, 100% { transform: scale(0.9); opacity: calc(var(--halo-opacity) * 0.7); }
-  50% { transform: scale(1.1); opacity: var(--halo-opacity); }
-}
+@keyframes float { 0%,100% { transform: translateY(0) rotate(-0.3deg);} 50% { transform: translateY(-5px) rotate(0.3deg);} }
+@keyframes haloPulse { 0%,100% { transform: scale(0.9); opacity: calc(var(--halo-opacity) * 0.7);} 50% { transform: scale(1.1); opacity: var(--halo-opacity);} }
 @keyframes flicker {
-  0%, 100% { transform: translateX(0) scale(calc(var(--core-scale) * 0.96), calc(var(--core-scale) * 1.04)); }
+  0%,100% { transform: translateX(0) scale(calc(var(--core-scale) * 0.96), calc(var(--core-scale) * 1.04)); }
   30% { transform: translateX(-1.8px) scale(calc(var(--core-scale) * 1.12), calc(var(--core-scale) * 0.88)); }
   60% { transform: translateX(1.8px) scale(calc(var(--core-scale) * 0.86), calc(var(--core-scale) * 1.14)); }
 }
-@keyframes drift {
-  0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
-  10% { opacity: 0.9; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0; }
-}
-@keyframes jitter {
-  0%, 100% { transform: translate(0, 0); }
-  30% { transform: translate(1.2px, -1px); }
-  70% { transform: translate(-1px, 1px); }
-}
-@keyframes burst {
-  0% { opacity: 0.9; transform: scale(0.62); }
-  100% { opacity: 0; transform: scale(1.65); }
-}
+@keyframes drift { 0% { transform: translate(0, 0) scale(0.8); opacity: 0; } 10% { opacity: 0.9; } 100% { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0; } }
+@keyframes burst { 0% { opacity: 0.9; transform: scale(0.62);} 100% { opacity: 0; transform: scale(1.65);} }
