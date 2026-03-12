@@ -1,442 +1,400 @@
 (function () {
   const overlayRoot = document.getElementById('overlay-root');
-  const eyeRoot = document.getElementById('lantern');
   const chatList = document.getElementById('chat-list');
   const chatInputForm = document.getElementById('chat-input-form');
   const chatInput = document.getElementById('chat-input');
   const tinyStatus = document.getElementById('tiny-status');
-  const interactionHeader = document.getElementById('interaction-header');
-  const explosionField = document.getElementById('explosion-field');
+  const testControls = document.getElementById('test-controls');
+
+  const modeLabel = document.getElementById('mode-label');
+  const scoreLabel = document.getElementById('score-label');
+  const runner = document.getElementById('runner');
+  const groundRunner = document.getElementById('ground-runner');
+  const obstacleLayer = document.getElementById('obstacle-layer');
+  const ivyMeter = document.getElementById('ivy-meter');
+  const ivyAura = document.getElementById('ivy-aura');
 
   const params = new URLSearchParams(window.location.search);
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
-  const IVY_THRESHOLD = 10;
-  const STATE_ORDER = ['blissful', 'awakened', 'curious', 'disturbed', 'corrupted', 'rotting', 'dead'];
-  const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
-
-  const matchConfig = {
-    corruptWords: ['ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death', 'blood', 'kill', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession', 'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'angry', 'burn', 'chaos', 'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness', 'violent', 'insane', 'mad', 'destroy', 'ruin', 'pain', 'torment', 'sinister', 'malicious', 'unholy', 'infected', 'plague', 'parasite', 'zombie', 'hollow'],
-    healWords: ['love', 'lovely', 'cute', 'cozy', 'calm', 'gentle', 'safe', 'okay', 'sweet', 'warm', 'bloom', 'light', 'hope', 'kind', 'peaceful', 'peace', 'comfort', 'serene', 'tranquil', 'pretty', 'soft', 'hug', 'healing', 'heal', 'rest', 'home', 'alive', 'smile', 'happy', 'joy', 'joyful', 'bright', 'angel', 'sunshine', 'breathe', 'relax', 'adorable', 'tender', 'clean', 'comfy'],
-    resetWords: ['wake', 'awaken', 'revive', 'reborn', 'reset', 'blink', 'return', 'restore', 'renew', 'rebirth'],
-    healPhrases: ['calm down', 'safe place'],
-    corruptPhrases: ['fall apart', 'give in']
+  const GAME = {
+    gravity: 2200,
+    jumpVelocity: 760,
+    duckScale: 0.58,
+    groundY: 10,
+    runnerX: 30,
+    runnerW: 24,
+    runnerH: 24,
+    baseSpeed: 190,
+    maxSpeed: 320,
+    spawnBaseMs: 1180,
+    ivyThreshold: 5,
+    ivyDurationMs: 2300,
+    darkDurationMs: 2600,
+    returnDelayMs: 1800
   };
 
   const state = {
     testingMode,
-    corruptionScore: 0,
-    ivyCounter: 0,
-    renderedState: 'awakened',
-    ivySurgeActive: false,
-    ivyPhase: 'charging',
-    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
-    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null, lookReset: null, peekReveal: null }
+    gameState: 'idle', // idle | starting | running | hit | gameover | returning
+    roundActive: false,
+    y: GAME.groundY,
+    vy: 0,
+    ducking: false,
+    obstacles: [],
+    speed: GAME.baseSpeed,
+    spawnTimer: 0,
+    elapsed: 0,
+    score: 0,
+    best: Number(window.localStorage.getItem('lantern-run-best') || 0),
+    ivyCharge: 0,
+    ivyShieldUntil: 0,
+    darkPulseUntil: 0,
+    lastFrame: 0,
+    rafId: null,
+    returnTimeout: null
   };
 
-  const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
-
-  function deriveStateFromScore(score = state.corruptionScore) {
-    if (score <= -2) return 'blissful';
-    if (score <= 1) return 'awakened';
-    if (score <= 3) return 'curious';
-    if (score <= 5) return 'disturbed';
-    if (score <= 7) return 'corrupted';
-    if (score <= 9) return 'rotting';
-    return 'dead';
+  function setGameState(next) {
+    state.gameState = next;
+    overlayRoot.dataset.gameState = next;
   }
 
-  function stateToScore(nextState) {
-    if (nextState === 'blissful') return -2;
-    if (nextState === 'awakened') return 0;
-    if (nextState === 'curious') return 2;
-    if (nextState === 'disturbed') return 4;
-    if (nextState === 'corrupted') return 6;
-    if (nextState === 'rotting') return 8;
-    return 10;
+  function setModeText() {
+    if (!state.roundActive) {
+      modeLabel.textContent = 'Lantern Companion';
+      return;
+    }
+
+    if (state.gameState === 'running' || state.gameState === 'starting') modeLabel.textContent = 'Lantern Run';
+    if (state.gameState === 'hit') modeLabel.textContent = 'Ouch!';
+    if (state.gameState === 'gameover') modeLabel.textContent = 'Round Ended';
   }
 
-  function deriveIvyPhase() {
-    if (state.ivySurgeActive) return state.ivyPhase;
-    if (state.ivyCounter >= IVY_THRESHOLD - 2) return 'warning';
-    return 'charging';
+  function updateScoreboard() {
+    scoreLabel.hidden = !state.roundActive;
+    scoreLabel.textContent = `Score: ${Math.floor(state.score)} • Best: ${Math.floor(state.best)}`;
   }
 
-  function resetDebug() {
-    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 };
+  function updateIvyUI() {
+    ivyMeter.style.width = `${Math.min(100, (state.ivyCharge / GAME.ivyThreshold) * 100)}%`;
+    const shieldOn = performance.now() < state.ivyShieldUntil;
+    ivyAura.hidden = !shieldOn || !state.roundActive;
+    runner.classList.toggle('mood-ivy', shieldOn);
   }
 
-  function updateStatus() {
+  function updateDebug() {
     if (!testingMode) return;
-
-    const phase = deriveIvyPhase().toUpperCase();
-    if (state.ivySurgeActive) {
-      tinyStatus.textContent = `TEST • IVY PEEK ACTIVE • PHASE: ${phase}`;
-      return;
-    }
-
-    const c = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
-    const h = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
-    const d = state.debug.delta > 0 ? `+${state.debug.delta}` : `${state.debug.delta}`;
-    tinyStatus.textContent = `TEST • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
+    const shieldMs = Math.max(0, state.ivyShieldUntil - performance.now());
+    const darkMs = Math.max(0, state.darkPulseUntil - performance.now());
+    tinyStatus.textContent = `TEST • state=${state.gameState} • score=${Math.floor(state.score)} • ivy=${state.ivyCharge}/${GAME.ivyThreshold} • shield=${Math.ceil(shieldMs)}ms • dark=${Math.ceil(darkMs)}ms`;
   }
 
-  function render(reason = 'render') {
-    const derived = deriveStateFromScore();
-    STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
-    eyeRoot.classList.add(`state-${derived}`);
-    overlayRoot.dataset.state = derived;
-    state.renderedState = derived;
-
-    for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
-    eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
-
-    eyeRoot.classList.remove('ivy-charge', 'ivy-warning', 'ivy-surge', 'ivy-cooldown');
-    const phase = deriveIvyPhase();
-    if (phase === 'charging') eyeRoot.classList.add('ivy-charge');
-    if (phase === 'warning') eyeRoot.classList.add('ivy-warning');
-    if (phase === 'surge') eyeRoot.classList.add('ivy-surge');
-    if (phase === 'cooldown') eyeRoot.classList.add('ivy-cooldown');
-
-    updateStatus();
-    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ivyPhase=${phase} reason=${reason}`);
-  }
-
-  function blink() {
-    eyeRoot.classList.remove('blink');
-    requestAnimationFrame(() => eyeRoot.classList.add('blink'));
-    clearTimeout(state.timers.blinkCleanup);
-    state.timers.blinkCleanup = setTimeout(() => eyeRoot.classList.remove('blink'), 460);
-  }
-
-  function bloom() {
-    eyeRoot.classList.remove('bloom');
-    requestAnimationFrame(() => eyeRoot.classList.add('bloom'));
-    clearTimeout(state.timers.bloomCleanup);
-    state.timers.bloomCleanup = setTimeout(() => eyeRoot.classList.remove('bloom'), 900);
-  }
-
-  function burst(type = 'pulse') {
-    eyeRoot.classList.remove('burst', 'stress');
-    requestAnimationFrame(() => eyeRoot.classList.add(type === 'stress' ? 'stress' : 'burst'));
-  }
-
-  function triggerReaction(kind = 'heal') {
-    eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral');
-    const cls = kind === 'corrupt' ? 'react-corrupt' : (kind === 'ivy' ? 'react-ivy' : 'react-heal');
-    requestAnimationFrame(() => eyeRoot.classList.add(cls));
-    clearTimeout(state.timers.reactionCleanup);
-    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral'), 420);
-  }
-
-
-  function glance(kind = 'neutral') {
-    if (kind === 'heal') eyeRoot.dataset.look = Math.random() > 0.5 ? 'left' : 'right';
-    else if (kind === 'corrupt') eyeRoot.dataset.look = Math.random() > 0.5 ? 'right' : 'left';
-    else eyeRoot.dataset.look = Math.random() > 0.55 ? 'left' : (Math.random() > 0.5 ? 'right' : 'center');
-
-    clearTimeout(state.timers.lookReset);
-    state.timers.lookReset = setTimeout(() => {
-      eyeRoot.dataset.look = 'center';
-    }, 300);
-  }
-
-  function triggerMessageResponse(kind = 'neutral') {
-    eyeRoot.classList.remove('message-ping');
-    requestAnimationFrame(() => eyeRoot.classList.add('message-ping'));
-    burst('pulse');
-    glance(kind);
-    clearTimeout(state.timers.messageCleanup);
-    state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 320);
-
-    if (kind === 'ivy') {
-      triggerReaction('ivy');
-      burst('stress');
-      blink();
-      return;
-    }
-
-    if (kind === 'corrupt') {
-      triggerReaction('corrupt');
-      burst('pulse');
-      return;
-    }
-
-    if (kind === 'heal') {
-      triggerReaction('heal');
-      bloom();
-      return;
-    }
-
-    eyeRoot.classList.remove('react-neutral');
-    requestAnimationFrame(() => eyeRoot.classList.add('react-neutral'));
-    blink();
-  }
-
-  function emitExternalDebris(amount = 24) {
-    if (!explosionField) return;
-    for (let i = 0; i < amount; i += 1) {
-      const r = Math.random();
-      const type = r > 0.72 ? 'ember' : (r > 0.42 ? 'spore' : 'smoke');
-      const d = document.createElement('span');
-      d.className = `debris ${type}`;
-      d.style.left = `${108 + (Math.random() * 30 - 15)}px`;
-      d.style.top = `${102 + (Math.random() * 18 - 9)}px`;
-      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 84}px`);
-      d.style.setProperty('--dy', `${(Math.random() * -86) - 10}px`);
-      d.style.animationDuration = `${920 + Math.random() * 760}ms`;
-      explosionField.appendChild(d);
-      setTimeout(() => d.remove(), 1900);
-    }
-  }
-
-  function triggerIvyHitFeedback(intensity = 1) {
-    triggerReaction('ivy');
-    eyeRoot.classList.remove('ivy-surge-hit');
-    requestAnimationFrame(() => eyeRoot.classList.add('ivy-surge-hit'));
-    clearTimeout(state.timers.ivyHitCleanup);
-    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 440);
-
-    const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
-    burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
-    emitParticle('warm');
-    if (Math.random() > 0.45 || nearing) emitParticle('ash');
-    if (Math.random() > 0.65 || nearing) emitParticle('smoke');
-  }
-
-  function setScore(value, reason = 'setScore') {
-    state.corruptionScore = clampScore(value);
-    render(reason);
-  }
-
-  function mutateScore(delta, reason = 'mutate') {
-    setScore(state.corruptionScore + delta, reason);
-  }
-
-  function setState(nextStateRaw, reason = 'setState') {
-    const alias = String(nextStateRaw || '').toLowerCase();
-    const normalized = STATE_ALIAS[alias] || alias;
-    if (!STATE_ORDER.includes(normalized)) return;
-    setScore(stateToScore(normalized), reason);
-  }
-
-  function tokenize(text) {
-    return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
-  }
-
-  function performIvySurge(source = 'ivySurge') {
-    if (state.ivySurgeActive) return;
-
-    state.ivySurgeActive = true;
-    state.debug.surgeActive = true;
-
-    state.ivyPhase = 'surge';
-    eyeRoot.classList.remove('ivy-peek-open');
-    render(`${source}:surge`);
-    blink();
-    burst('stress');
-    emitExternalDebris(10);
-
-    clearTimeout(state.timers.peekReveal);
-    state.timers.peekReveal = setTimeout(() => {
-      eyeRoot.classList.add('ivy-peek-open');
-    }, 260);
-
-    clearTimeout(state.timers.ritualStep);
-    state.timers.ritualStep = setTimeout(() => {
-      state.ivyPhase = 'cooldown';
-      state.ivyCounter = 0;
-      eyeRoot.classList.remove('ivy-peek-open');
-      render(`${source}:cooldown`);
-      emitExternalDebris(4);
-    }, 2300);
-
-    clearTimeout(state.timers.ritualCleanup);
-    state.timers.ritualCleanup = setTimeout(() => {
-      state.ivySurgeActive = false;
-      state.ivyPhase = 'charging';
-      eyeRoot.classList.remove('ivy-peek-open');
-      state.debug.surgeActive = false;
-      render(`${source}:reset`);
-      updateStatus();
-    }, 3200);
-  }
-
-  function applyPhraseMatches(normalizedText) {
-    for (const phrase of matchConfig.healPhrases) {
-      if (normalizedText.includes(phrase)) {
-        state.debug.matchedHeal.push(phrase);
-        state.debug.delta -= 1;
-      }
-    }
-    for (const phrase of matchConfig.corruptPhrases) {
-      if (normalizedText.includes(phrase)) {
-        state.debug.matchedCorrupt.push(phrase);
-        state.debug.delta += 1;
-      }
-    }
-  }
-
-  function applyMessageTriggers(text, source = 'chat') {
-    resetDebug();
-    const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
-    const words = tokenize(normalizedText);
-    applyPhraseMatches(normalizedText);
-
-    for (const word of words) {
-      if (word === 'ivy') {
-        state.debug.ivyHits += 1;
-        continue;
-      }
-      if (matchConfig.corruptWords.includes(word)) {
-        state.debug.matchedCorrupt.push(word);
-        state.debug.delta += 1;
-      }
-      if (matchConfig.healWords.includes(word)) {
-        state.debug.matchedHeal.push(word);
-        state.debug.delta -= 1;
-      }
-      if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
-    }
-
-    let messageKind = 'neutral';
-
-    if (state.debug.ivyHits > 0) {
-      if (!state.ivySurgeActive) {
-        state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
-      }
-      triggerIvyHitFeedback(state.debug.ivyHits);
-      messageKind = 'ivy';
-    }
-
-    if (state.debug.resetTriggered) {
-      setScore(0, `${source}:resetWord`);
-      bloom();
-      blink();
-      if (messageKind === 'neutral') messageKind = 'heal';
-    } else if (state.debug.delta !== 0) {
-      mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
-      if (state.debug.delta > 0) {
-        messageKind = messageKind === 'ivy' ? 'ivy' : 'corrupt';
-      }
-      if (state.debug.delta < 0) {
-        if (messageKind === 'neutral') messageKind = 'heal';
-      }
-    }
-
-    triggerMessageResponse(messageKind);
-
-    if (state.ivyCounter >= IVY_THRESHOLD && !state.ivySurgeActive) {
-      performIvySurge(`${source}:ivy`);
-      return;
-    }
-
-    render(`${source}:post`);
-  }
-
-  function appendChat(user, text) {
+  function addChat(user, text) {
     const item = document.createElement('li');
     item.innerHTML = `<span class="tag">${user}</span>${text}`;
     chatList.prepend(item);
     while (chatList.children.length > 6) chatList.removeChild(chatList.lastChild);
   }
 
-  function emitParticle(type) {
-    const layer = eyeRoot.querySelector(`.particle-layer.${type}`);
-    if (!layer) return;
-    const p = document.createElement('span');
-    p.className = `particle ${type}`;
-    p.style.left = `${80 + Math.random() * 65}px`;
-    p.style.top = `${86 + Math.random() * 56}px`;
-    p.style.setProperty('--dx', `${-22 + Math.random() * 44}px`);
-    p.style.setProperty('--dy', `${-88 + Math.random() * 52}px`);
-    layer.appendChild(p);
-    setTimeout(() => p.remove(), 3200);
+  function clearObstacles() {
+    state.obstacles.forEach((obs) => obs.el.remove());
+    state.obstacles.length = 0;
   }
 
-  function ambient() {
-    if (state.ivySurgeActive) {
-      emitParticle('warm');
-      if (Math.random() > 0.45) emitParticle('smoke');
+  function resetRunnerPose() {
+    state.y = GAME.groundY;
+    state.vy = 0;
+    state.ducking = false;
+    applyRunnerTransform();
+  }
+
+  function startRound(source = 'system') {
+    clearTimeout(state.returnTimeout);
+    clearObstacles();
+    state.roundActive = true;
+    setGameState('starting');
+    state.score = 0;
+    state.speed = GAME.baseSpeed;
+    state.spawnTimer = 260;
+    state.elapsed = 0;
+    state.darkPulseUntil = 0;
+    state.ivyShieldUntil = 0;
+    resetRunnerPose();
+    setModeText();
+    updateScoreboard();
+    updateIvyUI();
+    addChat('lantern', `Lantern Run started (${source}). Type jump!`);
+
+    setTimeout(() => {
+      if (state.roundActive && state.gameState === 'starting') setGameState('running');
+      setModeText();
+      updateDebug();
+    }, 280);
+  }
+
+  function finishRound(reason = 'hit') {
+    state.roundActive = false;
+    setGameState('gameover');
+    setModeText();
+    state.best = Math.max(state.best, state.score);
+    window.localStorage.setItem('lantern-run-best', String(Math.floor(state.best)));
+    updateScoreboard();
+    addChat('lantern', `Round over (${reason}). Score ${Math.floor(state.score)}.`);
+    state.returnTimeout = setTimeout(() => {
+      setGameState('returning');
+      clearObstacles();
+      setTimeout(() => {
+        setGameState('idle');
+        resetRunnerPose();
+        setModeText();
+        updateScoreboard();
+      }, 350);
+    }, GAME.returnDelayMs);
+  }
+
+  function applyRunnerTransform() {
+    const heightScale = state.ducking ? GAME.duckScale : 1;
+    groundRunner.style.transform = `translateY(${-state.y}px) scale(1, ${heightScale})`;
+  }
+
+  function jump() {
+    if (!state.roundActive || state.gameState !== 'running') return;
+    if (state.y > GAME.groundY + 1) return;
+    state.vy = GAME.jumpVelocity;
+    runner.classList.add('mood-jump');
+    setTimeout(() => runner.classList.remove('mood-jump'), 140);
+  }
+
+  function duck(active) {
+    if (!state.roundActive || state.gameState !== 'running') return;
+    state.ducking = !!active && state.y <= GAME.groundY + 2;
+    applyRunnerTransform();
+  }
+
+  function makeObstacle() {
+    const roll = Math.random();
+    const type = roll > 0.72 ? 'eye' : (roll > 0.4 ? 'root' : 'spike');
+    const width = type === 'root' ? 22 : 16;
+    const height = type === 'eye' ? 16 : (type === 'root' ? 14 : 24);
+    const y = type === 'eye' ? 31 : 10;
+
+    const el = document.createElement('span');
+    el.className = `obstacle type-${type}`;
+    el.style.left = '330px';
+    obstacleLayer.appendChild(el);
+
+    state.obstacles.push({ el, type, x: 330, y, width, height, passed: false });
+  }
+
+  function activateIvyShield() {
+    state.ivyCharge = 0;
+    state.ivyShieldUntil = performance.now() + GAME.ivyDurationMs;
+    addChat('lantern', 'Ivy form awakened: shielded glow!');
+  }
+
+  function applyCommand(text, user = 'chat') {
+    const msg = String(text || '').toLowerCase().trim();
+    if (!msg) return;
+
+    if (/\b(start|run|go)\b/.test(msg)) {
+      if (!state.roundActive) startRound(user);
       return;
     }
 
-    if (['blissful', 'awakened'].includes(state.renderedState)) {
-      if (Math.random() > 0.65) emitParticle('warm');
-    } else if (['curious', 'disturbed'].includes(state.renderedState)) {
-      emitParticle('warm');
-      if (Math.random() > 0.7) emitParticle('ash');
-    } else {
-      emitParticle('smoke');
-      if (Math.random() > 0.48) emitParticle('ash');
-      if (Math.random() > 0.84) blink();
+    if (/\bjump\b/.test(msg)) {
+      jump();
+      return;
+    }
+
+    if (/\bduck\b/.test(msg)) {
+      duck(true);
+      setTimeout(() => duck(false), 260);
+      return;
+    }
+
+    if (/\bivy\b/.test(msg)) {
+      state.ivyCharge = Math.min(GAME.ivyThreshold, state.ivyCharge + 1);
+      if (state.ivyCharge >= GAME.ivyThreshold && state.roundActive) activateIvyShield();
+      updateIvyUI();
+      return;
+    }
+
+    if (/\b(love|light|heal)\b/.test(msg)) {
+      if (state.roundActive) {
+        state.ivyShieldUntil = Math.max(state.ivyShieldUntil, performance.now() + 900);
+      }
+      addChat('lantern', 'Warm light steadies the spirit.');
+      updateIvyUI();
+      return;
+    }
+
+    if (/\b(dead|curse|demon)\b/.test(msg)) {
+      if (state.roundActive) {
+        state.darkPulseUntil = performance.now() + GAME.darkDurationMs;
+      }
+      addChat('lantern', 'A cursed wave darkens the lane.');
+      return;
     }
   }
 
-  function action(name) {
-    const act = String(name || '').toLowerCase();
-    if (act === 'blink') blink();
-    if (act === 'lookleft') eyeRoot.dataset.look = 'left';
-    if (act === 'lookright') eyeRoot.dataset.look = 'right';
-    if (act === 'corrupt') { mutateScore(1, 'action:corrupt'); triggerReaction('corrupt'); }
-    if (act === 'heal') { mutateScore(-1, 'action:heal'); triggerReaction('heal'); }
-    if (act === 'reset') { resetDebug(); setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
-    if (act === 'explode' || act === 'ivyburst') performIvySurge(`action:${act}`);
+  function intersects(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function tick(ts) {
+    if (!state.lastFrame) state.lastFrame = ts;
+    const dt = Math.min(0.032, (ts - state.lastFrame) / 1000);
+    state.lastFrame = ts;
+
+    if (state.roundActive && state.gameState === 'running') {
+      const darkActive = ts < state.darkPulseUntil;
+      state.speed = Math.min(GAME.maxSpeed, state.speed + dt * (darkActive ? 15 : 8));
+
+      state.vy -= GAME.gravity * dt;
+      state.y += state.vy * dt;
+      if (state.y <= GAME.groundY) {
+        state.y = GAME.groundY;
+        state.vy = 0;
+      }
+
+      applyRunnerTransform();
+
+      state.spawnTimer -= dt * 1000;
+      const spawnWindow = darkActive ? GAME.spawnBaseMs * 0.65 : GAME.spawnBaseMs;
+      if (state.spawnTimer <= 0) {
+        makeObstacle();
+        state.spawnTimer = spawnWindow * (0.75 + Math.random() * 0.6);
+      }
+
+      const runnerHeight = state.ducking ? GAME.runnerH * GAME.duckScale : GAME.runnerH;
+      const runnerBox = { x: GAME.runnerX, y: state.y, w: GAME.runnerW, h: runnerHeight };
+
+      for (const obs of state.obstacles) {
+        obs.x -= state.speed * dt;
+        obs.el.style.left = `${obs.x}px`;
+
+        const obsBox = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+
+        if (!obs.passed && obsBox.x + obsBox.w < GAME.runnerX) {
+          obs.passed = true;
+          state.score += 10;
+        }
+
+        const shieldOn = ts < state.ivyShieldUntil;
+        if (intersects(runnerBox, obsBox)) {
+          if (shieldOn) {
+            obs.passed = true;
+            obs.x = -40;
+            state.score += 4;
+          } else {
+            setGameState('hit');
+            runner.classList.add('mood-hit');
+            setTimeout(() => runner.classList.remove('mood-hit'), 400);
+            finishRound('collision');
+            break;
+          }
+        }
+      }
+
+      state.obstacles = state.obstacles.filter((obs) => {
+        const keep = obs.x > -40;
+        if (!keep) obs.el.remove();
+        return keep;
+      });
+
+      state.elapsed += dt;
+      state.score += dt * 7;
+      updateScoreboard();
+      updateIvyUI();
+    }
+
+    updateDebug();
+    state.rafId = requestAnimationFrame(tick);
+  }
+
+  function setupTesting() {
+    if (!testingMode) return;
+    overlayRoot.dataset.mode = 'test';
+    chatInputForm.hidden = false;
+    testControls.hidden = false;
+    tinyStatus.hidden = false;
+
+    chatInputForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+      addChat('you', text);
+      applyCommand(text, 'local');
+      chatInput.value = '';
+    });
+
+    testControls.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        addChat('test', cmd);
+        applyCommand(cmd, 'test');
+      });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'Space' || event.code === 'ArrowUp') {
+        event.preventDefault();
+        jump();
+      }
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        duck(true);
+      }
+      if (event.code === 'Enter' && !state.roundActive) {
+        event.preventDefault();
+        startRound('keyboard');
+      }
+      if (event.key.toLowerCase() === 'i') applyCommand('ivy', 'keyboard');
+      if (event.key.toLowerCase() === 'l') applyCommand('love', 'keyboard');
+      if (event.key.toLowerCase() === 'c') applyCommand('curse', 'keyboard');
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (event.code === 'ArrowDown') duck(false);
+    });
   }
 
   function receive(payload = {}) {
     const type = String(payload.type || '').toLowerCase();
     if (type === 'chat' && payload.text) {
-      appendChat(payload.user || 'chat', payload.text);
-      applyMessageTriggers(payload.text, 'receive:chat');
-    }
-    if (type === 'action' && payload.action) action(payload.action);
-    if (type === 'setscore') setScore(Number(payload.value ?? 0), 'receive:setScore');
-    if (type === 'setstate' && payload.state) setState(payload.state, 'receive:setState');
-  }
-
-  function handleTypedMessage(rawText) {
-    const text = String(rawText || '').trim();
-    if (!text) return;
-    appendChat('you', text);
-    applyMessageTriggers(text, 'local-input');
-  }
-
-  function setupTestingInput() {
-    if (!testingMode) {
-      interactionHeader.hidden = true;
+      addChat(payload.user || 'chat', payload.text);
+      applyCommand(payload.text, payload.user || 'chat');
       return;
     }
-    overlayRoot.dataset.mode = 'test';
-    chatInputForm.hidden = false;
-    tinyStatus.hidden = false;
-    chatInputForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      handleTypedMessage(chatInput.value);
-      chatInput.value = '';
-      chatInput.focus();
-    });
-  }
 
-  function bootstrapChat() {
-    appendChat('ivy-eye', 'be kind, be cursed, or spam ivy to summon a peek.');
-    if (testingMode) appendChat('ivy-eye', 'test: comfort it / corrupt it / ivy x10');
+    if (type === 'action' && payload.action) {
+      applyCommand(String(payload.action), 'action');
+    }
   }
 
   function bootstrap() {
-    setupTestingInput();
-    bootstrapChat();
-    eyeRoot.dataset.look = 'center';
-    render('bootstrap');
-    state.timers.particles = setInterval(ambient, 170);
+    setGameState('idle');
+    setModeText();
+    updateScoreboard();
+    updateIvyUI();
+    setupTesting();
+
+    addChat('lantern', 'Idle mode: type start/run/go to begin Lantern Run.');
+    addChat('lantern', 'Commands: jump • ivy • love/light/heal • dead/curse/demon');
+
+    state.rafId = requestAnimationFrame(tick);
   }
 
   window.ChatEye = {
     receive,
-    setScore: (value) => setScore(value, 'api:setScore'),
-    setState: (name) => setState(name, 'api:setState'),
-    action,
-    sendLocalMessage: handleTypedMessage
+    sendLocalMessage: (text) => {
+      addChat('local', text);
+      applyCommand(text, 'local');
+    },
+    startRound: () => startRound('api'),
+    jump,
+    duck
   };
 
   bootstrap();

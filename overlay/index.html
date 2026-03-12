@@ -3,52 +3,55 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ivy Eye Overlay</title>
+    <title>Lantern Run Overlay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main id="overlay-root" class="overlay-corner" data-mode="live" data-state="awakened">
-      <section id="lantern" class="lantern state-awakened" aria-label="Haunted lantern companion">
-        <div class="chain" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="lantern-halo" aria-hidden="true"></div>
+    <main id="overlay-root" class="overlay-corner" data-mode="live" data-game-state="idle">
+      <section id="lantern-card" class="lantern-card" aria-label="Lantern companion and mini-game">
+        <header class="panel-title">
+          <p id="mode-label">Lantern Companion</p>
+          <p id="score-label" hidden>Score: 0 • Best: 0</p>
+        </header>
 
-        <div class="lantern-shell">
-          <span class="frame cap"></span>
-          <span class="frame body"></span>
-          <span class="frame base"></span>
-          <span class="glass"></span>
-          <span class="cracks"></span>
-          <span class="entity-wrap">
-            <span class="flame-core"></span>
-            <span class="flame-inner"></span>
-            <span class="ivy-peeker"><span class="peeker-eye"></span></span>
-          </span>
-        </div>
+        <section id="lantern-stage" class="lantern-stage mode-idle" aria-live="polite">
+          <div class="lantern-shell" aria-hidden="true">
+            <span class="halo"></span>
+            <span id="runner" class="runner mood-idle">
+              <span class="eyes"></span>
+            </span>
+          </div>
 
-        <div class="particle-layer warm" aria-hidden="true"></div>
-        <div class="particle-layer ash" aria-hidden="true"></div>
-        <div class="particle-layer smoke" aria-hidden="true"></div>
-        <div class="burst-ring" aria-hidden="true"></div>
-        <div id="explosion-field" class="explosion-field" aria-hidden="true"></div>
+          <div id="game-strip" class="game-strip" role="img" aria-label="Lantern Run game lane">
+            <div class="lane-glow" aria-hidden="true"></div>
+            <div id="ground-runner" class="ground-runner"></div>
+            <div id="obstacle-layer" class="obstacle-layer"></div>
+            <div id="ivy-aura" class="ivy-aura" hidden></div>
+          </div>
 
-        <div class="ritual-layer" aria-hidden="true">
-          <div class="ritual-ring"></div>
-          <div class="ritual-sigil"></div>
-                  </div>
-      </section>
-
-      <section id="interaction-header" class="interaction-header" aria-label="interaction header">
-        <p>Comfort it • Corrupt it • Ivy to summon</p>
+          <div class="meters" aria-hidden="true">
+            <div class="meter-label">Ivy</div>
+            <div class="meter-track"><div id="ivy-meter" class="meter-fill"></div></div>
+          </div>
+        </section>
       </section>
 
       <aside id="chat-panel" class="chat-panel" aria-label="Lantern chat panel">
         <ol id="chat-list"></ol>
-
         <form id="chat-input-form" class="chat-input" hidden>
-          <input id="chat-input" type="text" maxlength="180" placeholder="Try: love joy / ghost demon / ivy ivy ..." autocomplete="off" />
+          <input id="chat-input" type="text" maxlength="180" placeholder="try: start / jump / ivy / love / curse" autocomplete="off" />
           <button type="submit">Send</button>
         </form>
       </aside>
+
+      <section id="test-controls" class="test-controls" hidden>
+        <button data-cmd="start">Start</button>
+        <button data-cmd="jump">Jump</button>
+        <button data-cmd="duck">Duck</button>
+        <button data-cmd="ivy">Ivy</button>
+        <button data-cmd="love">Love</button>
+        <button data-cmd="curse">Curse</button>
+      </section>
 
       <p id="tiny-status" class="tiny-status" hidden></p>
     </main>
