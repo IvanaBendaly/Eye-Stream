@@ -1,395 +1,424 @@
 (function () {
-  const shell = document.getElementById('eye-shell');
-  const overlayRoot = document.getElementById('overlay-root');
-
-  const STATE_CLASS = {
-    awakened: 'state-awakened',
-    overgrown: 'state-overgrown',
-    corrupted: 'state-corrupted',
-    rotten: 'state-rotten'
+  const config = {
+    states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
+    decay: { activity: 0.03, warm: 0.045, chaos: 0.05, curse: 0.022 },
+    keywords: {
+      warm: ['love', 'cute', 'safe', 'cozy', 'gentle', 'calm', 'hug', 'lovely', 'sweet'],
+      chaos: ['run', 'chaos', 'panic', 'fast', 'insane', 'scream', 'cursed', 'hunt', 'wild'],
+      curse: ['void', 'possessed', 'demon', 'hex', 'rot', 'bleed', 'haunt', 'watcher', 'consume', 'hollow']
+    },
+    thresholds: {
+      dormantActivity: 0.18,
+      warmDelta: 0.18,
+      agitatedDelta: 0.2,
+      possessedCurse: 0.84,
+      possessedDurationMs: 12000
+    }
   };
 
-  const PHASE_MOTION_CLASS = {
-    awakened: 'phase-awakened',
-    overgrown: 'phase-overgrown',
-    corrupted: 'phase-corrupted',
-    rotten: 'phase-rotten'
-  };
-
-  const EMOTION_CLASS = {
-    neutral: 'emotion-neutral',
-    happy: 'emotion-happy',
-    sad: 'emotion-sad',
-    alert: 'emotion-alert',
-    angry: 'emotion-angry',
-    afraid: 'emotion-afraid',
-    empty: 'emotion-empty',
-    bloodshot: 'emotion-bloodshot'
-  };
-
-  const BLINK_CLASS = {
-    normal: 'blink-normal',
-    soft: 'blink-soft',
-    half: 'blink-half',
-    tense: 'blink-tense',
-    heavy: 'blink-heavy'
-  };
-
-  const VARIANT_CLASS = {
-    bloodshot: 'variant-bloodshot',
-    bleeding: 'variant-bleeding',
-    zombified: 'variant-zombified',
-    decay: 'variant-heavy-decay',
-    glow: 'variant-soft-glow'
-  };
-
-  const stateAliases = {
-    alive: 'awakened',
-    zombie: 'rotten',
-    zombified: 'rotten'
-  };
-
-  const emotionAliases = {
-    calm: 'neutral',
-    puppy: 'happy',
-    puppyeye: 'happy',
-    hostile: 'angry',
-    dead: 'empty',
-    blank: 'empty'
-  };
-
-  const stateToScore = { awakened: 0, overgrown: 2, corrupted: 4, rotten: 6 };
-
+  const root = document.getElementById('overlay-root');
+  const lantern = document.getElementById('lantern');
   const testUi = document.getElementById('test-ui');
-  const testLabel = document.getElementById('test-label');
-  const labelStatus = document.getElementById('label-status');
-
-  const chatSim = document.getElementById('chat-sim');
-  const chatFeed = document.getElementById('chat-feed');
-  const chatState = document.getElementById('chat-state');
-
-  let corruptionScore = 0;
-  let currentEmotion = 'neutral';
-  let currentState = 'awakened';
-  let currentBlinkType = 'normal';
-  let ambientEnabled = true;
-  let demoTimer = null;
-  let demoIndex = 0;
-  const activeVariants = new Set(['glow']);
+  const testStatus = document.getElementById('test-status');
+  const showcaseLabel = document.getElementById('showcase-label');
 
   const params = new URLSearchParams(window.location.search);
-  const isTestMode = params.get('test') === '1' || params.get('mode') === 'test';
+  const isTestMode = params.get('mode') === 'test' || params.get('test') === '1';
+  const isShowcaseMode = params.get('mode') === 'showcase' || params.get('showcase') === '1';
+  root.dataset.mode = isShowcaseMode ? 'showcase' : (isTestMode ? 'test' : 'overlay');
 
-  const updateStateLabel = () => {
-    if (chatState) {
-      const variantText = activeVariants.size ? ` • ${Array.from(activeVariants).join('+')}` : '';
-      chatState.textContent = `${currentState} • ${currentEmotion}${variantText}`;
-    }
-    if (!isTestMode || !testLabel) return;
-    labelStatus.textContent = `phase:${currentState} • emo:${currentEmotion} • blink:${currentBlinkType} • shape:${currentState}-${currentEmotion} • amb:${ambientEnabled ? 'on' : 'off'} • ${Array.from(activeVariants).join(',') || 'base'}`;
+  const model = {
+    currentState: 'awake',
+    derivedState: 'awake',
+    renderedState: 'awake',
+    activityLevel: 0.2,
+    warmLevel: 0,
+    chaosLevel: 0,
+    curseLevel: 0,
+    possessedUntil: 0,
+    manualOverride: false,
+    manualState: null,
+    isAutoDemo: false,
+    isShowcase: false,
+    effects: { particles: true, smoke: true, thorns: false },
+    demoTimer: null,
+    decayTimer: null,
+    particleTimer: null,
+    showcaseTimer: null,
+    showcaseStep: 0
   };
 
-  const setVisualState = (state) => {
-    const resolved = STATE_CLASS[state] ? state : 'awakened';
-    Object.values(STATE_CLASS).forEach((c) => shell.classList.remove(c));
-    Object.values(PHASE_MOTION_CLASS).forEach((c) => shell.classList.remove(c));
-    shell.classList.add(STATE_CLASS[resolved]);
-    shell.classList.add(PHASE_MOTION_CLASS[resolved]);
-    currentState = resolved;
-    overlayRoot.dataset.eyeState = resolved;
-  };
+  const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
+  const random = (min, max) => Math.random() * (max - min) + min;
 
-  const setEmotion = (emotion) => {
-    const normalized = String(emotion || '').toLowerCase();
-    const resolved = emotionAliases[normalized] || normalized;
-    const finalEmotion = EMOTION_CLASS[resolved] ? resolved : 'neutral';
-    Object.values(EMOTION_CLASS).forEach((c) => shell.classList.remove(c));
-    shell.classList.add(EMOTION_CLASS[finalEmotion]);
-    currentEmotion = finalEmotion;
-    overlayRoot.dataset.eyeEmotion = finalEmotion;
-  };
-
-  const setBlinkType = (type = 'normal') => {
-    const resolved = BLINK_CLASS[type] ? type : 'normal';
-    Object.values(BLINK_CLASS).forEach((c) => shell.classList.remove(c));
-    shell.classList.add(BLINK_CLASS[resolved]);
-    currentBlinkType = resolved;
-  };
-
-  const setVariants = (variants = []) => {
-    activeVariants.clear();
-    variants.forEach((name) => {
-      if (VARIANT_CLASS[name]) activeVariants.add(name);
-    });
-    Object.values(VARIANT_CLASS).forEach((c) => shell.classList.remove(c));
-    Array.from(activeVariants).forEach((v) => shell.classList.add(VARIANT_CLASS[v]));
-  };
-
-  const toggleVariant = (name) => {
-    if (!VARIANT_CLASS[name]) return;
-    if (activeVariants.has(name)) activeVariants.delete(name);
-    else activeVariants.add(name);
-    setVariants(Array.from(activeVariants));
-  };
-
-  const setAmbient = (enabled) => {
-    ambientEnabled = !!enabled;
-    shell.classList.toggle('ambient-off', !ambientEnabled);
-  };
-
-  const blink = (type = currentBlinkType) => {
-    setBlinkType(type);
-    shell.classList.remove('blinking');
-    shell.classList.add('blinking');
-    const cssDuration = Number.parseFloat(getComputedStyle(shell).getPropertyValue('--blink-duration')) || 220;
-    setTimeout(() => shell.classList.remove('blinking'), cssDuration + 40);
-  };
-
-  const twitch = () => {
-    shell.classList.remove('twitch');
-    shell.classList.add('twitch');
-    setTimeout(() => shell.classList.remove('twitch'), 320);
-  };
-
-  const shudder = () => {
-    shell.classList.remove('shudder');
-    shell.classList.add('shudder');
-    setTimeout(() => shell.classList.remove('shudder'), 900);
-  };
-
-  const movePupil = (x, y) => {
-    shell.style.setProperty('--look-x', `${x}px`);
-    shell.style.setProperty('--look-y', `${y}px`);
-  };
-
-  const getDriftProfile = () => {
-    if (currentEmotion === 'happy') return { x: 3, y: 2, interval: 1700 };
-    if (currentEmotion === 'afraid') return { x: 12, y: 9, interval: 520 };
-    if (currentEmotion === 'alert' || currentEmotion === 'angry') return { x: 10, y: 4, interval: 700 };
-    if (currentEmotion === 'sad' || currentEmotion === 'empty') return { x: 2, y: 1, interval: 2400 };
-    if (currentState === 'rotten') return { x: 2, y: 1, interval: 3000 };
-    if (currentState === 'corrupted') return { x: 9, y: 5, interval: 850 };
-    return { x: 5, y: 3, interval: 1400 };
-  };
-
-  const randomPupilDrift = () => {
-    const p = getDriftProfile();
-    movePupil((Math.random() - 0.5) * p.x, (Math.random() - 0.5) * p.y);
-    setTimeout(randomPupilDrift, p.interval);
-  };
-
-  const setCombination = ({ state, emotion, blinkType, ambient, variants, action }) => {
-    if (state) {
-      setVisualState(state);
-      if (Object.prototype.hasOwnProperty.call(stateToScore, state)) corruptionScore = stateToScore[state];
-    }
-    if (emotion) setEmotion(emotion);
-    if (blinkType) setBlinkType(blinkType);
-    if (Array.isArray(variants)) setVariants(variants);
-    if (typeof ambient === 'boolean') setAmbient(ambient);
-    if (action === 'blink') blink(blinkType || currentBlinkType);
-    if (action === 'twitch') twitch();
-    if (action === 'shudder') shudder();
-    updateStateLabel();
-  };
-
-  const applyAction = (action) => {
-    if (action === 'blink') blink('normal');
-    if (action === 'softBlink') blink('soft');
-    if (action === 'halfBlink') blink('half');
-    if (action === 'tenseBlink') blink('tense');
-    if (action === 'heavyBlink') blink('heavy');
-    if (action === 'twitch') twitch();
-    if (action === 'shudder') shudder();
-    if (action === 'toggleAmbient') setAmbient(!ambientEnabled);
-    if (action === 'toggleBleeding') toggleVariant('bleeding');
-    if (action === 'toggleBloodshot') toggleVariant('bloodshot');
-    updateStateLabel();
-  };
-
-  const addChatLine = (text, tone = 'neutral') => {
-    if (!chatFeed) return;
-    const line = document.createElement('div');
-    line.className = `chat-line${tone !== 'neutral' ? ` chat-line--${tone}` : ''}`;
-    line.textContent = text;
-    chatFeed.prepend(line);
-    while (chatFeed.children.length > 4) chatFeed.removeChild(chatFeed.lastElementChild);
-  };
-
-  const simulateChat = () => {
-    const script = [
-      { user: 'gentlefern', message: 'you are safe, bloom softly', combo: { state: 'awakened', emotion: 'neutral', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink' }, tone: 'heal' },
-      { user: 'moonpetal', message: 'cute watcher, puppy eyes please', combo: { state: 'awakened', emotion: 'happy', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink' }, tone: 'heal' },
-      { user: 'vinescout', message: 'look behind, focus now, stay awake', combo: { state: 'overgrown', emotion: 'alert', blinkType: 'normal', variants: ['glow'], ambient: true, action: 'blink' }, tone: 'neutral' },
-      { user: 'mosschoir', message: 'lush energy, grow, bloom', combo: { state: 'overgrown', emotion: 'happy', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink' }, tone: 'heal' },
-      { user: 'hexcrow', message: 'cursed ghost hunt decay', combo: { state: 'corrupted', emotion: 'angry', blinkType: 'tense', variants: ['bloodshot'], ambient: true, action: 'twitch' }, tone: 'corrupt' },
-      { user: 'bleakling', message: 'blood hurt pain wounded eye', combo: { state: 'corrupted', emotion: 'afraid', blinkType: 'tense', variants: ['bloodshot', 'bleeding'], ambient: true, action: 'twitch' }, tone: 'corrupt' },
-      { user: 'hollowbell', message: 'undead corpse rotten hollow', combo: { state: 'rotten', emotion: 'empty', blinkType: 'heavy', variants: ['bloodshot', 'bleeding', 'zombified', 'decay'], ambient: true, action: 'shudder' }, tone: 'corrupt' },
-      { user: 'gravebot', message: 'revive then watch', combo: { state: 'rotten', emotion: 'sad', blinkType: 'heavy', variants: ['decay'], ambient: true, action: 'blink' }, tone: 'reset' },
-      { user: 'modlight', message: 'okay breathe calm gentle love', combo: { state: 'awakened', emotion: 'neutral', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink' }, tone: 'heal' }
-    ];
-
-    let idx = 0;
-    setInterval(() => {
-      const evt = script[idx % script.length];
-      idx += 1;
-      addChatLine(`${evt.user}: ${evt.message}`, evt.tone);
-      setCombination(evt.combo);
-    }, 2100);
-  };
-
-  const demoSequence = [
-    { state: 'awakened', emotion: 'neutral', blinkType: 'normal', variants: ['glow'], ambient: true, action: 'blink', hold: 1800 },
-    { state: 'awakened', emotion: 'happy', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink', hold: 1900 },
-    { state: 'overgrown', emotion: 'happy', blinkType: 'soft', variants: ['glow'], ambient: true, action: 'blink', hold: 1900 },
-    { state: 'overgrown', emotion: 'alert', blinkType: 'normal', variants: ['glow'], ambient: true, action: 'blink', hold: 1900 },
-    { state: 'corrupted', emotion: 'angry', blinkType: 'tense', variants: ['bloodshot'], ambient: true, action: 'twitch', hold: 2000 },
-    { state: 'corrupted', emotion: 'afraid', blinkType: 'tense', variants: ['bloodshot', 'bleeding'], ambient: true, action: 'twitch', hold: 2050 },
-    { state: 'corrupted', emotion: 'angry', blinkType: 'half', variants: ['bloodshot', 'bleeding', 'decay'], ambient: false, action: 'twitch', hold: 2100 },
-    { state: 'rotten', emotion: 'sad', blinkType: 'heavy', variants: ['decay', 'zombified'], ambient: true, action: 'blink', hold: 2200 },
-    { state: 'rotten', emotion: 'empty', blinkType: 'heavy', variants: ['bloodshot', 'bleeding', 'zombified', 'decay'], ambient: true, action: 'shudder', hold: 2300 },
-    { state: 'rotten', emotion: 'bloodshot', blinkType: 'heavy', variants: ['bloodshot', 'bleeding', 'zombified', 'decay'], ambient: true, action: 'shudder', hold: 2300 },
-    { state: 'rotten', emotion: 'empty', blinkType: 'heavy', variants: ['bloodshot', 'bleeding', 'zombified', 'decay'], ambient: true, action: 'blink', hold: 2400 }
-  ];
-
-  const runDemoStep = () => {
-    const step = demoSequence[demoIndex % demoSequence.length];
-    demoIndex += 1;
-    setCombination(step);
-    demoTimer = setTimeout(runDemoStep, step.hold || 1800);
-  };
-
-  const toggleDemo = () => {
-    if (demoTimer) {
-      clearTimeout(demoTimer);
-      demoTimer = null;
-      return;
-    }
-    demoIndex = 0;
-    runDemoStep();
-  };
-
-  const setupTestMode = () => {
-    if (!isTestMode) return;
-    overlayRoot.dataset.mode = 'test';
-    if (testUi) testUi.hidden = false;
-    if (testLabel) testLabel.hidden = false;
-    if (chatSim) chatSim.hidden = true;
-
-    const btns = testUi ? testUi.querySelectorAll('button') : [];
-    btns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const act = btn.dataset.act;
-        const val = btn.dataset.value;
-        if (act === 'phase') setCombination({ state: val });
-        if (act === 'emotion') setCombination({ emotion: val });
-        if (act === 'blink') blink(val);
-        if (act === 'action') applyAction(val);
-        if (act === 'variant') toggleVariant(val);
-        if (act === 'ambient') setAmbient(!ambientEnabled);
-        if (act === 'demo') toggleDemo();
-        updateStateLabel();
-      });
-    });
-
-    window.addEventListener('keydown', (event) => {
-      const key = event.key.toLowerCase();
-      if (key === '1') setCombination({ state: 'awakened' });
-      if (key === '2') setCombination({ state: 'overgrown' });
-      if (key === '3') setCombination({ state: 'corrupted' });
-      if (key === '4') setCombination({ state: 'rotten' });
-      if (key === 'q') setCombination({ emotion: 'neutral' });
-      if (key === 'w') setCombination({ emotion: 'happy' });
-      if (key === 'e') setCombination({ emotion: 'alert' });
-      if (key === 'r') setCombination({ emotion: 'angry' });
-      if (key === 'a') setCombination({ emotion: 'afraid' });
-      if (key === 's') setCombination({ emotion: 'sad' });
-      if (key === 'd') setCombination({ emotion: 'empty' });
-      if (key === 'f') setCombination({ emotion: 'bloodshot' });
-      if (key === 'b') blink('normal');
-      if (key === 'h') blink('half');
-      if (key === 'j') blink('heavy');
-      if (key === 'k') blink('tense');
-      if (key === 'l') blink('soft');
-      if (key === 't') applyAction('twitch');
-      if (key === 'y') applyAction('shudder');
-      if (key === 'u') toggleVariant('bloodshot');
-      if (key === 'i') toggleVariant('bleeding');
-      if (key === 'o') toggleVariant('zombified');
-      if (key === 'g') toggleVariant('glow');
-      if (key === 'm') setAmbient(!ambientEnabled);
-      if (key === 'p') toggleDemo();
-      updateStateLabel();
-    });
-
-    toggleDemo();
-  };
-
-  const receive = (payload) => {
-    if (!payload || typeof payload !== 'object') return;
-    if (payload.type === 'action' && typeof payload.action === 'string') return applyAction(payload.action);
-    if (payload.type === 'setScore' && Number.isFinite(payload.value)) {
-      corruptionScore = Math.max(0, Math.min(10, payload.value));
-      const derived = corruptionScore >= 6 ? 'rotten' : corruptionScore >= 4 ? 'corrupted' : corruptionScore >= 2 ? 'overgrown' : 'awakened';
-      setVisualState(derived);
-      return updateStateLabel();
-    }
-    if (payload.type === 'setEmotion' && typeof payload.emotion === 'string') return setCombination({ emotion: payload.emotion });
-    if (payload.type === 'setBlink' && typeof payload.blink === 'string') return blink(payload.blink);
-    if (payload.type === 'setAmbient' && typeof payload.enabled === 'boolean') return setAmbient(payload.enabled);
-    if (payload.type === 'setState' && typeof payload.state === 'string') {
-      const resolvedState = stateAliases[payload.state.toLowerCase()] || payload.state.toLowerCase();
-      return setCombination({ state: resolvedState, emotion: payload.emotion, blinkType: payload.blink, variants: payload.variants });
-    }
-  };
-
-  const connectWebSocketBridge = () => {
-    const wsUrl = params.get('ws');
-    if (!wsUrl) return;
-    try {
-      const socket = new WebSocket(wsUrl);
-      socket.addEventListener('message', (event) => {
-        try { receive(JSON.parse(event.data)); } catch (_error) { /* ignore */ }
-      });
-    } catch (_error) { /* ignore */ }
-  };
-
-  window.ChatEye = {
-    receive,
-    getScore: () => corruptionScore,
-    getState: () => currentState,
-    getEmotion: () => currentEmotion,
-    setCombination,
-    toggleDemo
-  };
-
-  setCombination({ state: 'awakened', emotion: 'neutral', blinkType: 'normal', variants: ['glow'], ambient: true });
-
-  if (!isTestMode && chatSim) {
-    chatSim.hidden = false;
-    simulateChat();
+  function setVisualClass(state) {
+    config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
+    lantern.classList.add(`state-${state}`);
+    root.dataset.state = state;
+    model.currentState = state;
+    model.renderedState = state;
+    console.log(`[LanternOverlay] render updated: ${state}`);
   }
 
-  const scheduleBlink = () => {
-    const ranges = { awakened: [3000, 5600], overgrown: [2400, 4300], corrupted: [1500, 2900], rotten: [4300, 7600] };
-    const [min, max] = ranges[currentState] || ranges.awakened;
-    const wait = currentEmotion === 'empty' ? 4800 + Math.random() * 6200 : min + Math.random() * (max - min);
-    setTimeout(() => {
-      if (!isTestMode || !demoTimer) blink(currentBlinkType);
-      scheduleBlink();
-    }, wait);
+  function applyStateEffects(state = model.renderedState, override = null) {
+    if (override) {
+      model.effects.particles = override.particles;
+      model.effects.smoke = override.smoke;
+      model.effects.thorns = override.thorns;
+    } else if (state === 'possessed') {
+      model.effects.thorns = true;
+      model.effects.smoke = true;
+    } else if (state === 'dormant' && !model.manualOverride) {
+      model.effects.smoke = false;
+      model.effects.thorns = false;
+    } else if (!model.manualOverride && state === 'awake') {
+      model.effects.thorns = false;
+      model.effects.smoke = true;
+    }
+
+    lantern.dataset.particles = model.effects.particles ? 'on' : 'off';
+    lantern.dataset.smoke = model.effects.smoke ? 'on' : 'off';
+    lantern.dataset.thorns = model.effects.thorns ? 'on' : 'off';
+  }
+
+  function updateStatus() {
+    if (!isTestMode || !testStatus) return;
+    testStatus.textContent = [
+      `manualOverride: ${model.manualOverride ? 'on' : 'off'}`,
+      `manualState: ${model.manualState || '-'}`,
+      `showcase: ${model.isShowcase ? 'on' : 'off'}`,
+      `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
+      `derivedState: ${model.derivedState}`,
+      `renderedState: ${model.renderedState}`
+    ].join(' • ');
+  }
+
+  function setShowcaseLabel(text) {
+    if (!showcaseLabel) return;
+    showcaseLabel.textContent = `Showcase • ${text}`;
+  }
+
+  function deriveStateFromMeters(reason = 'auto') {
+    const now = Date.now();
+    if (now < model.possessedUntil) {
+      model.derivedState = 'possessed';
+      console.log(`[LanternOverlay] derived auto state: possessed (reason: possessed-hold/${reason})`);
+      return 'possessed';
+    }
+
+    if (model.curseLevel >= config.thresholds.possessedCurse) {
+      model.possessedUntil = now + config.thresholds.possessedDurationMs;
+      model.curseLevel = clamp(model.curseLevel * 0.55);
+      model.derivedState = 'possessed';
+      console.log(`[LanternOverlay] derived auto state: possessed (reason: curse-threshold/${reason})`);
+      return 'possessed';
+    }
+
+    const warmBias = model.warmLevel - model.chaosLevel;
+    const chaosBias = model.chaosLevel - model.warmLevel;
+
+    let next = 'awake';
+    if (model.activityLevel < config.thresholds.dormantActivity && model.warmLevel < 0.2 && model.chaosLevel < 0.2) {
+      next = 'dormant';
+    } else if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) {
+      next = 'warm';
+    } else if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) {
+      next = 'agitated';
+    }
+
+    model.derivedState = next;
+    console.log(`[LanternOverlay] derived auto state: ${next} (reason: ${reason})`);
+    return next;
+  }
+
+  function forceRenderState(state, options = {}) {
+    const effects = options.effects || null;
+    setVisualClass(state);
+    applyStateEffects(state, effects);
+    if (showcaseLabel && model.isShowcase) setShowcaseLabel(options.label || state);
+    updateStatus();
+    console.log(`[LanternOverlay] force rendered state: ${state}${options.label ? ` (${options.label})` : ''}`);
+    if (options.burst) pulseBurst(options.burst);
+  }
+
+  function render(reason = 'unknown') {
+    if (model.isShowcase) return;
+
+    const stateToRender = model.manualOverride && model.manualState
+      ? model.manualState
+      : deriveStateFromMeters(reason);
+
+    const source = model.manualOverride && model.manualState ? 'manual override' : 'auto resolver';
+    setVisualClass(stateToRender);
+    applyStateEffects(stateToRender);
+    updateStatus();
+    console.log(`[LanternOverlay] final rendered state: ${stateToRender} (source: ${source}, reason: ${reason})`);
+  }
+
+  function stopDemo() {
+    if (!model.demoTimer) return;
+    clearInterval(model.demoTimer);
+    model.demoTimer = null;
+    model.isAutoDemo = false;
+  }
+
+  function stopShowcase() {
+    if (model.showcaseTimer) {
+      clearTimeout(model.showcaseTimer);
+      model.showcaseTimer = null;
+    }
+    model.isShowcase = false;
+    model.showcaseStep = 0;
+    if (showcaseLabel) showcaseLabel.hidden = true;
+  }
+
+  function startShowcase() {
+    stopDemo();
+    stopShowcase();
+    model.manualOverride = false;
+    model.manualState = null;
+    model.isShowcase = true;
+    root.dataset.mode = 'showcase';
+    if (showcaseLabel) showcaseLabel.hidden = false;
+
+    const sequence = [
+      { state: 'dormant', label: 'Dormant', ms: 2800, effects: { particles: false, smoke: false, thorns: false } },
+      { state: 'awake', label: 'Awake', ms: 2700, effects: { particles: true, smoke: true, thorns: false } },
+      { state: 'warm', label: 'Warm/Fond', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
+      { state: 'agitated', label: 'Agitated', ms: 3000, effects: { particles: true, smoke: false, thorns: false } },
+      { state: 'possessed', label: 'Possessed', ms: 3200, effects: { particles: true, smoke: true, thorns: true } },
+      { state: 'warm', label: 'Warm/Fond + Particles', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'kind' },
+      { state: 'agitated', label: 'Agitated + Sharp Flicker', ms: 2600, effects: { particles: true, smoke: false, thorns: false }, burst: 'chaos' },
+      { state: 'possessed', label: 'Possessed + Smoke', ms: 2600, effects: { particles: true, smoke: true, thorns: false } },
+      { state: 'possessed', label: 'Possessed + Thorns/Cracks', ms: 2600, effects: { particles: true, smoke: true, thorns: true } },
+      { state: 'possessed', label: 'Possessed + Curse Burst', ms: 2800, effects: { particles: true, smoke: true, thorns: true }, burst: 'curse' }
+    ];
+
+    const runStep = () => {
+      if (!model.isShowcase) return;
+      const step = sequence[model.showcaseStep % sequence.length];
+      model.showcaseStep += 1;
+      forceRenderState(step.state, step);
+      model.showcaseTimer = setTimeout(runStep, step.ms);
+    };
+
+    runStep();
+  }
+
+  function setManualState(state, source = 'api') {
+    if (!config.states.includes(state)) return;
+    if (model.isShowcase) return;
+    console.log(`[LanternOverlay] clicked state button: ${state} (${source})`);
+    stopDemo();
+    model.manualOverride = true;
+    model.manualState = state;
+    console.log(`[LanternOverlay] requested manual state: ${state}`);
+    console.log('[LanternOverlay] manual override enabled');
+    render('manual-state');
+  }
+
+  function resumeAutoMode() {
+    stopShowcase();
+    model.manualOverride = false;
+    model.manualState = null;
+    root.dataset.mode = isTestMode ? 'test' : 'overlay';
+    console.log('[LanternOverlay] manual override disabled; resumed auto mode');
+    render('resume-auto');
+  }
+
+  function emitParticle(type) {
+    if ((type === 'smoke' && !model.effects.smoke) || (!model.effects.particles && type !== 'smoke')) return;
+    const layer = lantern.querySelector(`.particle-layer.${type}`);
+    if (!layer) return;
+
+    const p = document.createElement('span');
+    p.className = `particle ${type}`;
+    p.style.left = `${random(82, 138)}px`;
+    p.style.top = `${random(96, 138)}px`;
+    p.style.setProperty('--dx', `${random(-16, 20)}px`);
+    p.style.setProperty('--dy', `${random(-72, -36)}px`);
+    p.style.animationDuration = `${random(1.6, 3.4)}s`;
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 3800);
+  }
+
+  function pulseBurst(kind) {
+    lantern.classList.remove('burst');
+    requestAnimationFrame(() => lantern.classList.add('burst'));
+    if (kind === 'kind') for (let i = 0; i < 5; i += 1) setTimeout(() => emitParticle('warm'), i * 65);
+    if (kind === 'chaos') for (let i = 0; i < 6; i += 1) setTimeout(() => emitParticle('ash'), i * 50);
+    if (kind === 'curse') for (let i = 0; i < 7; i += 1) setTimeout(() => emitParticle('smoke'), i * 55);
+  }
+
+  function addActivity(amount = 0.1) {
+    model.activityLevel = clamp(model.activityLevel + amount * 0.1);
+    render('add-activity');
+  }
+
+  function toggleEffect(effect, value) {
+    if (!(effect in model.effects)) return;
+    model.effects[effect] = typeof value === 'boolean' ? value : !model.effects[effect];
+    applyStateEffects(model.renderedState);
+    updateStatus();
+  }
+
+  function triggerBurst(kind, options = {}) {
+    const amount = options.amount ?? 0.12;
+    if (kind === 'kind') {
+      model.warmLevel = clamp(model.warmLevel + amount * 1.35);
+      model.chaosLevel = clamp(model.chaosLevel - amount * 0.28);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.25);
+    }
+    if (kind === 'chaos') {
+      model.chaosLevel = clamp(model.chaosLevel + amount * 1.45);
+      model.warmLevel = clamp(model.warmLevel - amount * 0.2);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.38);
+    }
+    if (kind === 'curse') {
+      model.curseLevel = clamp(model.curseLevel + amount * 1.5);
+      model.chaosLevel = clamp(model.chaosLevel + amount * 0.5);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.4);
+      model.effects.thorns = true;
+      applyStateEffects();
+    }
+
+    pulseBurst(kind);
+    render(`trigger-burst:${kind}`);
+  }
+
+  function parseChatText(text = '') {
+    const msg = String(text).toLowerCase();
+    const scoreKeyword = (list) => list.reduce((acc, token) => acc + (msg.includes(token) ? 1 : 0), 0);
+    const warmHits = scoreKeyword(config.keywords.warm);
+    const chaosHits = scoreKeyword(config.keywords.chaos);
+    const curseHits = scoreKeyword(config.keywords.curse);
+
+    if (warmHits + chaosHits + curseHits === 0) addActivity(0.4);
+    if (warmHits) triggerBurst('kind', { amount: warmHits * 0.11 });
+    if (chaosHits) triggerBurst('chaos', { amount: chaosHits * 0.11 });
+    if (curseHits) triggerBurst('curse', { amount: curseHits * 0.14 });
+  }
+
+  function applyDecayTick() {
+    model.activityLevel = clamp(model.activityLevel - config.decay.activity);
+    model.warmLevel = clamp(model.warmLevel - config.decay.warm);
+    model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
+    model.curseLevel = clamp(model.curseLevel - config.decay.curse);
+
+    if (model.manualOverride || model.isShowcase) {
+      updateStatus();
+      return;
+    }
+
+    render('decay');
+  }
+
+  function startAmbientLoop() {
+    if (model.particleTimer) clearInterval(model.particleTimer);
+    model.particleTimer = setInterval(() => {
+      if (model.renderedState === 'warm') emitParticle('warm');
+      if (model.renderedState === 'agitated') emitParticle('ash');
+      if (model.renderedState === 'possessed') emitParticle('smoke');
+      if (model.renderedState === 'awake' && Math.random() > 0.55) emitParticle('warm');
+    }, 340);
+  }
+
+  function toggleDemo() {
+    if (model.demoTimer) {
+      stopDemo();
+      resumeAutoMode();
+      return;
+    }
+
+    stopShowcase();
+    model.manualOverride = false;
+    model.manualState = null;
+    model.isAutoDemo = true;
+
+    const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
+    let i = 0;
+    model.manualOverride = true;
+    model.manualState = seq[0];
+    render('auto-demo-start');
+
+    model.demoTimer = setInterval(() => {
+      i = (i + 1) % seq.length;
+      const step = seq[i];
+      model.manualOverride = true;
+      model.manualState = step;
+      render('auto-demo-step');
+      if (step === 'warm') pulseBurst('kind');
+      if (step === 'agitated') pulseBurst('chaos');
+      if (step === 'possessed') pulseBurst('curse');
+    }, 2400);
+  }
+
+  function receive(payload = {}) {
+    const { type } = payload;
+    if (type === 'setState' && payload.state) setManualState(String(payload.state).toLowerCase(), 'receive');
+    if (type === 'startShowcase') startShowcase();
+    if (type === 'stopShowcase') resumeAutoMode();
+    if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
+    if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
+    if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
+    if (type === 'chat' && payload.text) parseChatText(payload.text);
+    if (type === 'setIntensity') {
+      model.activityLevel = clamp(Number(payload.activity ?? model.activityLevel));
+      model.warmLevel = clamp(Number(payload.warm ?? model.warmLevel));
+      model.chaosLevel = clamp(Number(payload.chaos ?? model.chaosLevel));
+      model.curseLevel = clamp(Number(payload.curse ?? model.curseLevel));
+      render('set-intensity');
+    }
+  }
+
+  function setupTestMode() {
+    if (!isTestMode) return;
+    root.dataset.mode = 'test';
+    root.style.pointerEvents = 'auto';
+    testUi.hidden = false;
+
+    testUi.querySelectorAll('button').forEach((button) => {
+      button.addEventListener('click', () => {
+        const act = button.dataset.act;
+        const value = button.dataset.value;
+
+        if (act === 'setState') setManualState(value, 'button');
+        if (act === 'activity') addActivity(Number(value));
+        if (act === 'burst') triggerBurst(value);
+        if (act === 'toggleEffect') toggleEffect(value);
+        if (act === 'demo') toggleDemo();
+        if (act === 'force') resumeAutoMode();
+
+        updateStatus();
+      });
+    });
+  }
+
+  function bootstrap() {
+    if (!isTestMode) root.style.pointerEvents = 'none';
+    setupTestMode();
+    applyStateEffects();
+    render('bootstrap');
+    startAmbientLoop();
+    model.decayTimer = setInterval(applyDecayTick, 1300);
+    if (isShowcaseMode) startShowcase();
+  }
+
+  window.LanternOverlay = {
+    config,
+    receive,
+    setState: setManualState,
+    setManualState,
+    clearForcedState: resumeAutoMode,
+    resumeAutoMode,
+    startShowcase,
+    stopShowcase: resumeAutoMode,
+    addActivity,
+    triggerBurst,
+    toggleEffect,
+    parseChatText,
+    setIntensity: (values) => receive({ type: 'setIntensity', ...values })
   };
 
-  randomPupilDrift();
-  scheduleBlink();
-  connectWebSocketBridge();
-  setupTestMode();
-
-  setInterval(() => {
-    if (!ambientEnabled) return;
-    const twitchChance = currentState === 'corrupted' ? 0.4 : currentState === 'rotten' ? 0.16 : 0.07;
-    if (Math.random() < twitchChance) twitch();
-    if (currentState === 'rotten' && Math.random() < 0.3) shudder();
-    if (currentState === 'corrupted' && Math.random() < 0.2) toggleVariant('bloodshot');
-  }, 2900);
+  bootstrap();
 })();
