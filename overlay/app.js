@@ -25,17 +25,20 @@
     runnerX: 30,
     runnerW: 24,
     runnerH: 24,
-    baseSpeed: 190,
-    maxSpeed: 320,
-    spawnBaseMs: 1180,
+    baseSpeed: 172,
+    maxSpeed: 292,
+    spawnBaseMs: 1220,
     ivyThreshold: 5,
     ivyDurationMs: 2300,
     darkDurationMs: 2600,
+    slowDurationMs: 2000,
+    summonGraceMs: 1400,
     returnDelayMs: 1800
   };
 
   const state = {
     testingMode,
+    controlMode: testingMode ? 'local' : 'auto',
     gameState: 'idle', // idle | starting | running | hit | gameover | returning
     roundActive: false,
     y: GAME.groundY,
@@ -44,14 +47,15 @@
     obstacles: [],
     speed: GAME.baseSpeed,
     spawnTimer: 0,
-    elapsed: 0,
     score: 0,
     best: Number(window.localStorage.getItem('lantern-run-best') || 0),
     ivyCharge: 0,
     ivyShieldUntil: 0,
     darkPulseUntil: 0,
+    slowUntil: 0,
+    summonGraceUntil: 0,
+    cursedWaveCount: 0,
     lastFrame: 0,
-    rafId: null,
     returnTimeout: null
   };
 
@@ -66,7 +70,9 @@
       return;
     }
 
-    if (state.gameState === 'running' || state.gameState === 'starting') modeLabel.textContent = 'Lantern Run';
+    if (state.gameState === 'running' || state.gameState === 'starting') {
+      modeLabel.textContent = state.controlMode === 'auto' ? 'Lantern Run • Auto Spirit' : 'Lantern Run • Local';
+    }
     if (state.gameState === 'hit') modeLabel.textContent = 'Ouch!';
     if (state.gameState === 'gameover') modeLabel.textContent = 'Round Ended';
   }
@@ -85,9 +91,12 @@
 
   function updateDebug() {
     if (!testingMode) return;
-    const shieldMs = Math.max(0, state.ivyShieldUntil - performance.now());
-    const darkMs = Math.max(0, state.darkPulseUntil - performance.now());
-    tinyStatus.textContent = `TEST • state=${state.gameState} • score=${Math.floor(state.score)} • ivy=${state.ivyCharge}/${GAME.ivyThreshold} • shield=${Math.ceil(shieldMs)}ms • dark=${Math.ceil(darkMs)}ms`;
+    const now = performance.now();
+    const shieldMs = Math.max(0, state.ivyShieldUntil - now);
+    const darkMs = Math.max(0, state.darkPulseUntil - now);
+    const slowMs = Math.max(0, state.slowUntil - now);
+    const summonMs = Math.max(0, state.summonGraceUntil - now);
+    tinyStatus.textContent = `TEST • ${state.controlMode} • state=${state.gameState} • score=${Math.floor(state.score)} • ivy=${state.ivyCharge}/${GAME.ivyThreshold} • shield=${Math.ceil(shieldMs)} • dark=${Math.ceil(darkMs)} • slow=${Math.ceil(slowMs)} • summon=${Math.ceil(summonMs)}`;
   }
 
   function addChat(user, text) {
@@ -116,15 +125,17 @@
     setGameState('starting');
     state.score = 0;
     state.speed = GAME.baseSpeed;
-    state.spawnTimer = 260;
-    state.elapsed = 0;
+    state.spawnTimer = 320;
     state.darkPulseUntil = 0;
+    state.slowUntil = 0;
+    state.summonGraceUntil = 0;
+    state.cursedWaveCount = 0;
     state.ivyShieldUntil = 0;
     resetRunnerPose();
     setModeText();
     updateScoreboard();
     updateIvyUI();
-    addChat('lantern', `Lantern Run started (${source}). Type jump!`);
+    addChat('lantern', `Lantern Run started (${source}). Chat powers influence fate.`);
 
     setTimeout(() => {
       if (state.roundActive && state.gameState === 'starting') setGameState('running');
@@ -158,9 +169,9 @@
     groundRunner.style.transform = `translateY(${-state.y}px) scale(1, ${heightScale})`;
   }
 
-  function jump() {
+  function jump(force = false) {
     if (!state.roundActive || state.gameState !== 'running') return;
-    if (state.y > GAME.groundY + 1) return;
+    if (!force && state.y > GAME.groundY + 1) return;
     state.vy = GAME.jumpVelocity;
     runner.classList.add('mood-jump');
     setTimeout(() => runner.classList.remove('mood-jump'), 140);
@@ -172,9 +183,9 @@
     applyRunnerTransform();
   }
 
-  function makeObstacle() {
+  function makeObstacle(typeForced = null) {
     const roll = Math.random();
-    const type = roll > 0.72 ? 'eye' : (roll > 0.4 ? 'root' : 'spike');
+    const type = typeForced || (roll > 0.72 ? 'eye' : (roll > 0.4 ? 'root' : 'spike'));
     const width = type === 'root' ? 22 : 16;
     const height = type === 'eye' ? 16 : (type === 'root' ? 14 : 24);
     const y = type === 'eye' ? 31 : 10;
@@ -193,6 +204,35 @@
     addChat('lantern', 'Ivy form awakened: shielded glow!');
   }
 
+  function triggerSummon() {
+    if (!state.roundActive) return;
+    state.summonGraceUntil = performance.now() + GAME.summonGraceMs;
+    const nearest = state.obstacles.find((obs) => obs.x > GAME.runnerX - 12);
+    if (nearest) nearest.x += 65;
+    addChat('lantern', 'A helper spirit pushes danger back.');
+  }
+
+  function triggerCurseWave() {
+    if (!state.roundActive) return;
+    state.darkPulseUntil = performance.now() + GAME.darkDurationMs;
+    state.cursedWaveCount = Math.min(3, state.cursedWaveCount + 2);
+    addChat('lantern', 'A cursed wave thickens the shadows.');
+  }
+
+  function triggerLove() {
+    if (state.roundActive) {
+      state.ivyShieldUntil = Math.max(state.ivyShieldUntil, performance.now() + 900);
+      state.slowUntil = Math.max(state.slowUntil, performance.now() + 1000);
+    }
+    addChat('lantern', 'Warm light steadies the spirit.');
+  }
+
+  function triggerSlow() {
+    if (!state.roundActive) return;
+    state.slowUntil = performance.now() + GAME.slowDurationMs;
+    addChat('lantern', 'The lane softens for a moment.');
+  }
+
   function applyCommand(text, user = 'chat') {
     const msg = String(text || '').toLowerCase().trim();
     if (!msg) return;
@@ -202,14 +242,18 @@
       return;
     }
 
-    if (/\bjump\b/.test(msg)) {
-      jump();
+    if (/\b(jump|hop)\b/.test(msg)) {
+      // latency-friendly: this is a supportive nudge, not required precision timing
+      if (state.roundActive) {
+        jump(true);
+        state.score += 3;
+      }
       return;
     }
 
     if (/\bduck\b/.test(msg)) {
       duck(true);
-      setTimeout(() => duck(false), 260);
+      setTimeout(() => duck(false), 300);
       return;
     }
 
@@ -221,20 +265,47 @@
     }
 
     if (/\b(love|light|heal)\b/.test(msg)) {
-      if (state.roundActive) {
-        state.ivyShieldUntil = Math.max(state.ivyShieldUntil, performance.now() + 900);
-      }
-      addChat('lantern', 'Warm light steadies the spirit.');
+      triggerLove();
       updateIvyUI();
       return;
     }
 
     if (/\b(dead|curse|demon)\b/.test(msg)) {
-      if (state.roundActive) {
-        state.darkPulseUntil = performance.now() + GAME.darkDurationMs;
-      }
-      addChat('lantern', 'A cursed wave darkens the lane.');
+      triggerCurseWave();
       return;
+    }
+
+    if (/\b(ivyhelp|summon|wisp|assist)\b/.test(msg)) {
+      triggerSummon();
+      return;
+    }
+
+    if (/\b(calm|slow|gentle)\b/.test(msg)) {
+      triggerSlow();
+    }
+  }
+
+  function autoDriveAssist() {
+    if (state.controlMode !== 'auto' || !state.roundActive || state.gameState !== 'running') return;
+    if (state.y > GAME.groundY + 2) return;
+
+    const closest = state.obstacles
+      .filter((obs) => obs.x + obs.width > GAME.runnerX - 8)
+      .sort((a, b) => a.x - b.x)[0];
+
+    if (!closest) return;
+
+    const distance = closest.x - GAME.runnerX;
+    if (closest.type === 'eye') {
+      if (distance < 34 && distance > 6) {
+        duck(true);
+        setTimeout(() => duck(false), 220);
+      }
+      return;
+    }
+
+    if (distance < 72 && distance > 8) {
+      jump();
     }
   }
 
@@ -249,7 +320,16 @@
 
     if (state.roundActive && state.gameState === 'running') {
       const darkActive = ts < state.darkPulseUntil;
-      state.speed = Math.min(GAME.maxSpeed, state.speed + dt * (darkActive ? 15 : 8));
+      const slowActive = ts < state.slowUntil;
+      const graceActive = ts < state.summonGraceUntil;
+      const speedFactor = slowActive ? 0.7 : 1;
+
+      state.speed = Math.min(
+        GAME.maxSpeed,
+        state.speed + dt * (darkActive ? 16 : 8)
+      );
+
+      autoDriveAssist();
 
       state.vy -= GAME.gravity * dt;
       state.y += state.vy * dt;
@@ -261,17 +341,22 @@
       applyRunnerTransform();
 
       state.spawnTimer -= dt * 1000;
-      const spawnWindow = darkActive ? GAME.spawnBaseMs * 0.65 : GAME.spawnBaseMs;
+      const spawnWindow = darkActive ? GAME.spawnBaseMs * 0.72 : GAME.spawnBaseMs;
       if (state.spawnTimer <= 0) {
-        makeObstacle();
-        state.spawnTimer = spawnWindow * (0.75 + Math.random() * 0.6);
+        if (state.cursedWaveCount > 0) {
+          makeObstacle(Math.random() > 0.5 ? 'spike' : 'root');
+          state.cursedWaveCount -= 1;
+        } else {
+          makeObstacle();
+        }
+        state.spawnTimer = spawnWindow * (0.78 + Math.random() * 0.58);
       }
 
       const runnerHeight = state.ducking ? GAME.runnerH * GAME.duckScale : GAME.runnerH;
       const runnerBox = { x: GAME.runnerX, y: state.y, w: GAME.runnerW, h: runnerHeight };
 
       for (const obs of state.obstacles) {
-        obs.x -= state.speed * dt;
+        obs.x -= state.speed * speedFactor * dt;
         obs.el.style.left = `${obs.x}px`;
 
         const obsBox = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
@@ -283,7 +368,7 @@
 
         const shieldOn = ts < state.ivyShieldUntil;
         if (intersects(runnerBox, obsBox)) {
-          if (shieldOn) {
+          if (shieldOn || graceActive) {
             obs.passed = true;
             obs.x = -40;
             state.score += 4;
@@ -303,14 +388,13 @@
         return keep;
       });
 
-      state.elapsed += dt;
       state.score += dt * 7;
       updateScoreboard();
       updateIvyUI();
     }
 
     updateDebug();
-    state.rafId = requestAnimationFrame(tick);
+    requestAnimationFrame(tick);
   }
 
   function setupTesting() {
@@ -340,7 +424,7 @@
     window.addEventListener('keydown', (event) => {
       if (event.code === 'Space' || event.code === 'ArrowUp') {
         event.preventDefault();
-        jump();
+        jump(true);
       }
       if (event.code === 'ArrowDown') {
         event.preventDefault();
@@ -353,6 +437,7 @@
       if (event.key.toLowerCase() === 'i') applyCommand('ivy', 'keyboard');
       if (event.key.toLowerCase() === 'l') applyCommand('love', 'keyboard');
       if (event.key.toLowerCase() === 'c') applyCommand('curse', 'keyboard');
+      if (event.key.toLowerCase() === 's') applyCommand('summon', 'keyboard');
     });
 
     window.addEventListener('keyup', (event) => {
@@ -380,10 +465,10 @@
     updateIvyUI();
     setupTesting();
 
-    addChat('lantern', 'Idle mode: type start/run/go to begin Lantern Run.');
-    addChat('lantern', 'Commands: jump • ivy • love/light/heal • dead/curse/demon');
+    addChat('lantern', 'Idle mode: start/run/go begins Lantern Run.');
+    addChat('lantern', 'Chat powers: ivy, love/light/heal, summon, curse.');
 
-    state.rafId = requestAnimationFrame(tick);
+    requestAnimationFrame(tick);
   }
 
   window.ChatEye = {
@@ -393,7 +478,7 @@
       applyCommand(text, 'local');
     },
     startRound: () => startRound('api'),
-    jump,
+    jump: () => jump(true),
     duck
   };
 
