@@ -1,66 +1,68 @@
-# The Ivy Eye Overlay (OBS Browser Source)
+# Lantern Familiar Overlay (OBS Browser Source)
 
-This repo contains a lightweight web overlay for OBS Browser Source and a simple message protocol so Streamer.bot can push ivy-eye actions/states from Twitch chat events.
+A polished, atmospheric OBS browser overlay featuring a living cursed lantern companion. The lantern reacts to chat intensity and mood with distinct emotional states:
 
-## Quick start
+- **Dormant** (dim ember)
+- **Awake** (balanced baseline)
+- **Warm/Fond** (honey glow + soft sparkles)
+- **Agitated/Chaotic** (sharper flicker + ash)
+- **Possessed/Cursed** (violet flame + shadow smoke)
 
-1. Open OBS and add a **Browser Source**.
-2. Point it to `overlay/index.html` as a local file.
-3. Set dimensions to `320x220` (or your preference).
-4. Keep background transparency enabled.
+## Run in OBS
 
-The eye will animate on its own with:
-- idle float
-- random blink
-- subtle twitch
-- small pupil drift
+1. Add **Browser Source** in OBS.
+2. Point to local file: `overlay/index.html`.
+3. Suggested size: `320x280` (adjust as needed).
+4. Keep transparency enabled.
 
-## Manual testing
+## Test / Demo Mode
 
-In the browser dev console:
+Open with query params:
+
+- `overlay/index.html?mode=test`
+
+Test mode adds compact controls for:
+
+- forcing each state
+- increasing/decreasing activity
+- triggering kind/chaos/curse bursts
+- toggling particles, smoke, thorns/cracks
+- auto demo sequence
+
+## Event API (for chat bridges / Streamer.bot)
+
+Use `window.LanternOverlay`:
 
 ```js
-window.ChatEye.receive({ type: 'action', action: 'corrupt' });
-window.ChatEye.receive({ type: 'action', action: 'heal' });
-window.ChatEye.receive({ type: 'action', action: 'reset' });
-window.ChatEye.receive({ type: 'action', action: 'blink' });
-window.ChatEye.receive({ type: 'action', action: 'lookLeft' });
-window.ChatEye.receive({ type: 'action', action: 'lookRight' });
+window.LanternOverlay.setState('warm');
+window.LanternOverlay.clearForcedState();
+window.LanternOverlay.addActivity(1);
+window.LanternOverlay.triggerBurst('kind');
+window.LanternOverlay.triggerBurst('chaos');
+window.LanternOverlay.triggerBurst('curse');
+window.LanternOverlay.toggleEffect('smoke', true);
+window.LanternOverlay.parseChatText('love cozy safe');
 ```
 
-Set score directly:
+Or send protocol-style messages:
 
 ```js
-window.ChatEye.receive({ type: 'setScore', value: 5 });
+window.LanternOverlay.receive({ type: 'setState', state: 'possessed' });
+window.LanternOverlay.receive({ type: 'addActivity', amount: 1 });
+window.LanternOverlay.receive({ type: 'triggerBurst', kind: 'chaos' });
+window.LanternOverlay.receive({ type: 'toggleEffect', effect: 'particles', value: false });
+window.LanternOverlay.receive({ type: 'chat', text: 'void hex consume' });
+window.LanternOverlay.receive({
+  type: 'setIntensity',
+  activity: 0.8,
+  warm: 0.1,
+  chaos: 0.7,
+  curse: 0.4
+});
 ```
 
-## State thresholds
+## Notes
 
-- `0-1`: Awakened
-- `2-3`: Overgrown
-- `4-5`: Corrupted
-- `6+`: Rotten
-
-## Streamer.bot integration outline
-
-1. Use Streamer.bot Twitch Chat Message triggers.
-2. Match keywords:
-   - Corrupt: `ghost`, `demon`, `cursed`, `run`, `hunt`
-   - Heal: `chill`, `safe`, `love`, `okay`, `cute`
-   - Reset: `wake`, `blink`, `revive`
-3. In trigger actions, update a global `corruptionScore` variable.
-4. Send a structured message matching this overlay protocol:
-
-```json
-{ "type": "action", "action": "corrupt" }
-```
-
-or
-
-```json
-{ "type": "setScore", "value": 3 }
-```
-
-Optional WebSocket bridge: launch the overlay with `?ws=ws://127.0.0.1:8080` and send JSON messages over that socket.
-
-See `docs/V1_SPEC.md` for the complete spec.
+- Overlay mode is clean: no permanent labels, no debug text.
+- Test UI is hidden unless `mode=test` is set.
+- The architecture is ready for future chat/websocket adapters and skin variants.
