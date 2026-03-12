@@ -191,6 +191,30 @@ body { background: transparent; color: #f4e7d4; }
   transition: opacity .18s ease, transform .18s ease;
 }
 
+
+.ivy-peeker {
+  position: absolute;
+  left: 20px;
+  top: 72px;
+  width: 24px;
+  height: 20px;
+  border-radius: 56% 44% 46% 54%;
+  background: radial-gradient(circle at 50% 24%, #ecffd5 0%, #b9da95 44%, #465744 100%);
+  opacity: 0;
+  transform: translateY(16px) scale(.72);
+  transition: opacity .2s ease, transform .22s ease;
+}
+
+.peeker-eye {
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  width: 10px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #111119 0%, #2e3040 56%, #9bc27d 100%);
+}
+
 .particle-layer { position: absolute; inset: 0; overflow: visible; }
 .particle { position: absolute; width: 5px; height: 5px; border-radius: 50%; animation: rise 2.8s ease-out forwards; }
 .particle.warm { background: #ffd39b; box-shadow: 0 0 8px rgba(255, 203, 127, .9); }
@@ -330,8 +354,8 @@ body { background: transparent; color: #f4e7d4; }
 
 
 /* trigger reactions */
-.lantern.message-ping .entity-wrap { transform: translateY(-1px); }
-.lantern.react-neutral .flame-core { transform: scale(1.03); }
+.lantern.message-ping .entity-wrap { transform: translateY(-2px) scale(1.02); }
+.lantern.react-neutral .flame-core { transform: scale(1.07); }
 .lantern.react-heal .flame-core { transform: scale(1.1) translateY(-2px); filter: drop-shadow(0 0 18px rgba(255, 204, 121, .7)); }
 .lantern.react-heal .lantern-halo { transform: scale(1.08); }
 .lantern.react-corrupt .flame-core { transform: scale(.95) rotate(-4deg); filter: drop-shadow(0 0 14px rgba(121, 80, 170, .75)); }
@@ -383,74 +407,47 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.ivy-warning .flame-core { transform: scale(1.1) translateY(-2px); animation-duration: .9s; }
 
 .lantern.ivy-surge .ritual-ring {
-  opacity: .38;
-  animation: ritualRingBurst 1.2s ease-out infinite;
+  opacity: .2;
+  animation: ritualRingBurst 1.3s ease-out infinite;
 }
 
 .lantern.ivy-surge .ritual-sigil {
-  opacity: .3;
-  animation: sigilSpin 1.2s linear infinite;
+  opacity: .16;
+  animation: sigilSpin 1.35s linear infinite;
 }
 
 .lantern.ivy-surge .lantern-halo {
-  transform: scale(1.38);
-  filter: brightness(1.66) saturate(1.24);
-}
-
-.lantern.ivy-surge .flame-core {
-  width: 50px;
-  height: 96px;
-  left: 25px;
-  top: 30px;
-  transform: scale(1.08);
-  clip-path: polygon(50% 0%, 66% 9%, 79% 25%, 88% 51%, 79% 69%, 66% 83%, 53% 100%, 36% 88%, 22% 100%, 10% 79%, 13% 53%, 24% 28%, 33% 12%);
-  background: radial-gradient(circle at 50% 22%, #fef8d9 0%, #dfffc1 28%, #b6ef8a 50%, #7ebf6f 73%, #513d66 100%);
-  filter: drop-shadow(0 0 38px rgba(194, 255, 173, .6));
-}
-
-.lantern.ivy-surge .flame-inner {
-  width: 18px;
-  height: 20px;
-  left: 41px;
-  top: 70px;
-  border-radius: 50% 50% 58% 42%;
-  clip-path: none;
-  background: radial-gradient(circle at 50% 52%, #18131f 0%, #2f2445 58%, #88c273 100%);
-  animation: eyePulse 1s ease-in-out infinite;
-}
-
-.lantern.ivy-surge .entity-wrap::before { opacity: .9; }
-.lantern.ivy-surge .entity-wrap::after {
-  content: "";
-  position: absolute;
-  left: 19px;
-  top: 6px;
-  width: 30px;
-  height: 18px;
-  opacity: .86;
-  border-radius: 50% 50% 42% 42%;
-  border: 1px solid rgba(170, 218, 137, .72);
-  box-shadow: inset 0 -4px 0 rgba(120, 161, 96, .5);
-}
-
-.lantern.ivy-surge .glass {
-  border-color: rgba(204, 234, 167, .58);
-  box-shadow: inset 0 0 34px rgba(28, 23, 36, .46), 0 0 20px rgba(184, 228, 159, .32);
+  transform: scale(1.28);
+  filter: brightness(1.46) saturate(1.2);
 }
 
 .lantern.ivy-surge .glass::after {
+  opacity: .72;
+  background: radial-gradient(circle at 50% 42%, rgba(12,10,18,.4), rgba(6,5,12,.84));
+}
+
+.lantern.ivy-surge .flame-core {
+  transform: translateY(14px) scale(.82,.74);
   opacity: .62;
-  background: radial-gradient(circle at 50% 38%, rgba(12,10,17,.24), rgba(6,5,12,.78));
 }
 
-.lantern.ivy-surge .glass::before {
-  background: linear-gradient(180deg, rgba(221, 255, 187, .28), rgba(255,255,255,.04));
+.lantern.ivy-surge .flame-inner {
+  transform: translateY(16px) scale(.72);
+  opacity: .4;
 }
 
-.lantern.ivy-surge::after {
-  opacity: .66;
-  background: radial-gradient(circle at 50% 40%, rgba(255,248,220,.86) 0%, rgba(219,255,191,.56) 34%, rgba(172,239,149,.24) 64%, rgba(126,214,115,0) 100%);
+.lantern.ivy-surge .ivy-peeker {
+  opacity: .96;
+  transform: translateY(-4px) scale(1.08);
+  animation: peekerBob .9s ease-in-out infinite;
 }
+
+.lantern.ivy-surge .peeker-eye {
+  animation: peekerBlink 1.2s steps(1,end) infinite;
+}
+
+.lantern.ivy-surge .entity-wrap::before { opacity: .28; }
+.lantern.ivy-surge .entity-wrap::after { display: none; }
 
 .lantern.ivy-cooldown .ritual-ring,
 .lantern.ivy-cooldown .ritual-sigil {
@@ -459,9 +456,10 @@ body { background: transparent; color: #f4e7d4; }
 
 .lantern.ivy-cooldown .flame-core,
 .lantern.ivy-cooldown .flame-inner {
-  transform: scale(.84) translateY(6px);
-  opacity: .58;
+  transform: scale(.9) translateY(4px);
+  opacity: .72;
 }
+.lantern.ivy-cooldown .ivy-peeker { opacity: 0; transform: translateY(12px) scale(.7); }
 
 .overlay-corner[data-mode='test'] .lantern.ivy-surge .ritual-text {
   display: block;
@@ -560,18 +558,20 @@ body { background: transparent; color: #f4e7d4; }
 
 /* state visuals */
 .lantern.state-blissful {
-  --halo: rgba(255, 213, 136, .6);
-  --flame-main: #ffcd70;
-  --flame-core: #fff9d5;
+  --halo: rgba(255, 229, 178, .68);
+  --flame-main: #ffe2a5;
+  --flame-core: #fffdf0;
 }
 .lantern.state-blissful .flame-core { width: 42px; height: 58px; left: 12px; top: 22px; border-radius: 62% 38% 58% 42% / 44% 62% 38% 56%; filter: drop-shadow(0 0 16px rgba(255, 215, 120, .72)); animation-duration: 1.15s; }
 .lantern.state-blissful .flame-inner { left: 24px; top: 34px; width: 13px; height: 14px; }
 
 .lantern.state-awakened {
-  --halo: rgba(255, 183, 106, .44);
-  --flame-main: #ffad58;
-  --flame-core: #fff0b8;
+  --halo: rgba(255, 214, 154, .52);
+  --flame-main: #ffd38a;
+  --flame-core: #fff8dd;
 }
+.lantern.state-awakened .flame-core { width: 42px; height: 56px; border-radius: 62% 38% 60% 40% / 46% 60% 40% 54%; animation-duration: 1.25s; }
+.lantern.state-awakened .flame-inner { width: 13px; height: 14px; left: 24px; top: 36px; }
 
 .lantern.state-curious {
   --halo: rgba(206, 212, 255, .4);
@@ -674,6 +674,8 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes ritualRingBurst { 0%{ transform: scale(.75); opacity:.85;} 100%{ transform: scale(1.45); opacity:0;} }
 @keyframes ritualTextPulse { 0%,100%{ opacity:.7; letter-spacing:.16em;} 50%{ opacity:1; letter-spacing:.22em;} }
 @keyframes eyePulse { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.18,.88);} }
+@keyframes peekerBob { 0%,100%{ transform: translateY(-4px) scale(1.08);} 50%{ transform: translateY(-7px) scale(1.12);} }
+@keyframes peekerBlink { 0%,30%,55%,100%{ transform: scaleY(1);} 36%,42%{ transform: scaleY(.2);} 70%{ transform: scaleY(.65);} }
 @keyframes surgeBlob { 0%,100%{ transform: scale(1.04);} 50%{ transform: scale(1.18,.92);} }
 @keyframes undeadLurch { 0%,35%,100%{ transform: scale(1) translateY(0);} 45%{ transform: scale(1.03,.95) translateY(2px);} 70%{ transform: scale(.96,1.04) translateY(1px);} }
 @keyframes undeadBlink { 0%,40%,63%,100%{ transform: scaleY(1);} 46%,50%{ transform: scaleY(.25);} 70%{ transform: scaleY(.7);} }

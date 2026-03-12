@@ -71,7 +71,7 @@
 
     const phase = deriveIvyPhase().toUpperCase();
     if (state.ivySurgeActive) {
-      tinyStatus.textContent = `TEST • IVY SURGE ACTIVE • PHASE: ${phase}`;
+      tinyStatus.textContent = `TEST • IVY PEEK ACTIVE • PHASE: ${phase}`;
       return;
     }
 
@@ -132,8 +132,9 @@
   function triggerMessageResponse(kind = 'neutral') {
     eyeRoot.classList.remove('message-ping');
     requestAnimationFrame(() => eyeRoot.classList.add('message-ping'));
+    burst('pulse');
     clearTimeout(state.timers.messageCleanup);
-    state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 280);
+    state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 320);
 
     if (kind === 'ivy') {
       triggerReaction('ivy');
@@ -181,7 +182,7 @@
     eyeRoot.classList.remove('ivy-surge-hit');
     requestAnimationFrame(() => eyeRoot.classList.add('ivy-surge-hit'));
     clearTimeout(state.timers.ivyHitCleanup);
-    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 360);
+    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 440);
 
     const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
     burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
@@ -216,21 +217,19 @@
     state.ivySurgeActive = true;
     state.debug.surgeActive = true;
 
-    // threshold snap
     state.ivyPhase = 'surge';
     render(`${source}:surge`);
-    burst('stress');
     blink();
-    bloom();
-    emitExternalDebris(20);
+    burst('stress');
+    emitExternalDebris(14);
 
     clearTimeout(state.timers.ritualStep);
     state.timers.ritualStep = setTimeout(() => {
       state.ivyPhase = 'cooldown';
       state.ivyCounter = 0;
       render(`${source}:cooldown`);
-      emitExternalDebris(10);
-    }, 2200);
+      emitExternalDebris(6);
+    }, 2300);
 
     clearTimeout(state.timers.ritualCleanup);
     state.timers.ritualCleanup = setTimeout(() => {
@@ -239,7 +238,7 @@
       state.debug.surgeActive = false;
       render(`${source}:reset`);
       updateStatus();
-    }, 3050);
+    }, 3200);
   }
 
   function applyPhraseMatches(normalizedText) {
@@ -400,7 +399,7 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'the lantern creature is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: ivy x10 surge / love / lurking / ghost');
+    if (testingMode) appendChat('ivy-eye', 'test: ivy x10 peek / love / lurking / ghost');
   }
 
   function bootstrap() {
