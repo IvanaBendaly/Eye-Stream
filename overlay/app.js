@@ -1,12 +1,7 @@
 (function () {
   const config = {
     states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    decay: {
-      activity: 0.03,
-      warm: 0.045,
-      chaos: 0.05,
-      curse: 0.022
-    },
+    decay: { activity: 0.03, warm: 0.045, chaos: 0.05, curse: 0.022 },
     keywords: {
       warm: ['love', 'cute', 'safe', 'cozy', 'gentle', 'calm', 'hug', 'lovely', 'sweet'],
       chaos: ['run', 'chaos', 'panic', 'fast', 'insane', 'scream', 'cursed', 'hunt', 'wild'],
@@ -18,7 +13,8 @@
       agitatedDelta: 0.2,
       possessedCurse: 0.84,
       possessedDurationMs: 12000
-    }
+    },
+    manualOverrideMs: 15000
   };
 
   const root = document.getElementById('overlay-root');
@@ -31,18 +27,16 @@
   root.dataset.mode = isTestMode ? 'test' : 'overlay';
 
   const model = {
-    state: 'awake',
-    activity: 0.2,
-    warm: 0,
-    chaos: 0,
-    curse: 0,
+    currentState: 'awake',
+    activityLevel: 0.2,
+    warmLevel: 0,
+    chaosLevel: 0,
+    curseLevel: 0,
     forcedState: null,
+    manualOverrideUntil: 0,
     possessedUntil: 0,
-    effects: {
-      particles: true,
-      smoke: true,
-      thorns: false
-    },
+    isAutoDemo: false,
+    effects: { particles: true, smoke: true, thorns: false },
     demoTimer: null,
     decayTimer: null,
     particleTimer: null
@@ -51,11 +45,12 @@
   const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, n));
   const random = (min, max) => Math.random() * (max - min) + min;
 
-  function applyVisualState(state) {
+  function setVisualClass(state) {
     config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
     lantern.classList.add(`state-${state}`);
     root.dataset.state = state;
-    model.state = state;
+    model.currentState = state;
+    console.log(`[LanternOverlay] render applied: ${state}`);
   }
 
   function updateVisualEffects() {
@@ -66,33 +61,55 @@
 
   function updateStatus() {
     if (!isTestMode || !testStatus) return;
-    testStatus.textContent = `state: ${model.state} • activity: ${model.activity.toFixed(2)} • warm: ${model.warm.toFixed(2)} • chaos: ${model.chaos.toFixed(2)} • curse: ${model.curse.toFixed(2)}${model.forcedState ? ` • forced:${model.forcedState}` : ''}`;
+    const manualActive = Date.now() < model.manualOverrideUntil || !!model.forcedState;
+    testStatus.textContent = [
+      `state: ${model.currentState}`,
+      `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
+      `manual: ${manualActive ? 'on' : 'off'}`,
+      `activity: ${model.activityLevel.toFixed(2)}`,
+      `warm: ${model.warmLevel.toFixed(2)}`,
+      `chaos: ${model.chaosLevel.toFixed(2)}`,
+      `curse: ${model.curseLevel.toFixed(2)}`
+    ].join(' • ');
   }
 
-  function chooseState() {
-    if (model.forcedState) return model.forcedState;
+  function getDerivedState() {
     const now = Date.now();
+    if (now < model.manualOverrideUntil && model.forcedState) return model.forcedState;
     if (now < model.possessedUntil) return 'possessed';
-    if (model.curse >= config.thresholds.possessedCurse) {
+
+    if (model.curseLevel >= config.thresholds.possessedCurse) {
       model.possessedUntil = now + config.thresholds.possessedDurationMs;
-      model.curse = clamp(model.curse * 0.55);
+      model.curseLevel = clamp(model.curseLevel * 0.55);
       return 'possessed';
     }
 
-    const warmBias = model.warm - model.chaos;
-    const chaosBias = model.chaos - model.warm;
+    const warmBias = model.warmLevel - model.chaosLevel;
+    const chaosBias = model.chaosLevel - model.warmLevel;
 
-    if (model.activity < config.thresholds.dormantActivity && model.warm < 0.2 && model.chaos < 0.2) {
+    if (model.activityLevel < config.thresholds.dormantActivity && model.warmLevel < 0.2 && model.chaosLevel < 0.2) {
       return 'dormant';
     }
-    if (warmBias >= config.thresholds.warmDelta && model.activity > 0.2) return 'warm';
-    if (chaosBias >= config.thresholds.agitatedDelta && model.activity > 0.26) return 'agitated';
+    if (warmBias >= config.thresholds.warmDelta && model.activityLevel > 0.2) return 'warm';
+    if (chaosBias >= config.thresholds.agitatedDelta && model.activityLevel > 0.26) return 'agitated';
     return 'awake';
   }
 
-  function evaluateMood() {
-    applyVisualState(chooseState());
+  function renderState(reason = 'unknown') {
+    const derived = getDerivedState();
+    setVisualClass(derived);
+
+    if (derived === 'possessed') {
+      model.effects.thorns = true;
+      model.effects.smoke = true;
+    }
+    if (derived === 'dormant') {
+      model.effects.smoke = false;
+    }
+
+    updateVisualEffects();
     updateStatus();
+    console.log(`[LanternOverlay] state changed to ${derived} (reason: ${reason})`);
   }
 
   function emitParticle(type) {
@@ -104,42 +121,46 @@
     p.className = `particle ${type}`;
     p.style.left = `${random(82, 138)}px`;
     p.style.top = `${random(96, 138)}px`;
-    p.style.setProperty('--dx', `${random(-14, 18)}px`);
-    p.style.setProperty('--dy', `${random(-68, -34)}px`);
-    p.style.animationDuration = `${random(1.8, 3.5)}s`;
-    p.style.animationDelay = `${random(0, 0.5)}s`;
+    p.style.setProperty('--dx', `${random(-16, 20)}px`);
+    p.style.setProperty('--dy', `${random(-72, -36)}px`);
+    p.style.animationDuration = `${random(1.6, 3.4)}s`;
     layer.appendChild(p);
-
     setTimeout(() => p.remove(), 3800);
   }
 
   function pulseBurst(kind) {
     lantern.classList.remove('burst');
     requestAnimationFrame(() => lantern.classList.add('burst'));
-    if (kind === 'kind') {
-      for (let i = 0; i < 4; i += 1) setTimeout(() => emitParticle('warm'), i * 75);
-    } else if (kind === 'chaos') {
-      for (let i = 0; i < 5; i += 1) setTimeout(() => emitParticle('ash'), i * 55);
-    } else if (kind === 'curse') {
-      for (let i = 0; i < 6; i += 1) setTimeout(() => emitParticle('smoke'), i * 70);
-    }
+    if (kind === 'kind') for (let i = 0; i < 5; i += 1) setTimeout(() => emitParticle('warm'), i * 65);
+    if (kind === 'chaos') for (let i = 0; i < 6; i += 1) setTimeout(() => emitParticle('ash'), i * 50);
+    if (kind === 'curse') for (let i = 0; i < 7; i += 1) setTimeout(() => emitParticle('smoke'), i * 55);
   }
 
   function addActivity(amount = 0.1) {
-    model.activity = clamp(model.activity + amount * 0.1);
-    evaluateMood();
+    model.activityLevel = clamp(model.activityLevel + amount * 0.1);
+    renderState('addActivity');
   }
 
-  function setState(state) {
+  function stopDemo() {
+    if (!model.demoTimer) return;
+    clearInterval(model.demoTimer);
+    model.demoTimer = null;
+    model.isAutoDemo = false;
+  }
+
+  function setState(state, source = 'api') {
     if (!config.states.includes(state)) return;
     model.forcedState = state;
-    applyVisualState(state);
-    updateStatus();
+    model.manualOverrideUntil = Date.now() + config.manualOverrideMs;
+    stopDemo();
+    console.log(`[LanternOverlay] clicked ${state} (${source})`);
+    renderState('manual-setState');
   }
 
   function clearForcedState() {
     model.forcedState = null;
-    evaluateMood();
+    model.manualOverrideUntil = 0;
+    renderState('clearForcedState');
   }
 
   function toggleEffect(effect, value) {
@@ -147,6 +168,30 @@
     model.effects[effect] = typeof value === 'boolean' ? value : !model.effects[effect];
     updateVisualEffects();
     updateStatus();
+  }
+
+  function triggerBurst(kind, options = {}) {
+    const amount = options.amount ?? 0.12;
+    if (kind === 'kind') {
+      model.warmLevel = clamp(model.warmLevel + amount * 1.35);
+      model.chaosLevel = clamp(model.chaosLevel - amount * 0.28);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.25);
+    }
+    if (kind === 'chaos') {
+      model.chaosLevel = clamp(model.chaosLevel + amount * 1.45);
+      model.warmLevel = clamp(model.warmLevel - amount * 0.2);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.38);
+    }
+    if (kind === 'curse') {
+      model.curseLevel = clamp(model.curseLevel + amount * 1.5);
+      model.chaosLevel = clamp(model.chaosLevel + amount * 0.5);
+      model.activityLevel = clamp(model.activityLevel + amount * 1.4);
+      model.effects.thorns = true;
+      updateVisualEffects();
+    }
+
+    pulseBurst(kind);
+    renderState(`triggerBurst:${kind}`);
   }
 
   function parseChatText(text = '') {
@@ -162,89 +207,75 @@
     if (curseHits) triggerBurst('curse', { amount: curseHits * 0.14 });
   }
 
-  function triggerBurst(kind, options = {}) {
-    const amount = options.amount ?? 0.12;
-    if (kind === 'kind') {
-      model.warm = clamp(model.warm + amount * 1.35);
-      model.chaos = clamp(model.chaos - amount * 0.28);
-      model.activity = clamp(model.activity + amount * 1.25);
-    }
-    if (kind === 'chaos') {
-      model.chaos = clamp(model.chaos + amount * 1.45);
-      model.warm = clamp(model.warm - amount * 0.2);
-      model.activity = clamp(model.activity + amount * 1.38);
-    }
-    if (kind === 'curse') {
-      model.curse = clamp(model.curse + amount * 1.5);
-      model.chaos = clamp(model.chaos + amount * 0.5);
-      model.activity = clamp(model.activity + amount * 1.4);
-      model.effects.thorns = true;
-      updateVisualEffects();
-    }
-    pulseBurst(kind);
-    evaluateMood();
-  }
-
   function applyDecayTick() {
-    model.activity = clamp(model.activity - config.decay.activity);
-    model.warm = clamp(model.warm - config.decay.warm);
-    model.chaos = clamp(model.chaos - config.decay.chaos);
-    model.curse = clamp(model.curse - config.decay.curse);
+    model.activityLevel = clamp(model.activityLevel - config.decay.activity);
+    model.warmLevel = clamp(model.warmLevel - config.decay.warm);
+    model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
+    model.curseLevel = clamp(model.curseLevel - config.decay.curse);
 
-    if (model.state !== 'possessed' && model.curse < 0.12 && !model.forcedState) {
-      model.effects.thorns = false;
-      updateVisualEffects();
+    if (Date.now() > model.manualOverrideUntil) {
+      model.forcedState = null;
     }
 
-    evaluateMood();
+    if (model.currentState !== 'possessed' && model.curseLevel < 0.12 && !model.forcedState) {
+      model.effects.thorns = false;
+      if (!model.isAutoDemo) model.effects.smoke = true;
+    }
+
+    renderState('decay');
   }
 
   function startAmbientLoop() {
     if (model.particleTimer) clearInterval(model.particleTimer);
     model.particleTimer = setInterval(() => {
-      if (model.state === 'warm') emitParticle('warm');
-      if (model.state === 'agitated') emitParticle('ash');
-      if (model.state === 'possessed') emitParticle('smoke');
-      if (model.state === 'awake' && Math.random() > 0.5) emitParticle('warm');
-    }, 360);
+      if (model.currentState === 'warm') emitParticle('warm');
+      if (model.currentState === 'agitated') emitParticle('ash');
+      if (model.currentState === 'possessed') emitParticle('smoke');
+      if (model.currentState === 'awake' && Math.random() > 0.55) emitParticle('warm');
+    }, 340);
   }
 
   function toggleDemo() {
     if (model.demoTimer) {
-      clearInterval(model.demoTimer);
-      model.demoTimer = null;
+      stopDemo();
+      updateStatus();
       return;
     }
 
-    const seq = [
-      () => setState('dormant'),
-      () => setState('awake'),
-      () => { setState('warm'); triggerBurst('kind'); },
-      () => { setState('agitated'); triggerBurst('chaos'); },
-      () => { setState('possessed'); triggerBurst('curse'); },
-      () => clearForcedState()
-    ];
+    model.forcedState = null;
+    model.manualOverrideUntil = 0;
+    model.isAutoDemo = true;
+
+    const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
     let i = 0;
-    seq[0]();
+    setVisualClass(seq[0]);
+    updateStatus();
+
     model.demoTimer = setInterval(() => {
       i = (i + 1) % seq.length;
-      seq[i]();
-    }, 2600);
+      const step = seq[i];
+      model.forcedState = step;
+      model.manualOverrideUntil = Date.now() + 2200;
+      renderState('auto-demo');
+      if (step === 'warm') pulseBurst('kind');
+      if (step === 'agitated') pulseBurst('chaos');
+      if (step === 'possessed') pulseBurst('curse');
+    }, 2400);
   }
 
   function receive(payload = {}) {
     const { type } = payload;
-    if (type === 'setState' && payload.state) setState(String(payload.state).toLowerCase());
+    if (type === 'setState' && payload.state) setState(String(payload.state).toLowerCase(), 'receive');
     if (type === 'addActivity') addActivity(Number(payload.amount ?? payload.value ?? 1));
     if (type === 'triggerBurst' && payload.kind) triggerBurst(String(payload.kind).toLowerCase());
     if (type === 'toggleEffect' && payload.effect) toggleEffect(payload.effect, payload.value);
     if (type === 'chat' && payload.text) parseChatText(payload.text);
     if (type === 'setIntensity') {
-      model.activity = clamp(Number(payload.activity ?? model.activity));
-      model.warm = clamp(Number(payload.warm ?? model.warm));
-      model.chaos = clamp(Number(payload.chaos ?? model.chaos));
-      model.curse = clamp(Number(payload.curse ?? model.curse));
-      evaluateMood();
+      model.activityLevel = clamp(Number(payload.activity ?? model.activityLevel));
+      model.warmLevel = clamp(Number(payload.warm ?? model.warmLevel));
+      model.chaosLevel = clamp(Number(payload.chaos ?? model.chaosLevel));
+      model.curseLevel = clamp(Number(payload.curse ?? model.curseLevel));
+      renderState('setIntensity');
     }
   }
 
@@ -258,12 +289,14 @@
       button.addEventListener('click', () => {
         const act = button.dataset.act;
         const value = button.dataset.value;
-        if (act === 'setState') setState(value);
+
+        if (act === 'setState') setState(value, 'button');
         if (act === 'activity') addActivity(Number(value));
         if (act === 'burst') triggerBurst(value);
         if (act === 'toggleEffect') toggleEffect(value);
         if (act === 'demo') toggleDemo();
         if (act === 'force') clearForcedState();
+
         updateStatus();
       });
     });
@@ -273,7 +306,7 @@
     if (!isTestMode) root.style.pointerEvents = 'none';
     setupTestMode();
     updateVisualEffects();
-    evaluateMood();
+    renderState('bootstrap');
     startAmbientLoop();
     model.decayTimer = setInterval(applyDecayTick, 1300);
   }

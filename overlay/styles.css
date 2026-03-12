@@ -49,6 +49,7 @@ html, body {
   transform-origin: 50% 14%;
   animation: float var(--float-speed) ease-in-out infinite;
   filter: drop-shadow(0 26px 18px rgba(0, 0, 0, 0.42));
+  transition: filter 220ms ease, opacity 220ms ease, transform 220ms ease;
 }
 
 .lantern,
@@ -222,58 +223,64 @@ html, body {
 
 /* Mood states */
 .lantern.state-dormant {
-  --glow-main: #b6804f;
-  --core-main: #dd9449;
-  --core-inner: #ffd2a0;
-  --glow-shadow: rgba(180, 113, 50, 0.18);
-  --core-scale: 0.78;
-  --halo-opacity: 0.3;
-  --flicker-speed: 2.8s;
-  --float-speed: 8s;
+  --glow-main: #8f653f;
+  --core-main: #c57d36;
+  --core-inner: #ffc693;
+  --glow-shadow: rgba(146, 86, 36, 0.14);
+  --core-scale: 0.62;
+  --halo-opacity: 0.14;
+  --flicker-speed: 3.6s;
+  --float-speed: 9s;
+  opacity: 0.82;
+  filter: saturate(0.72) brightness(0.72) drop-shadow(0 18px 14px rgba(0, 0, 0, 0.48));
 }
 
 .lantern.state-awake {
   --glow-main: #f2bf63;
   --core-main: #ffd87d;
   --core-inner: #fff3ce;
-  --glow-shadow: rgba(247, 180, 72, 0.3);
+  --glow-shadow: rgba(247, 180, 72, 0.32);
   --core-scale: 1;
   --flicker-speed: 1.6s;
+  opacity: 1;
 }
 
 .lantern.state-warm {
   --glow-main: #ffc470;
   --core-main: #ffde95;
   --core-inner: #fff4d8;
-  --glow-shadow: rgba(255, 198, 104, 0.42);
-  --core-scale: 1.08;
-  --halo-opacity: 0.92;
-  --flicker-speed: 1.9s;
+  --glow-shadow: rgba(255, 198, 104, 0.55);
+  --core-scale: 1.14;
+  --halo-opacity: 1;
+  --flicker-speed: 2.1s;
+  filter: saturate(1.2) brightness(1.1) drop-shadow(0 26px 18px rgba(0, 0, 0, 0.38));
 }
 
 .lantern.state-agitated {
-  --glow-main: #ffbd55;
-  --core-main: #ffd372;
-  --core-inner: #fff8dd;
-  --glow-shadow: rgba(255, 159, 72, 0.45);
-  --core-scale: 1.02;
-  --flicker-speed: 0.62s;
-  --float-speed: 3.6s;
-  --tilt: -2deg;
+  --glow-main: #ffb049;
+  --core-main: #ffd063;
+  --core-inner: #fffde2;
+  --glow-shadow: rgba(255, 132, 66, 0.6);
+  --core-scale: 1.06;
+  --flicker-speed: 0.42s;
+  --float-speed: 2.4s;
+  --tilt: -4deg;
+  filter: saturate(1.18) contrast(1.12) drop-shadow(0 26px 20px rgba(0, 0, 0, 0.46));
 }
 
 .lantern.state-possessed {
-  --metal-mid: #413149;
-  --metal-light: #65557a;
-  --glow-main: #ad7eff;
-  --core-main: #9d65ff;
-  --core-inner: #e6ddff;
-  --glow-shadow: rgba(134, 80, 209, 0.5);
-  --smoke-color: rgba(34, 20, 53, 0.74);
-  --core-scale: 1.1;
+  --metal-mid: #352640;
+  --metal-light: #6d5a86;
+  --glow-main: #a56fff;
+  --core-main: #864eff;
+  --core-inner: #ebe3ff;
+  --glow-shadow: rgba(120, 63, 225, 0.68);
+  --smoke-color: rgba(25, 14, 39, 0.84);
+  --core-scale: 1.2;
   --halo-opacity: 1;
-  --flicker-speed: 0.86s;
-  --tilt: -3.5deg;
+  --flicker-speed: 0.55s;
+  --tilt: -5.5deg;
+  filter: saturate(1.28) contrast(1.2) brightness(0.96) drop-shadow(0 30px 24px rgba(7, 2, 18, 0.72));
 }
 
 .lantern.state-agitated .lantern-shell,
@@ -365,3 +372,13 @@ html, body {
   0% { opacity: 0.8; transform: scale(0.65); }
   100% { opacity: 0; transform: scale(1.5); }
 }
+
+.lantern.state-dormant .particle-layer.warm,
+.lantern.state-dormant .particle-layer.ash,
+.lantern.state-dormant .particle-layer.smoke { opacity: 0.15; }
+
+.lantern.state-warm .sigil { opacity: 0.5; border-color: rgba(255, 220, 160, 0.48); }
+.lantern.state-agitated .sigil { opacity: 0.18; }
+.lantern.state-possessed .sigil { opacity: 0.62; border-color: rgba(198, 157, 255, 0.72); }
+.lantern.state-possessed .glass { background: linear-gradient(180deg, rgba(184, 144, 255, 0.18), rgba(40, 28, 58, 0.46)); }
+.lantern.state-possessed .thorn-ring { border-color: rgba(156, 114, 228, 0.8); }

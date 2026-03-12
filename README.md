@@ -28,6 +28,7 @@ Test mode adds compact controls for:
 - triggering kind/chaos/curse bursts
 - toggling particles, smoke, thorns/cracks
 - auto demo sequence
+- visible debug status (`state`, `auto`, `manual`, intensity channels)
 
 ## Event API (for chat bridges / Streamer.bot)
 
