@@ -13,8 +13,7 @@
       agitatedDelta: 0.2,
       possessedCurse: 0.84,
       possessedDurationMs: 12000
-    },
-    manualOverrideMs: 15000
+    }
   };
 
   const root = document.getElementById('overlay-root');
@@ -33,7 +32,7 @@
     chaosLevel: 0,
     curseLevel: 0,
     forcedState: null,
-    manualOverrideUntil: 0,
+    manualOverrideActive: false,
     possessedUntil: 0,
     isAutoDemo: false,
     effects: { particles: true, smoke: true, thorns: false },
@@ -61,7 +60,7 @@
 
   function updateStatus() {
     if (!isTestMode || !testStatus) return;
-    const manualActive = Date.now() < model.manualOverrideUntil || !!model.forcedState;
+    const manualActive = model.manualOverrideActive && !!model.forcedState;
     testStatus.textContent = [
       `state: ${model.currentState}`,
       `auto: ${model.isAutoDemo ? 'on' : 'off'}`,
@@ -75,7 +74,7 @@
 
   function getDerivedState() {
     const now = Date.now();
-    if (now < model.manualOverrideUntil && model.forcedState) return model.forcedState;
+    if (model.manualOverrideActive && model.forcedState) return model.forcedState;
     if (now < model.possessedUntil) return 'possessed';
 
     if (model.curseLevel >= config.thresholds.possessedCurse) {
@@ -109,7 +108,7 @@
 
     updateVisualEffects();
     updateStatus();
-    console.log(`[LanternOverlay] state changed to ${derived} (reason: ${reason})`);
+    console.log(`[LanternOverlay] state requested/applied: ${model.forcedState || derived} -> ${derived} (reason: ${reason})`);
   }
 
   function emitParticle(type) {
@@ -151,15 +150,17 @@
   function setState(state, source = 'api') {
     if (!config.states.includes(state)) return;
     model.forcedState = state;
-    model.manualOverrideUntil = Date.now() + config.manualOverrideMs;
+    model.manualOverrideActive = true;
     stopDemo();
-    console.log(`[LanternOverlay] clicked ${state} (${source})`);
+    console.log(`[LanternOverlay] clicked state: ${state} (${source})`);
+    console.log('[LanternOverlay] manual override enabled');
     renderState('manual-setState');
   }
 
   function clearForcedState() {
     model.forcedState = null;
-    model.manualOverrideUntil = 0;
+    model.manualOverrideActive = false;
+    console.log('[LanternOverlay] manual override disabled');
     renderState('clearForcedState');
   }
 
@@ -213,10 +214,6 @@
     model.chaosLevel = clamp(model.chaosLevel - config.decay.chaos);
     model.curseLevel = clamp(model.curseLevel - config.decay.curse);
 
-    if (Date.now() > model.manualOverrideUntil) {
-      model.forcedState = null;
-    }
-
     if (model.currentState !== 'possessed' && model.curseLevel < 0.12 && !model.forcedState) {
       model.effects.thorns = false;
       if (!model.isAutoDemo) model.effects.smoke = true;
@@ -238,12 +235,14 @@
   function toggleDemo() {
     if (model.demoTimer) {
       stopDemo();
-      updateStatus();
+      model.forcedState = null;
+      model.manualOverrideActive = false;
+      renderState('demo-stopped');
       return;
     }
 
     model.forcedState = null;
-    model.manualOverrideUntil = 0;
+    model.manualOverrideActive = false;
     model.isAutoDemo = true;
 
     const seq = ['dormant', 'awake', 'warm', 'agitated', 'possessed'];
@@ -255,7 +254,7 @@
       i = (i + 1) % seq.length;
       const step = seq[i];
       model.forcedState = step;
-      model.manualOverrideUntil = Date.now() + 2200;
+      model.manualOverrideActive = true;
       renderState('auto-demo');
       if (step === 'warm') pulseBurst('kind');
       if (step === 'agitated') pulseBurst('chaos');
