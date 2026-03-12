@@ -6,14 +6,14 @@
   const chatInput = document.getElementById('chat-input');
   const tinyStatus = document.getElementById('tiny-status');
   const interactionHeader = document.getElementById('interaction-header');
+  const explosionField = document.getElementById('explosion-field');
 
   const params = new URLSearchParams(window.location.search);
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
-  const SCORE_MAX = 10;
   const IVY_THRESHOLD = 10;
-  const STATE_ORDER = ['awakened', 'overgrown', 'corrupted', 'rotten'];
-  const STATE_ALIAS = { alive: 'awakened', alert: 'overgrown', zombified: 'rotten' };
+  const STATE_ORDER = ['blissful', 'awakened', 'curious', 'overgrown', 'disturbed', 'corrupted', 'rotting', 'dead'];
+  const STATE_ALIAS = { alive: 'awakened', alert: 'overgrown', zombified: 'dead' };
 
   const matchConfig = {
     corruptWords: [
@@ -31,8 +31,7 @@
     ],
     resetWords: ['wake', 'awaken', 'revive', 'reborn', 'reset', 'blink', 'return', 'restore', 'renew', 'rebirth'],
     healPhrases: ['calm down', 'safe place'],
-    corruptPhrases: [],
-    resetPhrases: []
+    corruptPhrases: []
   };
 
   const state = {
@@ -62,56 +61,50 @@
   };
 
   function clampScore(value) {
-    return Math.max(0, Math.min(SCORE_MAX, Math.round(value)));
+    return Math.max(-3, Math.min(12, Math.round(value)));
   }
 
   function deriveStateFromScore(score = state.corruptionScore) {
+    if (score <= -2) return 'blissful';
     if (score <= 1) return 'awakened';
-    if (score <= 3) return 'overgrown';
-    if (score <= 5) return 'corrupted';
-    return 'rotten';
+    if (score === 2) return 'curious';
+    if (score <= 4) return 'overgrown';
+    if (score <= 6) return 'disturbed';
+    if (score <= 8) return 'corrupted';
+    if (score <= 10) return 'rotting';
+    return 'dead';
   }
 
   function stateToScore(nextState) {
+    if (nextState === 'blissful') return -2;
     if (nextState === 'awakened') return 0;
-    if (nextState === 'overgrown') return 2;
-    if (nextState === 'corrupted') return 4;
-    return 6;
+    if (nextState === 'curious') return 2;
+    if (nextState === 'overgrown') return 3;
+    if (nextState === 'disturbed') return 5;
+    if (nextState === 'corrupted') return 7;
+    if (nextState === 'rotting') return 9;
+    return 11;
   }
 
   function resetDebug() {
-    state.debug = {
-      matchedCorrupt: [],
-      matchedHeal: [],
-      ivyHits: 0,
-      resetTriggered: false,
-      explosionTriggered: false,
-      delta: 0
-    };
+    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, explosionTriggered: false, delta: 0 };
   }
 
   function updateStatus() {
     if (!testingMode) return;
-
     if (state.overloadPhase) {
       tinyStatus.textContent = `TEST • IVY OVERLOAD • PHASE: ${state.overloadPhase.toUpperCase()}`;
       return;
     }
-
     const corruptText = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
     const healText = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
-    const ivyText = state.debug.ivyHits ? `x${state.debug.ivyHits}` : '0';
     const deltaSign = state.debug.delta > 0 ? '+' : '';
-
-    tinyStatus.textContent = `TEST • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • IVY: ${state.ivyCounter}/${IVY_THRESHOLD} • CORRUPT: ${corruptText} • HEAL: ${healText} • IVYHITS: ${ivyText} • RESET: ${state.debug.resetTriggered ? 'yes' : 'no'} • EXPLODE: ${state.debug.explosionTriggered ? 'yes' : 'no'} • DELTA: ${deltaSign}${state.debug.delta}`;
+    tinyStatus.textContent = `TEST • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • IVY: ${state.ivyCounter}/${IVY_THRESHOLD} • CORRUPT: ${corruptText} • HEAL: ${healText} • IVYHITS: x${state.debug.ivyHits} • RESET: ${state.debug.resetTriggered ? 'yes' : 'no'} • EXPLODE: ${state.debug.explosionTriggered ? 'yes' : 'no'} • DELTA: ${deltaSign}${state.debug.delta}`;
   }
 
   function applyIvyLevelClass() {
-    eyeRoot.classList.remove(
-      'ivy-level-0', 'ivy-level-1', 'ivy-level-2', 'ivy-level-3', 'ivy-level-4',
-      'ivy-level-5', 'ivy-level-6', 'ivy-level-7', 'ivy-level-8', 'ivy-level-9', 'ivy-level-10'
-    );
-    eyeRoot.classList.add(`ivy-level-${Math.min(10, Math.max(0, state.ivyCounter))}`);
+    for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
+    eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
   }
 
   function render(reason = 'render') {
@@ -150,7 +143,7 @@
     const cls = kind === 'corrupt' ? 'react-corrupt' : (kind === 'ivy' ? 'react-ivy' : 'react-heal');
     requestAnimationFrame(() => eyeRoot.classList.add(cls));
     clearTimeout(state.timers.reactionCleanup);
-    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy'), 380);
+    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy'), 420);
   }
 
   function setLook(direction) {
@@ -176,11 +169,82 @@
   }
 
   function tokenize(text) {
-    return String(text || '')
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, ' ')
-      .split(/\s+/)
-      .filter(Boolean);
+    return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  }
+
+  function emitExternalDebris(amount = 28) {
+    if (!explosionField) return;
+    for (let i = 0; i < amount; i += 1) {
+      const typeRoll = Math.random();
+      const cls = typeRoll > 0.75 ? 'leaf' : (typeRoll > 0.45 ? 'ember' : (typeRoll > 0.2 ? 'shard' : 'spore'));
+      const d = document.createElement('span');
+      d.className = `debris ${cls}`;
+      d.style.left = `${108 + (Math.random() * 36 - 18)}px`;
+      d.style.top = `${94 + (Math.random() * 26 - 13)}px`;
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 200}px`);
+      d.style.setProperty('--dy', `${(Math.random() * -180) - 25}px`);
+      d.style.animationDuration = `${900 + Math.random() * 900}ms`;
+      explosionField.appendChild(d);
+      setTimeout(() => d.remove(), 2200);
+    }
+  }
+
+  function performIvyExplosion(source = 'ivyOverload') {
+    if (state.exploding) return;
+    state.exploding = true;
+    state.debug.explosionTriggered = true;
+    state.overloadPhase = 'charge';
+    updateStatus();
+
+    eyeRoot.classList.remove('explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
+    eyeRoot.classList.add('explode-charge');
+    burst('stress');
+
+    const setPhase = (phase, className) => {
+      state.overloadPhase = phase;
+      updateStatus();
+      eyeRoot.classList.remove('explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
+      eyeRoot.classList.add(className);
+    };
+
+    setTimeout(() => {
+      setPhase('ignition', 'explode-ignition');
+      state.corruptionScore = 10;
+      render(`${source}:ignition`);
+      burst('stress');
+    }, 420);
+
+    setTimeout(() => {
+      setPhase('explosion', 'explode-explosion');
+      emitExternalDebris(42);
+      burst('stress');
+    }, 980);
+
+    setTimeout(() => {
+      setPhase('aftermath', 'explode-aftermath');
+      state.corruptionScore = 11;
+      render(`${source}:aftermath`);
+    }, 1540);
+
+    clearTimeout(state.timers.explosionCleanup);
+    state.timers.explosionCleanup = setTimeout(() => {
+      setPhase('rebirth', 'explode-rebirth');
+      state.corruptionScore = 0;
+      state.ivyCounter = 0;
+      state.exploding = false;
+      state.overloadPhase = null;
+      eyeRoot.classList.remove('explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
+      render(`${source}:rebirth`);
+      bloom();
+      blink();
+      updateStatus();
+
+      if (state.pendingMessages.length) {
+        const queued = [...state.pendingMessages];
+        state.pendingMessages = [];
+        queued.forEach((msg) => applyMessageTriggers(msg, 'queued'));
+      }
+    }, 2340);
   }
 
   function applyPhraseMatches(normalizedText) {
@@ -196,66 +260,6 @@
         state.debug.delta += 1;
       }
     }
-    for (const phrase of matchConfig.resetPhrases) {
-      if (normalizedText.includes(phrase)) state.debug.resetTriggered = true;
-    }
-  }
-
-  function performIvyExplosion(source = 'ivyOverload') {
-    if (state.exploding) return;
-    state.exploding = true;
-    state.debug.explosionTriggered = true;
-    state.overloadPhase = 'charge';
-    updateStatus();
-
-    eyeRoot.classList.remove('explode', 'explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
-    eyeRoot.classList.add('explode', 'explode-charge');
-    burst('stress');
-
-    const setPhase = (phase, className) => {
-      state.overloadPhase = phase;
-      updateStatus();
-      eyeRoot.classList.remove('explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
-      eyeRoot.classList.add(className);
-    };
-
-    setTimeout(() => {
-      setPhase('ignition', 'explode-ignition');
-      state.corruptionScore = 9;
-      render(`${source}:ignition`);
-      burst('stress');
-    }, 380);
-
-    setTimeout(() => {
-      setPhase('explosion', 'explode-explosion');
-      burst('stress');
-    }, 820);
-
-    setTimeout(() => {
-      setPhase('aftermath', 'explode-aftermath');
-      state.corruptionScore = 7;
-      render(`${source}:aftermath`);
-    }, 1260);
-
-    clearTimeout(state.timers.explosionCleanup);
-    state.timers.explosionCleanup = setTimeout(() => {
-      setPhase('rebirth', 'explode-rebirth');
-      state.corruptionScore = 0;
-      state.ivyCounter = 0;
-      state.exploding = false;
-      state.overloadPhase = null;
-      eyeRoot.classList.remove('explode', 'explode-charge', 'explode-ignition', 'explode-explosion', 'explode-aftermath', 'explode-rebirth');
-      render(`${source}:rebirth`);
-      bloom();
-      blink();
-      updateStatus();
-
-      if (state.pendingMessages.length) {
-        const queued = [...state.pendingMessages];
-        state.pendingMessages = [];
-        queued.forEach((msg) => applyMessageTriggers(msg, 'queued'));
-      }
-    }, 2040);
   }
 
   function applyMessageTriggers(text, source = 'chat') {
@@ -267,7 +271,6 @@
     resetDebug();
     const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
     const words = tokenize(normalizedText);
-
     applyPhraseMatches(normalizedText);
 
     for (const word of words) {
@@ -285,9 +288,7 @@
         state.debug.matchedHeal.push(word);
         state.debug.delta -= 1;
       }
-      if (matchConfig.resetWords.includes(word)) {
-        state.debug.resetTriggered = true;
-      }
+      if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
     }
 
     if (state.debug.resetTriggered) {
@@ -298,7 +299,7 @@
       mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
       if (state.debug.delta > 0) {
         triggerReaction('corrupt');
-        burst(state.corruptionScore >= 6 ? 'stress' : 'pulse');
+        burst(state.corruptionScore >= 7 ? 'stress' : 'pulse');
       }
       if (state.debug.delta < 0) {
         triggerReaction('heal');
@@ -339,28 +340,28 @@
   function ambient() {
     if (state.exploding) return;
 
-    if (state.renderedState === 'awakened') {
-      if (Math.random() > 0.72) emitParticle('warm');
+    if (state.renderedState === 'blissful' || state.renderedState === 'awakened') {
+      if (Math.random() > 0.65) emitParticle('warm');
       return;
     }
 
-    if (state.renderedState === 'overgrown') {
+    if (state.renderedState === 'curious' || state.renderedState === 'overgrown') {
       emitParticle('leaves');
-      if (Math.random() > 0.63) emitParticle('warm');
+      if (Math.random() > 0.6) emitParticle('warm');
       return;
     }
 
-    if (state.renderedState === 'corrupted') {
+    if (state.renderedState === 'disturbed' || state.renderedState === 'corrupted') {
       emitParticle('ash');
       emitParticle('smoke');
-      if (Math.random() > 0.86) blink();
+      if (Math.random() > 0.84) blink();
       return;
     }
 
-    if (state.renderedState === 'rotten') {
+    if (state.renderedState === 'rotting' || state.renderedState === 'dead') {
       emitParticle('smoke');
-      if (Math.random() > 0.5) emitParticle('ash');
-      if (Math.random() > 0.84) blink();
+      if (Math.random() > 0.48) emitParticle('ash');
+      if (Math.random() > 0.82) blink();
     }
   }
 
@@ -387,19 +388,15 @@
       blink();
       updateStatus();
     }
-    if (act === 'explode' || act === 'ivyburst') {
-      performIvyExplosion(`action:${act}`);
-    }
+    if (act === 'explode' || act === 'ivyburst') performIvyExplosion(`action:${act}`);
   }
 
   function receive(payload = {}) {
     const type = String(payload.type || '').toLowerCase();
-
     if (type === 'chat' && payload.text) {
       appendChat(payload.user || 'chat', payload.text);
       applyMessageTriggers(payload.text, 'receive:chat');
     }
-
     if (type === 'action' && payload.action) action(payload.action);
     if (type === 'setscore') setScore(Number(payload.value ?? 0), 'receive:setScore');
     if (type === 'setstate' && payload.state) setState(payload.state, 'receive:setState');
@@ -417,11 +414,9 @@
       interactionHeader.hidden = true;
       return;
     }
-
     overlayRoot.dataset.mode = 'test';
     chatInputForm.hidden = false;
     tinyStatus.hidden = false;
-
     chatInputForm.addEventListener('submit', (event) => {
       event.preventDefault();
       handleTypedMessage(chatInput.value);
@@ -431,8 +426,8 @@
   }
 
   function bootstrapChat() {
-    appendChat('ivy-eye', 'the lantern is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: demon haunt / love cozy / ivy ivy / wake');
+    appendChat('ivy-eye', 'the lantern creature is listening.');
+    if (testingMode) appendChat('ivy-eye', 'test: love / curious / ghost / ivy x10 / wake');
   }
 
   function bootstrap() {
