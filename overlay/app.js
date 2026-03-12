@@ -159,8 +159,8 @@
       d.className = 'debris rubble';
       d.style.left = `${96 + (Math.random() * 56 - 18)}px`;
       d.style.top = `${172 + Math.random() * 16}px`;
-      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 62}px`);
-      d.style.setProperty('--dy', `${34 + Math.random() * 22}px`);
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 28}px`);
+      d.style.setProperty('--dy', `${20 + Math.random() * 14}px`);
       d.style.animationDuration = `${1400 + Math.random() * 800}ms`;
       explosionField.appendChild(d);
       setTimeout(() => d.remove(), 4200);
@@ -193,19 +193,19 @@
     setTimeout(() => {
       phase('detonation', 'explode-detonation');
       burst('stress');
-      emitExternalDebris(74);
-      emitRubblePieces(20);
+      emitExternalDebris(52);
+      emitRubblePieces(10);
     }, 980);
 
     setTimeout(() => {
       phase('afterflash', 'explode-afterflash');
-      emitExternalDebris(28);
-      emitRubblePieces(8);
+      emitExternalDebris(16);
+      emitRubblePieces(4);
     }, 1480);
 
     setTimeout(() => {
       phase('aftermath', 'explode-aftermath');
-      emitRubblePieces(6);
+      emitRubblePieces(3);
     }, 2060);
 
     clearTimeout(state.timers.explosionCleanup);
