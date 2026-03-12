@@ -31,7 +31,7 @@
     ivySurgeActive: false,
     ivyPhase: 'charging',
     debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
-    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null }
+    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null }
   };
 
   const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
@@ -122,11 +122,41 @@
   }
 
   function triggerReaction(kind = 'heal') {
-    eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy');
+    eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral');
     const cls = kind === 'corrupt' ? 'react-corrupt' : (kind === 'ivy' ? 'react-ivy' : 'react-heal');
     requestAnimationFrame(() => eyeRoot.classList.add(cls));
     clearTimeout(state.timers.reactionCleanup);
-    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy'), 420);
+    state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral'), 420);
+  }
+
+  function triggerMessageResponse(kind = 'neutral') {
+    eyeRoot.classList.remove('message-ping');
+    requestAnimationFrame(() => eyeRoot.classList.add('message-ping'));
+    clearTimeout(state.timers.messageCleanup);
+    state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 280);
+
+    if (kind === 'ivy') {
+      triggerReaction('ivy');
+      burst('stress');
+      blink();
+      return;
+    }
+
+    if (kind === 'corrupt') {
+      triggerReaction('corrupt');
+      burst('pulse');
+      return;
+    }
+
+    if (kind === 'heal') {
+      triggerReaction('heal');
+      bloom();
+      return;
+    }
+
+    eyeRoot.classList.remove('react-neutral');
+    requestAnimationFrame(() => eyeRoot.classList.add('react-neutral'));
+    blink();
   }
 
   function emitExternalDebris(amount = 24) {
@@ -249,28 +279,32 @@
       if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
     }
 
+    let messageKind = 'neutral';
+
     if (state.debug.ivyHits > 0) {
       if (!state.ivySurgeActive) {
         state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
       }
       triggerIvyHitFeedback(state.debug.ivyHits);
+      messageKind = 'ivy';
     }
 
     if (state.debug.resetTriggered) {
       setScore(0, `${source}:resetWord`);
       bloom();
       blink();
+      if (messageKind === 'neutral') messageKind = 'heal';
     } else if (state.debug.delta !== 0) {
       mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
       if (state.debug.delta > 0) {
-        triggerReaction('corrupt');
-        burst(state.corruptionScore >= 7 ? 'stress' : 'pulse');
+        messageKind = messageKind === 'ivy' ? 'ivy' : 'corrupt';
       }
       if (state.debug.delta < 0) {
-        triggerReaction('heal');
-        bloom();
+        if (messageKind === 'neutral') messageKind = 'heal';
       }
     }
+
+    triggerMessageResponse(messageKind);
 
     if (state.ivyCounter >= IVY_THRESHOLD && !state.ivySurgeActive) {
       performIvySurge(`${source}:ivy`);
@@ -366,7 +400,7 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'the lantern creature is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: ivy ivy ivy / love / ghost / ivy x10 surge');
+    if (testingMode) appendChat('ivy-eye', 'test: ivy x10 surge / love / lurking / ghost');
   }
 
   function bootstrap() {

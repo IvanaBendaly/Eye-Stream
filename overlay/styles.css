@@ -182,6 +182,15 @@ body { background: transparent; color: #f4e7d4; }
   animation: eyeDrift 1.8s ease-in-out infinite;
 }
 
+.flame-core::before,
+.flame-core::after,
+.flame-inner::before {
+  content: '';
+  position: absolute;
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
 .particle-layer { position: absolute; inset: 0; overflow: visible; }
 .particle { position: absolute; width: 5px; height: 5px; border-radius: 50%; animation: rise 2.8s ease-out forwards; }
 .particle.warm { background: #ffd39b; box-shadow: 0 0 8px rgba(255, 203, 127, .9); }
@@ -321,11 +330,13 @@ body { background: transparent; color: #f4e7d4; }
 
 
 /* trigger reactions */
-.lantern.react-heal .flame-core { transform: scale(1.12) translateY(-3px); filter: drop-shadow(0 0 18px rgba(255, 204, 121, .7)); }
-.lantern.react-heal .lantern-halo { transform: scale(1.1); filter: saturate(1.15); }
-.lantern.react-corrupt .flame-core { transform: scale(.93) rotate(-4deg); filter: drop-shadow(0 0 14px rgba(121, 80, 170, .75)); }
+.lantern.message-ping .entity-wrap { transform: translateY(-1px); }
+.lantern.react-neutral .flame-core { transform: scale(1.03); }
+.lantern.react-heal .flame-core { transform: scale(1.1) translateY(-2px); filter: drop-shadow(0 0 18px rgba(255, 204, 121, .7)); }
+.lantern.react-heal .lantern-halo { transform: scale(1.08); }
+.lantern.react-corrupt .flame-core { transform: scale(.95) rotate(-4deg); filter: drop-shadow(0 0 14px rgba(121, 80, 170, .75)); }
 .lantern.react-corrupt .glass::after { opacity: .34; }
-.lantern.react-ivy { transform: scale(1.06); }
+.lantern.react-ivy { transform: scale(1.03); }
 .lantern.react-ivy .cracks { opacity: .35; }
 
 /* eye look controls */
@@ -372,13 +383,13 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.ivy-warning .flame-core { transform: scale(1.1) translateY(-2px); animation-duration: .9s; }
 
 .lantern.ivy-surge .ritual-ring {
-  opacity: .68;
-  animation: ritualRingBurst 1.3s ease-out infinite;
+  opacity: .38;
+  animation: ritualRingBurst 1.2s ease-out infinite;
 }
 
 .lantern.ivy-surge .ritual-sigil {
-  opacity: .58;
-  animation: sigilSpin 1.15s linear infinite;
+  opacity: .3;
+  animation: sigilSpin 1.2s linear infinite;
 }
 
 .lantern.ivy-surge .lantern-halo {
@@ -409,6 +420,18 @@ body { background: transparent; color: #f4e7d4; }
 }
 
 .lantern.ivy-surge .entity-wrap::before { opacity: .9; }
+.lantern.ivy-surge .entity-wrap::after {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 6px;
+  width: 30px;
+  height: 18px;
+  opacity: .86;
+  border-radius: 50% 50% 42% 42%;
+  border: 1px solid rgba(170, 218, 137, .72);
+  box-shadow: inset 0 -4px 0 rgba(120, 161, 96, .5);
+}
 
 .lantern.ivy-surge .glass {
   border-color: rgba(204, 234, 167, .58);
@@ -449,6 +472,91 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.blink .flame-core { transform: scaleY(.08); }
 .lantern.blink .flame-inner { transform: scale(.1); opacity: 0; }
 .lantern.bloom .lantern-halo { transform: scale(1.2); }
+
+
+/* state character accessories/details */
+.lantern.state-blissful .flame-core::before {
+  opacity: .85;
+  left: 6px;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 242, 179, .9);
+  box-shadow: 16px 2px 0 rgba(255, 236, 164, .78), 10px 12px 0 rgba(255, 214, 140, .62);
+}
+
+.lantern.state-awakened .flame-core::before {
+  opacity: .55;
+  left: 11px;
+  top: 8px;
+  width: 18px;
+  height: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 220, 162, .42);
+}
+
+.lantern.state-curious .flame-core::after {
+  opacity: .84;
+  left: 30px;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 70% 30% 70% 30%;
+  background: rgba(206, 232, 255, .8);
+  transform: rotate(18deg);
+}
+
+.lantern.state-disturbed .flame-core::before {
+  opacity: .78;
+  left: 7px;
+  top: 18px;
+  width: 22px;
+  height: 2px;
+  background: rgba(244, 198, 189, .7);
+  transform: rotate(-18deg);
+}
+
+.lantern.state-corrupted .flame-core::after {
+  opacity: .9;
+  left: 31px;
+  top: 24px;
+  width: 3px;
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(59, 41, 89, .85);
+}
+
+.lantern.state-rotting .flame-core::before {
+  opacity: .72;
+  left: 9px;
+  top: 6px;
+  width: 20px;
+  height: 6px;
+  border-radius: 6px;
+  border: 1px dashed rgba(187, 194, 171, .56);
+}
+
+.lantern.state-dead .flame-core::before {
+  opacity: .78;
+  left: 6px;
+  top: 4px;
+  width: 24px;
+  height: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(151, 166, 160, .46);
+  transform: rotate(-8deg);
+}
+
+.lantern.state-dead .flame-inner::before {
+  opacity: .86;
+  left: -2px;
+  top: -2px;
+  width: 12px;
+  height: 5px;
+  border-radius: 4px;
+  background: rgba(20, 22, 28, .8);
+}
 
 /* state visuals */
 .lantern.state-blissful {
