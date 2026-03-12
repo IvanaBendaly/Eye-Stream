@@ -28,9 +28,9 @@
     corruptionScore: 0,
     ivyCounter: 0,
     renderedState: 'awakened',
-    ritualActive: false,
-    ritualPhase: 'charging',
-    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, climaxActive: false, delta: 0 },
+    ivySurgeActive: false,
+    ivyPhase: 'charging',
+    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
     timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null }
   };
 
@@ -56,29 +56,29 @@
     return 10;
   }
 
-  function deriveRitualPhase() {
-    if (state.ritualActive) return state.ritualPhase;
+  function deriveIvyPhase() {
+    if (state.ivySurgeActive) return state.ivyPhase;
     if (state.ivyCounter >= IVY_THRESHOLD - 2) return 'warning';
     return 'charging';
   }
 
   function resetDebug() {
-    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, climaxActive: false, delta: 0 };
+    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 };
   }
 
   function updateStatus() {
     if (!testingMode) return;
 
-    const phase = deriveRitualPhase().toUpperCase();
-    if (state.ritualActive) {
-      tinyStatus.textContent = `TEST • IVY RITUAL COMPLETE • EVENT ACTIVE • PHASE: ${phase}`;
+    const phase = deriveIvyPhase().toUpperCase();
+    if (state.ivySurgeActive) {
+      tinyStatus.textContent = `TEST • IVY SURGE ACTIVE • PHASE: ${phase}`;
       return;
     }
 
     const c = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
     const h = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
     const d = state.debug.delta > 0 ? `+${state.debug.delta}` : `${state.debug.delta}`;
-    tinyStatus.textContent = `TEST • IVY RITUAL ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
+    tinyStatus.textContent = `TEST • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
   }
 
   function render(reason = 'render') {
@@ -91,13 +91,12 @@
     for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
     eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
 
-    eyeRoot.classList.remove('ritual-charge', 'ritual-warning', 'ritual-snap', 'ritual-climax', 'ritual-cooldown');
-    const phase = deriveRitualPhase();
-    if (phase === 'charging') eyeRoot.classList.add('ritual-charge');
-    if (phase === 'warning') eyeRoot.classList.add('ritual-warning');
-    if (phase === 'snap') eyeRoot.classList.add('ritual-snap');
-    if (phase === 'climax') eyeRoot.classList.add('ritual-climax');
-    if (phase === 'cooldown') eyeRoot.classList.add('ritual-cooldown');
+    eyeRoot.classList.remove('ivy-charge', 'ivy-warning', 'ivy-surge', 'ivy-cooldown');
+    const phase = deriveIvyPhase();
+    if (phase === 'charging') eyeRoot.classList.add('ivy-charge');
+    if (phase === 'warning') eyeRoot.classList.add('ivy-warning');
+    if (phase === 'surge') eyeRoot.classList.add('ivy-surge');
+    if (phase === 'cooldown') eyeRoot.classList.add('ivy-cooldown');
 
     updateStatus();
     console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ritual=${phase} reason=${reason}`);
@@ -149,10 +148,10 @@
 
   function triggerIvyHitFeedback(intensity = 1) {
     triggerReaction('ivy');
-    eyeRoot.classList.remove('ivy-hit');
-    requestAnimationFrame(() => eyeRoot.classList.add('ivy-hit'));
+    eyeRoot.classList.remove('ivy-surge-hit');
+    requestAnimationFrame(() => eyeRoot.classList.add('ivy-surge-hit'));
     clearTimeout(state.timers.ivyHitCleanup);
-    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-hit'), 360);
+    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 360);
 
     const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
     burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
@@ -181,44 +180,36 @@
     return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   }
 
-  function performIvyRitual(source = 'ivyRitual') {
-    if (state.ritualActive) return;
+  function performIvySurge(source = 'ivySurge') {
+    if (state.ivySurgeActive) return;
 
-    state.ritualActive = true;
-    state.debug.climaxActive = true;
+    state.ivySurgeActive = true;
+    state.debug.surgeActive = true;
 
     // threshold snap
-    state.ritualPhase = 'snap';
-    render(`${source}:snap`);
+    state.ivyPhase = 'surge';
+    render(`${source}:surge`);
     burst('stress');
     blink();
-    emitExternalDebris(16);
+    bloom();
+    emitExternalDebris(20);
 
     clearTimeout(state.timers.ritualStep);
     state.timers.ritualStep = setTimeout(() => {
-      // special transformed form
-      state.ritualPhase = 'climax';
-      render(`${source}:climax`);
-      bloom();
-      emitExternalDebris(28);
-    }, 280);
-
-    clearTimeout(state.timers.ritualCleanup);
-    state.timers.ritualCleanup = setTimeout(() => {
-      state.ritualPhase = 'cooldown';
+      state.ivyPhase = 'cooldown';
       state.ivyCounter = 0;
       render(`${source}:cooldown`);
       emitExternalDebris(10);
-    }, 2550);
+    }, 2200);
 
-    setTimeout(() => {
-      state.ritualActive = false;
-      state.ritualPhase = 'charging';
-      state.debug.climaxActive = false;
+    clearTimeout(state.timers.ritualCleanup);
+    state.timers.ritualCleanup = setTimeout(() => {
+      state.ivySurgeActive = false;
+      state.ivyPhase = 'charging';
+      state.debug.surgeActive = false;
       render(`${source}:reset`);
-      bloom();
       updateStatus();
-    }, 3300);
+    }, 3050);
   }
 
   function applyPhraseMatches(normalizedText) {
@@ -259,7 +250,7 @@
     }
 
     if (state.debug.ivyHits > 0) {
-      if (!state.ritualActive) {
+      if (!state.ivySurgeActive) {
         state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
       }
       triggerIvyHitFeedback(state.debug.ivyHits);
@@ -281,8 +272,8 @@
       }
     }
 
-    if (state.ivyCounter >= IVY_THRESHOLD && !state.ritualActive) {
-      performIvyRitual(`${source}:ivy`);
+    if (state.ivyCounter >= IVY_THRESHOLD && !state.ivySurgeActive) {
+      performIvySurge(`${source}:ivy`);
       return;
     }
 
@@ -310,7 +301,7 @@
   }
 
   function ambient() {
-    if (state.ritualActive) {
+    if (state.ivySurgeActive) {
       emitParticle('warm');
       if (Math.random() > 0.45) emitParticle('smoke');
       return;
@@ -336,7 +327,7 @@
     if (act === 'corrupt') { mutateScore(1, 'action:corrupt'); triggerReaction('corrupt'); }
     if (act === 'heal') { mutateScore(-1, 'action:heal'); triggerReaction('heal'); }
     if (act === 'reset') { resetDebug(); setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
-    if (act === 'explode' || act === 'ivyburst') performIvyRitual(`action:${act}`);
+    if (act === 'explode' || act === 'ivyburst') performIvySurge(`action:${act}`);
   }
 
   function receive(payload = {}) {
