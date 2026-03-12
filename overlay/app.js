@@ -11,18 +11,18 @@
 
   const config = {
     states: ['dormant', 'awake', 'warm', 'agitated', 'possessed'],
-    showcaseMs: 2600,
+    showcaseMs: 3000,
     decayMs: 1400,
-    particleMs: 280,
+    particleMs: 220,
     showcaseSequence: [
-      { state: 'dormant', variant: 'base', label: 'Dormant' },
-      { state: 'awake', variant: 'base', label: 'Awake' },
-      { state: 'warm', variant: 'warm-sparkles', label: 'Warm / Fond' },
-      { state: 'agitated', variant: 'agitated-spike', label: 'Agitated / Chaotic' },
-      { state: 'possessed', variant: 'possessed-smoke', label: 'Possessed / Cursed' },
-      { state: 'possessed', variant: 'possessed-thorns', label: 'Possessed + Thorns' },
-      { state: 'possessed', variant: 'possessed-cracks', label: 'Possessed + Cracks' },
-      { state: 'possessed', variant: 'possessed-burst', label: 'Possessed + Curse Burst' }
+      { state: 'dormant', variant: 'base' },
+      { state: 'awake', variant: 'base' },
+      { state: 'warm', variant: 'warm-sparkles' },
+      { state: 'agitated', variant: 'agitated-spike' },
+      { state: 'possessed', variant: 'possessed-smoke' },
+      { state: 'possessed', variant: 'possessed-thorns' },
+      { state: 'possessed', variant: 'possessed-cracks' },
+      { state: 'possessed', variant: 'possessed-burst' }
     ],
     previewChat: [
       { user: 'kindling', text: 'soft vibes tonight, stay cozy ember ✨', mood: 'kind' },
@@ -36,11 +36,13 @@
   const state = {
     preview: {
       enabled: previewMode,
-      forcedState: 'awake',
-      variant: 'base',
       showcaseOn: previewMode,
       showcaseTimer: null,
       showcaseIndex: 0,
+      showcaseState: 'awake',
+      showcaseVariant: 'base',
+      manualState: null,
+      manualVariant: 'base',
       chatTimer: null,
       chatIndex: 0
     },
@@ -66,14 +68,30 @@
     return Math.random() * (max - min) + min;
   }
 
+  function activePreviewSource() {
+    if (state.preview.manualState) {
+      return { moodState: state.preview.manualState, variant: state.preview.manualVariant };
+    }
+
+    return { moodState: state.preview.showcaseState, variant: state.preview.showcaseVariant };
+  }
+
   function getRenderSource() {
     if (state.preview.enabled) {
-      return { moodState: state.preview.forcedState, variant: state.preview.variant };
+      return activePreviewSource();
     }
     return { moodState: deriveReactiveState(), variant: 'base' };
   }
 
-  function renderLantern() {
+  function updatePreviewStatus() {
+    if (!previewMode) return;
+
+    const manualLabel = state.preview.manualState || 'none';
+    const showcaseLabel = state.preview.showcaseOn ? 'running' : 'paused';
+    previewStatus.textContent = `Preview ON • showcase: ${showcaseLabel} • manual: ${manualLabel} • rendered: ${state.render.state}`;
+  }
+
+  function renderLantern(reason = 'unknown') {
     const { moodState, variant } = getRenderSource();
     config.states.forEach((name) => lantern.classList.remove(`state-${name}`));
     lantern.classList.add(`state-${moodState}`);
@@ -81,10 +99,11 @@
 
     state.render.state = moodState;
     state.render.variant = variant;
-
     overlayRoot.dataset.state = moodState;
+
+    updatePreviewStatus();
     if (previewMode) {
-      previewStatus.textContent = `Preview ON • state: ${moodState} • showcase: ${state.preview.showcaseOn ? 'on' : 'off'}`;
+      console.log(`[LanternOverlay] rendered preview state: ${moodState} (variant: ${variant}, reason: ${reason})`);
     }
   }
 
@@ -99,30 +118,42 @@
     const particle = document.createElement('span');
     particle.className = `particle ${type}`;
     particle.style.left = `${random(82, 142)}px`;
-    particle.style.top = `${random(92, 138)}px`;
-    particle.style.setProperty('--dx', `${random(-18, 20)}px`);
-    particle.style.setProperty('--dy', `${random(-74, -36)}px`);
+    particle.style.top = `${random(92, 140)}px`;
+    particle.style.setProperty('--dx', `${random(-22, 26)}px`);
+    particle.style.setProperty('--dy', `${random(-84, -38)}px`);
+    particle.style.animationDuration = `${random(1.4, 3.3)}s`;
     layer.appendChild(particle);
-    setTimeout(() => particle.remove(), 3000);
+    setTimeout(() => particle.remove(), 3400);
   }
 
   function emitAmbientParticles() {
     const mood = state.render.state;
     const variant = state.render.variant;
 
-    if (mood === 'dormant' && Math.random() > 0.85) emitParticle('ash');
-    if (mood === 'awake' && Math.random() > 0.6) emitParticle('warm');
+    if (mood === 'dormant' && Math.random() > 0.98) emitParticle('ash');
+
+    if (mood === 'awake') {
+      if (Math.random() > 0.72) emitParticle('warm');
+    }
+
     if (mood === 'warm') {
       emitParticle('warm');
-      if (variant === 'warm-sparkles' && Math.random() > 0.5) emitParticle('warm');
+      if (variant === 'warm-sparkles' || Math.random() > 0.4) emitParticle('warm');
     }
+
     if (mood === 'agitated') {
       emitParticle('ash');
-      if (variant === 'agitated-spike') emitParticle('warm');
+      if (Math.random() > 0.35) emitParticle('warm');
+      if (variant === 'agitated-spike' && Math.random() > 0.55) pulseBurst();
     }
+
     if (mood === 'possessed') {
       emitParticle('smoke');
-      if (variant === 'possessed-burst' && Math.random() > 0.45) emitParticle('ash');
+      if (Math.random() > 0.4) emitParticle('smoke');
+      if (variant === 'possessed-burst' && Math.random() > 0.45) {
+        emitParticle('ash');
+        pulseBurst();
+      }
     }
   }
 
@@ -153,7 +184,7 @@
       pulseBurst();
     }
 
-    if (!state.preview.enabled) renderLantern();
+    if (!state.preview.enabled) renderLantern('apply-mood');
   }
 
   function appendChat(message) {
@@ -163,13 +194,21 @@
     while (chatList.children.length > 5) chatList.removeChild(chatList.lastChild);
   }
 
+  function stopShowcase(logReason = 'manual') {
+    state.preview.showcaseOn = false;
+    clearTimeout(state.preview.showcaseTimer);
+    console.log(`[LanternOverlay] showcase paused (${logReason})`);
+    if (showcaseToggle) showcaseToggle.textContent = 'Resume showcase';
+  }
+
   function showcaseStep() {
-    if (!state.preview.enabled || !state.preview.showcaseOn) return;
+    if (!state.preview.enabled || !state.preview.showcaseOn || state.preview.manualState) return;
+
     const entry = config.showcaseSequence[state.preview.showcaseIndex % config.showcaseSequence.length];
+    state.preview.showcaseState = entry.state;
+    state.preview.showcaseVariant = entry.variant;
     state.preview.showcaseIndex += 1;
-    state.preview.forcedState = entry.state;
-    state.preview.variant = entry.variant;
-    renderLantern();
+    renderLantern('showcase-step');
 
     if (entry.variant === 'possessed-burst' || entry.variant === 'agitated-spike') {
       pulseBurst();
@@ -178,16 +217,34 @@
     state.preview.showcaseTimer = setTimeout(showcaseStep, config.showcaseMs);
   }
 
-  function startShowcase() {
+  function startShowcase(logReason = 'button') {
+    if (!state.preview.enabled) return;
+
+    state.preview.manualState = null;
+    state.preview.manualVariant = 'base';
     state.preview.showcaseOn = true;
     clearTimeout(state.preview.showcaseTimer);
+    console.log(`[LanternOverlay] showcase resumed (${logReason})`);
+    if (showcaseToggle) showcaseToggle.textContent = 'Pause showcase';
     showcaseStep();
   }
 
-  function stopShowcase() {
-    state.preview.showcaseOn = false;
-    clearTimeout(state.preview.showcaseTimer);
-    renderLantern();
+  function setManualPreviewState(nextState) {
+    if (!state.preview.enabled || !config.states.includes(nextState)) return;
+
+    console.log(`[LanternOverlay] clicked preview button: ${nextState}`);
+    stopShowcase('preview-button-click');
+
+    state.preview.manualState = nextState;
+    state.preview.manualVariant = nextState === 'warm' ? 'warm-sparkles' : (nextState === 'agitated' ? 'agitated-spike' : 'base');
+
+    if (nextState === 'possessed') {
+      state.preview.manualVariant = 'possessed-thorns';
+      pulseBurst();
+    }
+
+    console.log(`[LanternOverlay] manual preview override enabled: ${nextState}`);
+    renderLantern('manual-preview-state');
   }
 
   function startPreviewChat() {
@@ -197,9 +254,11 @@
       state.preview.chatIndex += 1;
       appendChat(message);
 
-      if (message.mood === 'kind') applyMood('kind');
-      if (message.mood === 'chaos') applyMood('chaos');
-      if (message.mood === 'curse') applyMood('curse');
+      if (!state.preview.manualState) {
+        if (message.mood === 'kind') applyMood('kind');
+        if (message.mood === 'chaos') applyMood('chaos');
+        if (message.mood === 'curse') applyMood('curse');
+      }
     }, 2100);
   }
 
@@ -210,7 +269,7 @@
       state.reactive.warmth = clamp(state.reactive.warmth - 0.035);
       state.reactive.chaos = clamp(state.reactive.chaos - 0.04);
       state.reactive.curse = clamp(state.reactive.curse - 0.025);
-      renderLantern();
+      renderLantern('reactive-decay');
     }, config.decayMs);
   }
 
@@ -221,20 +280,16 @@
 
     previewPanel.querySelectorAll('[data-state]').forEach((button) => {
       button.addEventListener('click', () => {
-        stopShowcase();
-        state.preview.forcedState = button.dataset.state;
-        state.preview.variant = 'base';
-        renderLantern();
+        setManualPreviewState(button.dataset.state);
       });
     });
 
     showcaseToggle.addEventListener('click', () => {
       if (state.preview.showcaseOn) {
-        stopShowcase();
-        showcaseToggle.textContent = 'Resume showcase';
+        stopShowcase('toggle-button');
+        renderLantern('showcase-paused');
       } else {
-        startShowcase();
-        showcaseToggle.textContent = 'Pause showcase';
+        startShowcase('toggle-button');
       }
     });
   }
@@ -249,12 +304,12 @@
       state.reactive.chaos = event.state === 'agitated' ? 0.74 : 0.08;
       state.reactive.curse = event.state === 'possessed' ? 0.9 : 0;
       if (event.state === 'dormant') state.reactive.activity = 0.08;
-      renderLantern();
+      renderLantern('api-setstate');
     }
 
     if (command === 'addactivity' && !state.preview.enabled) {
       state.reactive.activity = clamp(state.reactive.activity + Number(event.value ?? 0.12));
-      renderLantern();
+      renderLantern('api-addactivity');
     }
 
     if (command === 'triggermood' && !state.preview.enabled) {
@@ -280,11 +335,11 @@
     bindPreviewControls();
     bootstrapChat();
 
-    renderLantern();
+    renderLantern('bootstrap');
     state.render.particleTimer = setInterval(emitAmbientParticles, config.particleMs);
 
     if (previewMode) {
-      startShowcase();
+      startShowcase('bootstrap');
       startPreviewChat();
     } else {
       startReactiveDecay();
@@ -299,11 +354,16 @@
     pushChat: (user, text, mood) => receive({ type: 'chat', user, text, mood }),
     startShowcase: () => {
       if (!state.preview.enabled) return;
-      startShowcase();
+      startShowcase('api');
     },
     stopShowcase: () => {
       if (!state.preview.enabled) return;
-      stopShowcase();
+      stopShowcase('api');
+      renderLantern('api-stop-showcase');
+    },
+    setPreviewState: (previewState) => {
+      if (!state.preview.enabled) return;
+      setManualPreviewState(String(previewState || '').toLowerCase());
     }
   };
 
