@@ -352,7 +352,7 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.explode-charge .flame-inner { transform: scale(1.18); }
 .lantern.explode-charge .lantern-halo { transform: scale(1.25); filter: brightness(1.55); }
 .lantern.explode-charge .glass { border-color: rgba(255, 243, 224, .22); background: linear-gradient(180deg, rgba(255,248,236,.24), rgba(66,53,45,.15)); }
-.lantern.explode-charge .cracks { opacity: .92 !important; }
+.lantern.explode-charge .cracks { opacity: .78 !important; }
 .lantern.explode-charge::after { opacity: .5; background: radial-gradient(circle at 50% 46%, rgba(255,255,255,.95) 0%, rgba(255,247,220,.65) 38%, rgba(255,209,140,.12) 72%, rgba(255,198,132,0) 100%); }
 
 .lantern.explode-overload {
@@ -364,7 +364,7 @@ body { background: transparent; color: #f4e7d4; }
   transform: scale(1.25) translateY(-10px);
   filter: drop-shadow(0 0 36px rgba(255, 245, 214, .88));
 }
-.lantern.explode-overload .flame-inner { opacity: .99; }
+.lantern.explode-overload .flame-inner { opacity: .96; }
 .lantern.explode-overload .glass {
   opacity: .32;
   border-color: rgba(255,255,255,.22);
@@ -378,7 +378,7 @@ body { background: transparent; color: #f4e7d4; }
   background: radial-gradient(circle at 50% 44%, rgba(255,255,255,1) 0%, rgba(255,255,255,.95) 18%, rgba(255,246,220,.82) 38%, rgba(255,228,186,.54) 58%, rgba(255,212,152,.2) 76%, rgba(255,198,132,0) 100%);
 }
 
-.lantern.explode-detonation .glass { opacity: .06; }
+.lantern.explode-detonation .glass { opacity: 0; }
 .lantern.explode-detonation .flame-core,
 .lantern.explode-detonation .flame-inner {
   transform: scale(1.4) translateY(-16px);
@@ -386,9 +386,13 @@ body { background: transparent; color: #f4e7d4; }
 }
 .lantern.explode-detonation .lantern-halo { transform: scale(1.38); filter: brightness(1.65); }
 .lantern.explode-detonation .shockwave { animation: shock .62s ease-out forwards; }
+.lantern.explode-detonation .rupture-burst { opacity: 1; animation: burstOut .64s cubic-bezier(.14,.75,.24,1) forwards; }
+.lantern.explode-detonation .chamber-breach { opacity: .52; }
+.lantern.explode-detonation .frame.body { box-shadow: inset 0 0 16px rgba(28,24,22,.6); }
+
 .lantern.explode-detonation .glass-shatter {
   opacity: 1;
-  animation: shatterFling .58s ease-out forwards;
+  animation: shatterFling .68s ease-out forwards;
 }
 .lantern.explode-detonation::after {
   opacity: .92;
@@ -396,20 +400,23 @@ body { background: transparent; color: #f4e7d4; }
 }
 
 .lantern.explode-afterflash .lantern-halo { transform: scale(1.48); filter: brightness(1.82); }
-.lantern.explode-afterflash .glass { opacity: .14; }
+.lantern.explode-afterflash .glass { opacity: .08; }
 .lantern.explode-afterflash .flame-core,
-.lantern.explode-afterflash .flame-inner { opacity: .46; filter: blur(1px); transform: scale(1.02) translateY(-2px); }
-.lantern.explode-afterflash .ember-remnant { opacity: .74; animation: emberFlicker .6s ease-in-out infinite; }
+.lantern.explode-afterflash .flame-inner { opacity: .28; filter: blur(1.1px); transform: scale(.86) translateY(4px); }
+.lantern.explode-afterflash .ember-remnant { opacity: .72; animation: emberFlicker .6s ease-in-out infinite; }
+.lantern.explode-afterflash .chamber-breach { opacity: .72; }
+.lantern.explode-afterflash .rupture-burst { opacity: .22; transform: scale(.92); }
 .lantern.explode-afterflash::after {
   opacity: .78;
   animation: afterflashFade .42s ease-out forwards;
   background: radial-gradient(circle at 50% 52%, rgba(255,251,242,.9) 0%, rgba(255,237,202,.58) 46%, rgba(255,208,150,0) 100%);
 }
 
-.lantern.explode-aftermath .glass { opacity: .24; box-shadow: inset 0 0 24px rgba(45,40,38,.46); }
+.lantern.explode-aftermath .glass { opacity: .05; box-shadow: inset 0 0 24px rgba(45,40,38,.52); }
 .lantern.explode-aftermath .flame-core,
-.lantern.explode-aftermath .flame-inner { opacity: .22; transform: scale(.72) translateY(10px); }
-.lantern.explode-aftermath .ember-remnant { opacity: .84; animation: emberFlicker .8s ease-in-out infinite; }
+.lantern.explode-aftermath .flame-inner { opacity: .1; transform: scale(.58) translateY(16px); }
+.lantern.explode-aftermath .ember-remnant { opacity: .9; animation: emberFlicker .84s ease-in-out infinite; }
+.lantern.explode-aftermath .chamber-breach { opacity: .86; }
 .lantern.explode-aftermath .glass-shatter { opacity: .42; }
 .lantern.explode-aftermath::after { opacity: .16; }
 
@@ -523,6 +530,7 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes afterflashFade { from{ opacity:.78; } to{ opacity:0; } }
 @keyframes debrisFly { to { transform: translate(var(--dx), var(--dy)) rotate(300deg); opacity: 0; } }
 @keyframes shatterFling { 0%{ opacity:1; transform: scale(1) translateY(0);} 100%{ opacity:0; transform: scale(1.08) translateY(-8px) rotate(8deg);} }
+@keyframes burstOut { 0%{ opacity:.95; transform: scale(.35); } 55%{ opacity:1; transform: scale(1.45); } 100%{ opacity:0; transform: scale(1.92); } }
 @keyframes emberFlicker { 0%,100%{ transform: scale(.96); filter: drop-shadow(0 0 6px rgba(255,128,70,.45)); } 50%{ transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255,154,88,.66)); } }
 @keyframes shellJitter { 0%,100%{ transform: translateX(0); } 50%{ transform: translateX(1px); } }
 @keyframes deadPulse { 0%,100%{ opacity:.62; transform: scale(.95);} 50%{ opacity:.3; transform: scale(1.02);} }
