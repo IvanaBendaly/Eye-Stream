@@ -28,6 +28,7 @@
 
   const params = new URLSearchParams(window.location.search);
   const isTestMode = params.get('mode') === 'test' || params.get('test') === '1';
+  root.dataset.mode = isTestMode ? 'test' : 'overlay';
 
   const model = {
     state: 'awake',
@@ -250,6 +251,7 @@
   function setupTestMode() {
     if (!isTestMode) return;
     root.dataset.mode = 'test';
+    root.style.pointerEvents = 'auto';
     testUi.hidden = false;
 
     testUi.querySelectorAll('button').forEach((button) => {
@@ -262,11 +264,13 @@
         if (act === 'toggleEffect') toggleEffect(value);
         if (act === 'demo') toggleDemo();
         if (act === 'force') clearForcedState();
+        updateStatus();
       });
     });
   }
 
   function bootstrap() {
+    if (!isTestMode) root.style.pointerEvents = 'none';
     setupTestMode();
     updateVisualEffects();
     evaluateMood();
