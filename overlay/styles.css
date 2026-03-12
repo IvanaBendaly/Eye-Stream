@@ -217,17 +217,18 @@ body { background: transparent; color: #f4e7d4; }
 }
 
 .ritual-ring {
-  border: 1px solid rgba(134, 191, 128, .45);
-  box-shadow: 0 0 14px rgba(128, 183, 126, .35), inset 0 0 14px rgba(193, 158, 90, .24);
+  border: 1px solid rgba(136, 186, 129, .28);
+  box-shadow: 0 0 10px rgba(120, 169, 116, .22), inset 0 0 12px rgba(192, 160, 94, .16);
 }
 
 .ritual-sigil {
-  inset: 12px;
-  border: 1px dashed rgba(209, 192, 144, .44);
+  inset: 14px;
+  border: 1px dashed rgba(209, 192, 144, .24);
   transform: scale(.86) rotate(-4deg);
 }
 
 .ritual-text {
+  display: none;
   position: absolute;
   left: 50%;
   top: -22px;
@@ -332,78 +333,117 @@ body { background: transparent; color: #f4e7d4; }
 
 /* ivy ritual phases */
 .lantern.ivy-hit .ritual-ring {
-  opacity: .42;
-  transform: scale(1.05);
+  opacity: .46;
+  transform: scale(1.07);
 }
+
 .lantern.ivy-hit .ritual-sigil {
   opacity: .3;
   transform: scale(.98) rotate(4deg);
 }
 
 .lantern.ritual-charge .ritual-ring {
-  opacity: calc(.16 + (var(--ivy-strength, 0.1) * .36));
+  opacity: .24;
 }
 
 .lantern.ritual-warning .ritual-ring,
 .lantern.ritual-warning .ritual-sigil {
-  opacity: .56;
-  animation: sigilPulse 1.1s ease-in-out infinite;
+  opacity: .54;
+  animation: sigilPulse 1.05s ease-in-out infinite;
 }
 
 .lantern.ritual-warning .lantern-halo {
-  transform: scale(1.12);
-  filter: saturate(1.08);
+  transform: scale(1.14);
+  filter: saturate(1.12);
+}
+
+.lantern.ritual-snap .lantern-halo {
+  transform: scale(1.28);
+  filter: brightness(1.66) saturate(1.2);
+}
+
+.lantern.ritual-snap .flame-core,
+.lantern.ritual-snap .flame-inner {
+  transform: scale(1.18) translateY(-8px);
+  filter: drop-shadow(0 0 28px rgba(255, 226, 154, .8));
+}
+
+.lantern.ritual-snap::after {
+  opacity: .76;
+  background: radial-gradient(circle at 50% 42%, rgba(255,252,235,.92) 0%, rgba(225,255,202,.52) 42%, rgba(168,238,147,.14) 72%, rgba(126,214,115,0) 100%);
 }
 
 .lantern.ritual-climax .ritual-ring {
-  opacity: .95;
-  animation: ritualRingBurst 1.5s ease-out infinite;
+  opacity: .68;
+  animation: ritualRingBurst 1.3s ease-out infinite;
 }
 
 .lantern.ritual-climax .ritual-sigil {
-  opacity: .92;
-  animation: sigilSpin 1.25s linear infinite;
-}
-
-.lantern.ritual-climax .ritual-text {
-  opacity: .96;
-  animation: ritualTextPulse .9s ease-in-out infinite;
+  opacity: .58;
+  animation: sigilSpin 1.15s linear infinite;
 }
 
 .lantern.ritual-climax .lantern-halo {
-  transform: scale(1.35);
-  filter: brightness(1.55) saturate(1.2);
+  transform: scale(1.38);
+  filter: brightness(1.66) saturate(1.24);
 }
 
-.lantern.ritual-climax .flame-core,
+.lantern.ritual-climax .flame-core {
+  width: 50px;
+  height: 96px;
+  left: 25px;
+  top: 30px;
+  transform: scale(1.08);
+  clip-path: polygon(50% 0%, 66% 9%, 79% 25%, 88% 51%, 79% 69%, 66% 83%, 53% 100%, 36% 88%, 22% 100%, 10% 79%, 13% 53%, 24% 28%, 33% 12%);
+  background: radial-gradient(circle at 50% 22%, #fef8d9 0%, #dfffc1 28%, #b6ef8a 50%, #7ebf6f 73%, #513d66 100%);
+  filter: drop-shadow(0 0 38px rgba(194, 255, 173, .6));
+}
+
 .lantern.ritual-climax .flame-inner {
-  transform: scale(1.26) translateY(-10px);
-  filter: drop-shadow(0 0 30px rgba(255, 220, 141, .85));
+  width: 18px;
+  height: 20px;
+  left: 41px;
+  top: 70px;
+  border-radius: 50% 50% 58% 42%;
+  clip-path: none;
+  background: radial-gradient(circle at 50% 52%, #18131f 0%, #2f2445 58%, #88c273 100%);
+  animation: eyePulse 1s ease-in-out infinite;
 }
 
 .lantern.ritual-climax .glass {
-  border-color: rgba(206, 232, 174, .58);
-  box-shadow: inset 0 0 28px rgba(220, 245, 187, .2), 0 0 18px rgba(206, 232, 174, .22);
+  border-color: rgba(204, 234, 167, .58);
+  box-shadow: inset 0 0 34px rgba(28, 23, 36, .46), 0 0 20px rgba(184, 228, 159, .32);
+}
+
+.lantern.ritual-climax .glass::after {
+  opacity: .62;
+  background: radial-gradient(circle at 50% 38%, rgba(12,10,17,.24), rgba(6,5,12,.78));
+}
+
+.lantern.ritual-climax .glass::before {
+  background: linear-gradient(180deg, rgba(221, 255, 187, .28), rgba(255,255,255,.04));
 }
 
 .lantern.ritual-climax::after {
-  opacity: .68;
-  background: radial-gradient(circle at 50% 42%, rgba(255,247,219,.92) 0%, rgba(217,255,192,.62) 36%, rgba(172,239,149,.2) 66%, rgba(126,214,115,0) 100%);
+  opacity: .66;
+  background: radial-gradient(circle at 50% 40%, rgba(255,248,220,.86) 0%, rgba(219,255,191,.56) 34%, rgba(172,239,149,.24) 64%, rgba(126,214,115,0) 100%);
 }
 
 .lantern.ritual-cooldown .ritual-ring,
 .lantern.ritual-cooldown .ritual-sigil {
-  opacity: .22;
-}
-
-.lantern.ritual-cooldown .ritual-text {
-  opacity: .35;
+  opacity: .2;
 }
 
 .lantern.ritual-cooldown .flame-core,
 .lantern.ritual-cooldown .flame-inner {
   transform: scale(.84) translateY(6px);
-  opacity: .55;
+  opacity: .58;
+}
+
+.overlay-corner[data-mode='test'] .lantern.ritual-climax .ritual-text {
+  display: block;
+  opacity: .92;
+  animation: ritualTextPulse .9s ease-in-out infinite;
 }
 
 .lantern.blink .flame-core { transform: scaleY(.08); }
@@ -520,6 +560,7 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes sigilSpin { from{ transform: scale(1) rotate(0deg);} to{ transform: scale(1.06) rotate(360deg);} }
 @keyframes ritualRingBurst { 0%{ transform: scale(.75); opacity:.85;} 100%{ transform: scale(1.45); opacity:0;} }
 @keyframes ritualTextPulse { 0%,100%{ opacity:.7; letter-spacing:.16em;} 50%{ opacity:1; letter-spacing:.22em;} }
+@keyframes eyePulse { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.18,.88);} }
 @keyframes deadPulse { 0%,100%{ opacity:.62; transform: scale(.95);} 50%{ opacity:.3; transform: scale(1.02);} }
 @keyframes pupilTwitch { 0%,100%{ transform: translate(0,0);} 40%{ transform: translate(2px,-1px);} 65%{ transform: translate(-1px,1px);} }
 @keyframes rebirthFlare { 0%{ transform: scale(.52) translateY(14px); opacity:.2;} 100%{ transform: scale(1) translateY(0); opacity:1;} }

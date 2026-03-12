@@ -71,7 +71,7 @@
 
     const phase = deriveRitualPhase().toUpperCase();
     if (state.ritualActive) {
-      tinyStatus.textContent = `TEST • IVY RITUAL COMPLETE • PHASE: ${phase}`;
+      tinyStatus.textContent = `TEST • IVY RITUAL COMPLETE • EVENT ACTIVE • PHASE: ${phase}`;
       return;
     }
 
@@ -91,10 +91,11 @@
     for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
     eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
 
-    eyeRoot.classList.remove('ritual-charge', 'ritual-warning', 'ritual-climax', 'ritual-cooldown');
+    eyeRoot.classList.remove('ritual-charge', 'ritual-warning', 'ritual-snap', 'ritual-climax', 'ritual-cooldown');
     const phase = deriveRitualPhase();
     if (phase === 'charging') eyeRoot.classList.add('ritual-charge');
     if (phase === 'warning') eyeRoot.classList.add('ritual-warning');
+    if (phase === 'snap') eyeRoot.classList.add('ritual-snap');
     if (phase === 'climax') eyeRoot.classList.add('ritual-climax');
     if (phase === 'cooldown') eyeRoot.classList.add('ritual-cooldown');
 
@@ -151,10 +152,13 @@
     eyeRoot.classList.remove('ivy-hit');
     requestAnimationFrame(() => eyeRoot.classList.add('ivy-hit'));
     clearTimeout(state.timers.ivyHitCleanup);
-    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-hit'), 320);
-    burst(intensity > 1 ? 'stress' : 'pulse');
-    if (Math.random() > 0.3) emitParticle('warm');
-    if (state.ivyCounter >= IVY_THRESHOLD - 2 || intensity > 1) emitParticle('smoke');
+    state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-hit'), 360);
+
+    const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
+    burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
+    emitParticle('warm');
+    if (Math.random() > 0.45 || nearing) emitParticle('ash');
+    if (Math.random() > 0.65 || nearing) emitParticle('smoke');
   }
 
   function setScore(value, reason = 'setScore') {
@@ -181,32 +185,40 @@
     if (state.ritualActive) return;
 
     state.ritualActive = true;
-    state.ritualPhase = 'climax';
     state.debug.climaxActive = true;
-    render(`${source}:climax`);
+
+    // threshold snap
+    state.ritualPhase = 'snap';
+    render(`${source}:snap`);
     burst('stress');
-    bloom();
     blink();
-    emitExternalDebris(34);
+    emitExternalDebris(16);
 
     clearTimeout(state.timers.ritualStep);
     state.timers.ritualStep = setTimeout(() => {
-      state.ritualPhase = 'cooldown';
-      state.ivyCounter = 0;
-      render(`${source}:cooldown`);
-      emitExternalDebris(12);
-    }, 1900);
+      // special transformed form
+      state.ritualPhase = 'climax';
+      render(`${source}:climax`);
+      bloom();
+      emitExternalDebris(28);
+    }, 280);
 
     clearTimeout(state.timers.ritualCleanup);
     state.timers.ritualCleanup = setTimeout(() => {
+      state.ritualPhase = 'cooldown';
+      state.ivyCounter = 0;
+      render(`${source}:cooldown`);
+      emitExternalDebris(10);
+    }, 2550);
+
+    setTimeout(() => {
       state.ritualActive = false;
       state.ritualPhase = 'charging';
       state.debug.climaxActive = false;
       render(`${source}:reset`);
       bloom();
-      blink();
       updateStatus();
-    }, 3100);
+    }, 3300);
   }
 
   function applyPhraseMatches(normalizedText) {
