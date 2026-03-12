@@ -32,6 +32,21 @@ body { background: transparent; color: #f4e7d4; }
   transition: transform .22s ease, filter .22s ease;
 }
 
+.lantern::after {
+  content: '';
+  position: absolute;
+  left: 60px;
+  top: 52px;
+  width: 112px;
+  height: 122px;
+  border-radius: 54% 46% 50% 50%;
+  background: radial-gradient(circle at 50% 42%, rgba(255,255,255,0) 0%, rgba(255,250,236,0) 24%, rgba(255,239,205,0) 60%, rgba(255,210,150,0) 100%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transition: opacity .18s ease;
+}
+
 .chain { position: absolute; left: 106px; top: 2px; display: flex; flex-direction: column; gap: 4px; }
 .chain span { width: 22px; height: 3px; border-radius: 99px; background: linear-gradient(90deg, rgba(89,75,67,.2), rgba(176,142,116,.85), rgba(89,75,67,.2)); }
 
@@ -267,22 +282,69 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.ivy-level-7 .cracks, .lantern.ivy-level-8 .cracks { opacity: .64; }
 .lantern.ivy-level-9 .cracks, .lantern.ivy-level-10 .cracks { opacity: .9; }
 
-/* explosion phases: cleaner, no detached aftermath objects */
-.lantern.explode-charge { animation: overloadPulse .36s ease-in-out infinite; }
-.lantern.explode-charge .flame-core { transform: scale(1.2) translateY(-8px); filter: drop-shadow(0 0 28px rgba(255, 157, 108, .85)); }
-.lantern.explode-charge .cracks { opacity: 1 !important; }
+/* explosion phases: blinding overcharge and washout */
+.lantern.explode-charge { animation: overloadPulse .34s ease-in-out infinite; }
+.lantern.explode-charge .flame-core {
+  transform: scale(1.24) translateY(-10px);
+  filter: drop-shadow(0 0 34px rgba(255, 214, 145, .95));
+}
+.lantern.explode-charge .flame-inner { transform: scale(1.18); }
+.lantern.explode-charge .lantern-halo { transform: scale(1.25); filter: brightness(1.55); }
+.lantern.explode-charge .glass { border-color: rgba(255, 243, 224, .22); background: linear-gradient(180deg, rgba(255,248,236,.24), rgba(66,53,45,.15)); }
+.lantern.explode-charge .cracks { opacity: .9 !important; }
+.lantern.explode-charge::after { opacity: .5; background: radial-gradient(circle at 50% 46%, rgba(255,255,255,.95) 0%, rgba(255,247,220,.65) 38%, rgba(255,209,140,.12) 72%, rgba(255,198,132,0) 100%); }
 
-.lantern.explode-shatter .glass { opacity: .22; }
-.lantern.explode-shatter .flame-core { transform: scale(1.32) translateY(-18px); filter: drop-shadow(0 0 34px rgba(255, 120, 84, .92)); }
-.lantern.explode-shatter .shockwave { animation: shock .56s ease-out forwards; }
+.lantern.explode-overload {
+  animation: overloadPulse .22s ease-in-out infinite;
+  filter: drop-shadow(0 0 26px rgba(255, 240, 210, .68));
+}
+.lantern.explode-overload .flame-core,
+.lantern.explode-overload .flame-inner {
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #fffdf7 22%, #fff6d7 45%, rgba(255, 224, 168, .9) 72%, rgba(255, 190, 124, .6) 100%);
+  transform: scale(1.36) translateY(-14px);
+  filter: drop-shadow(0 0 46px rgba(255, 245, 214, .98));
+}
+.lantern.explode-overload .flame-inner { opacity: .98; }
+.lantern.explode-overload .glass {
+  opacity: .35;
+  border-color: rgba(255,255,255,.2);
+  box-shadow: inset 0 0 38px rgba(255,255,255,.48), 0 0 22px rgba(255, 233, 197, .5);
+}
+.lantern.explode-overload .frame.body { box-shadow: inset 0 0 24px rgba(255, 232, 188, .58); }
+.lantern.explode-overload .lantern-halo { transform: scale(1.46); filter: brightness(1.75) saturate(1.15); }
+.lantern.explode-overload .cracks { opacity: 1 !important; }
+.lantern.explode-overload::after {
+  opacity: .98;
+  background: radial-gradient(circle at 50% 44%, rgba(255,255,255,1) 0%, rgba(255,255,255,.94) 18%, rgba(255,246,220,.8) 38%, rgba(255,228,186,.52) 58%, rgba(255,212,152,.2) 76%, rgba(255,198,132,0) 100%);
+}
 
-.lantern.explode-seep .glass { opacity: .12; }
-.lantern.explode-seep .flame-core { transform: scale(.92) translateY(4px); opacity: .48; filter: blur(.9px); }
-.lantern.explode-seep .flame-inner { opacity: .3; filter: blur(1.1px); }
+.lantern.explode-shatter .glass { opacity: .08; }
+.lantern.explode-shatter .flame-core,
+.lantern.explode-shatter .flame-inner {
+  transform: scale(1.45) translateY(-20px);
+  filter: drop-shadow(0 0 40px rgba(255, 252, 240, .98));
+}
+.lantern.explode-shatter .lantern-halo { transform: scale(1.6); filter: brightness(2); }
+.lantern.explode-shatter .shockwave { animation: shock .6s ease-out forwards; }
+.lantern.explode-shatter::after {
+  opacity: .9;
+  background: radial-gradient(circle at 50% 48%, rgba(255,255,255,.96) 0%, rgba(255,245,214,.76) 40%, rgba(255,217,162,.25) 72%, rgba(255,198,132,0) 100%);
+}
 
-.lantern.explode-aftermath .glass { opacity: .2; }
+.lantern.explode-afterflash .lantern-halo { transform: scale(1.44); filter: brightness(1.7); }
+.lantern.explode-afterflash .glass { opacity: .16; }
+.lantern.explode-afterflash .flame-core,
+.lantern.explode-afterflash .flame-inner { opacity: .45; filter: blur(1px); transform: scale(1.04) translateY(-2px); }
+.lantern.explode-afterflash::after {
+  opacity: .75;
+  animation: afterflashFade .38s ease-out forwards;
+  background: radial-gradient(circle at 50% 52%, rgba(255,251,242,.88) 0%, rgba(255,237,202,.55) 46%, rgba(255,208,150,0) 100%);
+}
+
+.lantern.explode-aftermath .glass { opacity: .22; }
 .lantern.explode-aftermath .flame-core,
-.lantern.explode-aftermath .flame-inner { opacity: .18; transform: scale(.72) translateY(9px); }
+.lantern.explode-aftermath .flame-inner { opacity: .2; transform: scale(.74) translateY(10px); }
+.lantern.explode-aftermath::after { opacity: .12; }
 
 .lantern.explode-rebirth .flame-core { animation: rebirthFlare .92s ease-out; }
 .lantern.explode-rebirth .lantern-halo { animation: rebirthHalo .95s ease-out; }
@@ -391,6 +453,7 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes burst { from{ opacity:.72; transform: scale(.6);} to{ opacity:0; transform: scale(1.4);} }
 @keyframes overloadPulse { 0%,100%{ transform: scale(1.08);} 50%{ transform: scale(1.17);} }
 @keyframes shock { from{ opacity:.95; transform: scale(.35);} to{ opacity:0; transform: scale(1.58);} }
+@keyframes afterflashFade { from{ opacity:.78; } to{ opacity:0; } }
 @keyframes debrisFly { to { transform: translate(var(--dx), var(--dy)) rotate(300deg); opacity: 0; } }
 @keyframes deadPulse { 0%,100%{ opacity:.62; transform: scale(.95);} 50%{ opacity:.3; transform: scale(1.02);} }
 @keyframes pupilTwitch { 0%,100%{ transform: translate(0,0);} 40%{ transform: translate(2px,-1px);} 65%{ transform: translate(-1px,1px);} }

@@ -159,35 +159,36 @@
     state.overloadPhase = 'charge';
     updateStatus();
 
-    eyeRoot.classList.remove('explode-charge', 'explode-shatter', 'explode-seep', 'explode-aftermath', 'explode-rebirth');
+    eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
     eyeRoot.classList.add('explode-charge');
     burst('stress');
 
     const phase = (name, className) => {
       state.overloadPhase = name;
       updateStatus();
-      eyeRoot.classList.remove('explode-charge', 'explode-shatter', 'explode-seep', 'explode-aftermath', 'explode-rebirth');
+      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
       eyeRoot.classList.add(className);
     };
 
     setTimeout(() => {
-      phase('shatter', 'explode-shatter');
+      phase('overload', 'explode-overload');
       burst('stress');
-      emitExternalDebris(48);
-    }, 560);
+    }, 420);
 
     setTimeout(() => {
-      phase('seep', 'explode-seep');
-      state.corruptionScore = 10;
-      render(`${source}:seep`);
-      emitExternalDebris(22);
-    }, 1120);
+      phase('shatter', 'explode-shatter');
+      burst('stress');
+      emitExternalDebris(56);
+    }, 920);
+
+    setTimeout(() => {
+      phase('afterflash', 'explode-afterflash');
+      emitExternalDebris(18);
+    }, 1320);
 
     setTimeout(() => {
       phase('aftermath', 'explode-aftermath');
-      state.corruptionScore = 11;
-      render(`${source}:aftermath`);
-    }, 1700);
+    }, 1760);
 
     clearTimeout(state.timers.explosionCleanup);
     state.timers.explosionCleanup = setTimeout(() => {
@@ -196,7 +197,7 @@
       state.ivyCounter = 0;
       state.exploding = false;
       state.overloadPhase = null;
-      eyeRoot.classList.remove('explode-charge', 'explode-shatter', 'explode-seep', 'explode-aftermath', 'explode-rebirth');
+      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
       render(`${source}:rebirth`);
       bloom();
       blink();
