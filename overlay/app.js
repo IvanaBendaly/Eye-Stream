@@ -152,6 +152,21 @@
     }
   }
 
+  function emitRubblePieces(amount = 16) {
+    if (!explosionField) return;
+    for (let i = 0; i < amount; i += 1) {
+      const d = document.createElement('span');
+      d.className = 'debris rubble';
+      d.style.left = `${96 + (Math.random() * 56 - 18)}px`;
+      d.style.top = `${172 + Math.random() * 16}px`;
+      d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 62}px`);
+      d.style.setProperty('--dy', `${34 + Math.random() * 22}px`);
+      d.style.animationDuration = `${1400 + Math.random() * 800}ms`;
+      explosionField.appendChild(d);
+      setTimeout(() => d.remove(), 4200);
+    }
+  }
+
   function performIvyExplosion(source = 'ivyOverload') {
     if (state.exploding) return;
     state.exploding = true;
@@ -159,36 +174,39 @@
     state.overloadPhase = 'charge';
     updateStatus();
 
-    eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
+    eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
     eyeRoot.classList.add('explode-charge');
     burst('stress');
 
     const phase = (name, className) => {
       state.overloadPhase = name;
       updateStatus();
-      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
+      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
       eyeRoot.classList.add(className);
     };
 
     setTimeout(() => {
       phase('overload', 'explode-overload');
       burst('stress');
-    }, 420);
+    }, 430);
 
     setTimeout(() => {
-      phase('shatter', 'explode-shatter');
+      phase('detonation', 'explode-detonation');
       burst('stress');
-      emitExternalDebris(56);
-    }, 920);
+      emitExternalDebris(74);
+      emitRubblePieces(20);
+    }, 980);
 
     setTimeout(() => {
       phase('afterflash', 'explode-afterflash');
-      emitExternalDebris(18);
-    }, 1320);
+      emitExternalDebris(28);
+      emitRubblePieces(8);
+    }, 1480);
 
     setTimeout(() => {
       phase('aftermath', 'explode-aftermath');
-    }, 1760);
+      emitRubblePieces(6);
+    }, 2060);
 
     clearTimeout(state.timers.explosionCleanup);
     state.timers.explosionCleanup = setTimeout(() => {
@@ -197,7 +215,7 @@
       state.ivyCounter = 0;
       state.exploding = false;
       state.overloadPhase = null;
-      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-shatter', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
+      eyeRoot.classList.remove('explode-charge', 'explode-overload', 'explode-detonation', 'explode-afterflash', 'explode-aftermath', 'explode-rebirth');
       render(`${source}:rebirth`);
       bloom();
       blink();
@@ -208,7 +226,7 @@
         state.pendingMessages = [];
         queued.forEach((msg) => applyMessageTriggers(msg, 'queued'));
       }
-    }, 2680);
+    }, 3380);
   }
 
   function applyPhraseMatches(normalizedText) {

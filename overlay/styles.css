@@ -197,6 +197,7 @@ body { background: transparent; color: #f4e7d4; }
 .debris.ember { background: rgba(255, 132, 74, .95); border-radius: 50%; }
 .debris.spore { background: rgba(173, 152, 224, .85); border-radius: 50%; }
 .debris.smoke { background: rgba(88, 94, 106, .58); filter: blur(1px); border-radius: 50%; }
+.debris.rubble { width: 7px; height: 6px; background: rgba(116, 103, 95, .9); box-shadow: none; border-radius: 2px; animation: rubbleDrop 1.8s ease-out forwards; }
 
 .shockwave {
   position: absolute;
@@ -207,6 +208,69 @@ body { background: transparent; color: #f4e7d4; }
   border-radius: 50%;
   border: 2px solid rgba(255, 214, 160, .44);
   opacity: 0;
+}
+
+.glass-shatter {
+  position: absolute;
+  left: 81px;
+  top: 78px;
+  width: 70px;
+  height: 98px;
+  opacity: 0;
+  pointer-events: none;
+}
+.glass-shatter::before,
+.glass-shatter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(138deg, transparent 40%, rgba(224, 236, 246, .92) 42%, transparent 46%),
+    linear-gradient(58deg, transparent 58%, rgba(216, 230, 243, .84) 61%, transparent 65%),
+    linear-gradient(16deg, transparent 47%, rgba(206, 220, 236, .8) 50%, transparent 54%);
+  mix-blend-mode: screen;
+}
+.glass-shatter::after { opacity: .88; transform: rotate(9deg) scale(1.03); }
+
+.rubble-field {
+  position: absolute;
+  left: 70px;
+  top: 197px;
+  width: 96px;
+  height: 24px;
+  opacity: 0;
+  border-radius: 16px;
+  background: radial-gradient(circle at 40% 48%, rgba(110,98,90,.72) 0%, rgba(70,61,58,.45) 55%, rgba(40,36,34,0) 100%);
+  box-shadow:
+    6px 4px 0 rgba(91,80,73,.66),
+    16px 1px 0 rgba(104,90,82,.56),
+    26px 5px 0 rgba(84,74,68,.54),
+    36px 2px 0 rgba(95,84,76,.58),
+    48px 5px 0 rgba(75,67,62,.52),
+    58px 1px 0 rgba(100,88,80,.5);
+  transform: translateY(-8px);
+}
+
+.ember-remnant {
+  position: absolute;
+  left: 108px;
+  top: 156px;
+  width: 16px;
+  height: 22px;
+  opacity: 0;
+  border-radius: 52% 48% 58% 42% / 62% 52% 48% 38%;
+  background: radial-gradient(circle at 50% 22%, rgba(255,241,184,.95) 0%, rgba(255,171,93,.92) 42%, rgba(170,70,30,.72) 100%);
+  filter: drop-shadow(0 0 8px rgba(255,149,84,.55));
+}
+.ember-remnant::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: -13px;
+  width: 12px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 65%, rgba(88,96,109,.52) 0%, rgba(45,51,61,0) 68%);
 }
 
 .interaction-header p {
@@ -282,7 +346,7 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.ivy-level-7 .cracks, .lantern.ivy-level-8 .cracks { opacity: .64; }
 .lantern.ivy-level-9 .cracks, .lantern.ivy-level-10 .cracks { opacity: .9; }
 
-/* explosion phases: blinding overcharge and washout */
+/* explosion phases: blinding overcharge and physical rupture */
 .lantern.explode-charge { animation: overloadPulse .34s ease-in-out infinite; }
 .lantern.explode-charge .flame-core {
   transform: scale(1.24) translateY(-10px);
@@ -291,60 +355,74 @@ body { background: transparent; color: #f4e7d4; }
 .lantern.explode-charge .flame-inner { transform: scale(1.18); }
 .lantern.explode-charge .lantern-halo { transform: scale(1.25); filter: brightness(1.55); }
 .lantern.explode-charge .glass { border-color: rgba(255, 243, 224, .22); background: linear-gradient(180deg, rgba(255,248,236,.24), rgba(66,53,45,.15)); }
-.lantern.explode-charge .cracks { opacity: .9 !important; }
+.lantern.explode-charge .cracks { opacity: .92 !important; }
 .lantern.explode-charge::after { opacity: .5; background: radial-gradient(circle at 50% 46%, rgba(255,255,255,.95) 0%, rgba(255,247,220,.65) 38%, rgba(255,209,140,.12) 72%, rgba(255,198,132,0) 100%); }
 
 .lantern.explode-overload {
-  animation: overloadPulse .22s ease-in-out infinite;
+  animation: overloadPulse .2s ease-in-out infinite;
   filter: drop-shadow(0 0 26px rgba(255, 240, 210, .68));
 }
 .lantern.explode-overload .flame-core,
 .lantern.explode-overload .flame-inner {
   background: radial-gradient(circle at 50% 40%, #ffffff 0%, #fffdf7 22%, #fff6d7 45%, rgba(255, 224, 168, .9) 72%, rgba(255, 190, 124, .6) 100%);
   transform: scale(1.36) translateY(-14px);
-  filter: drop-shadow(0 0 46px rgba(255, 245, 214, .98));
+  filter: drop-shadow(0 0 48px rgba(255, 245, 214, .99));
 }
-.lantern.explode-overload .flame-inner { opacity: .98; }
+.lantern.explode-overload .flame-inner { opacity: .99; }
 .lantern.explode-overload .glass {
-  opacity: .35;
-  border-color: rgba(255,255,255,.2);
-  box-shadow: inset 0 0 38px rgba(255,255,255,.48), 0 0 22px rgba(255, 233, 197, .5);
+  opacity: .32;
+  border-color: rgba(255,255,255,.22);
+  box-shadow: inset 0 0 42px rgba(255,255,255,.54), 0 0 26px rgba(255, 233, 197, .52);
 }
 .lantern.explode-overload .frame.body { box-shadow: inset 0 0 24px rgba(255, 232, 188, .58); }
-.lantern.explode-overload .lantern-halo { transform: scale(1.46); filter: brightness(1.75) saturate(1.15); }
+.lantern.explode-overload .lantern-halo { transform: scale(1.48); filter: brightness(1.8) saturate(1.15); }
 .lantern.explode-overload .cracks { opacity: 1 !important; }
 .lantern.explode-overload::after {
-  opacity: .98;
-  background: radial-gradient(circle at 50% 44%, rgba(255,255,255,1) 0%, rgba(255,255,255,.94) 18%, rgba(255,246,220,.8) 38%, rgba(255,228,186,.52) 58%, rgba(255,212,152,.2) 76%, rgba(255,198,132,0) 100%);
+  opacity: .99;
+  background: radial-gradient(circle at 50% 44%, rgba(255,255,255,1) 0%, rgba(255,255,255,.95) 18%, rgba(255,246,220,.82) 38%, rgba(255,228,186,.54) 58%, rgba(255,212,152,.2) 76%, rgba(255,198,132,0) 100%);
 }
 
-.lantern.explode-shatter .glass { opacity: .08; }
-.lantern.explode-shatter .flame-core,
-.lantern.explode-shatter .flame-inner {
-  transform: scale(1.45) translateY(-20px);
-  filter: drop-shadow(0 0 40px rgba(255, 252, 240, .98));
+.lantern.explode-detonation .glass { opacity: .06; }
+.lantern.explode-detonation .flame-core,
+.lantern.explode-detonation .flame-inner {
+  transform: scale(1.48) translateY(-22px);
+  filter: drop-shadow(0 0 42px rgba(255, 252, 240, .99));
 }
-.lantern.explode-shatter .lantern-halo { transform: scale(1.6); filter: brightness(2); }
-.lantern.explode-shatter .shockwave { animation: shock .6s ease-out forwards; }
-.lantern.explode-shatter::after {
-  opacity: .9;
-  background: radial-gradient(circle at 50% 48%, rgba(255,255,255,.96) 0%, rgba(255,245,214,.76) 40%, rgba(255,217,162,.25) 72%, rgba(255,198,132,0) 100%);
+.lantern.explode-detonation .lantern-halo { transform: scale(1.66); filter: brightness(2.15); }
+.lantern.explode-detonation .shockwave { animation: shock .62s ease-out forwards; }
+.lantern.explode-detonation .glass-shatter {
+  opacity: 1;
+  animation: shatterFling .68s ease-out forwards;
+}
+.lantern.explode-detonation .rubble-field {
+  opacity: .88;
+  transform: translateY(0);
+  animation: rubbleSettle .82s ease-out forwards;
+}
+.lantern.explode-detonation::after {
+  opacity: .92;
+  background: radial-gradient(circle at 50% 48%, rgba(255,255,255,.98) 0%, rgba(255,245,214,.78) 40%, rgba(255,217,162,.25) 72%, rgba(255,198,132,0) 100%);
 }
 
-.lantern.explode-afterflash .lantern-halo { transform: scale(1.44); filter: brightness(1.7); }
-.lantern.explode-afterflash .glass { opacity: .16; }
+.lantern.explode-afterflash .lantern-halo { transform: scale(1.48); filter: brightness(1.82); }
+.lantern.explode-afterflash .glass { opacity: .14; }
 .lantern.explode-afterflash .flame-core,
-.lantern.explode-afterflash .flame-inner { opacity: .45; filter: blur(1px); transform: scale(1.04) translateY(-2px); }
+.lantern.explode-afterflash .flame-inner { opacity: .46; filter: blur(1px); transform: scale(1.02) translateY(-2px); }
+.lantern.explode-afterflash .rubble-field { opacity: .96; transform: translateY(1px); }
+.lantern.explode-afterflash .ember-remnant { opacity: .74; animation: emberFlicker .6s ease-in-out infinite; }
 .lantern.explode-afterflash::after {
-  opacity: .75;
-  animation: afterflashFade .38s ease-out forwards;
-  background: radial-gradient(circle at 50% 52%, rgba(255,251,242,.88) 0%, rgba(255,237,202,.55) 46%, rgba(255,208,150,0) 100%);
+  opacity: .78;
+  animation: afterflashFade .42s ease-out forwards;
+  background: radial-gradient(circle at 50% 52%, rgba(255,251,242,.9) 0%, rgba(255,237,202,.58) 46%, rgba(255,208,150,0) 100%);
 }
 
-.lantern.explode-aftermath .glass { opacity: .22; }
+.lantern.explode-aftermath .glass { opacity: .2; }
 .lantern.explode-aftermath .flame-core,
-.lantern.explode-aftermath .flame-inner { opacity: .2; transform: scale(.74) translateY(10px); }
-.lantern.explode-aftermath::after { opacity: .12; }
+.lantern.explode-aftermath .flame-inner { opacity: .22; transform: scale(.72) translateY(10px); }
+.lantern.explode-aftermath .rubble-field { opacity: .96; transform: translateY(0); }
+.lantern.explode-aftermath .ember-remnant { opacity: .84; animation: emberFlicker .8s ease-in-out infinite; }
+.lantern.explode-aftermath .glass-shatter { opacity: .28; }
+.lantern.explode-aftermath::after { opacity: .16; }
 
 .lantern.explode-rebirth .flame-core { animation: rebirthFlare .92s ease-out; }
 .lantern.explode-rebirth .lantern-halo { animation: rebirthHalo .95s ease-out; }
@@ -455,6 +533,10 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes shock { from{ opacity:.95; transform: scale(.35);} to{ opacity:0; transform: scale(1.58);} }
 @keyframes afterflashFade { from{ opacity:.78; } to{ opacity:0; } }
 @keyframes debrisFly { to { transform: translate(var(--dx), var(--dy)) rotate(300deg); opacity: 0; } }
+@keyframes rubbleDrop { 0%{ opacity:.95; transform: translate(0,0) rotate(0deg);} 100%{ opacity:.6; transform: translate(var(--dx), var(--dy)) rotate(120deg);} }
+@keyframes shatterFling { 0%{ opacity:1; transform: scale(1) translateY(0);} 100%{ opacity:0; transform: scale(1.28) translateY(-26px) rotate(14deg);} }
+@keyframes rubbleSettle { 0%{ transform: translateY(-10px); } 100%{ transform: translateY(0); } }
+@keyframes emberFlicker { 0%,100%{ transform: scale(.96); filter: drop-shadow(0 0 6px rgba(255,128,70,.45)); } 50%{ transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255,154,88,.66)); } }
 @keyframes deadPulse { 0%,100%{ opacity:.62; transform: scale(.95);} 50%{ opacity:.3; transform: scale(1.02);} }
 @keyframes pupilTwitch { 0%,100%{ transform: translate(0,0);} 40%{ transform: translate(2px,-1px);} 65%{ transform: translate(-1px,1px);} }
 @keyframes rebirthFlare { 0%{ transform: scale(.52) translateY(14px); opacity:.2;} 100%{ transform: scale(1) translateY(0); opacity:1;} }
