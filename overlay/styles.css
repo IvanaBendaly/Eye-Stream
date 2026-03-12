@@ -286,20 +286,6 @@ body { background: transparent; color: #f4e7d4; }
   transform: scale(.86) rotate(-4deg);
 }
 
-.ritual-text {
-  display: none;
-  position: absolute;
-  left: 50%;
-  top: -22px;
-  transform: translateX(-50%);
-  font-size: 9px;
-  letter-spacing: .2em;
-  color: rgba(219, 243, 192, .84);
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-}
-
 
 
 .interaction-header p {
@@ -354,8 +340,8 @@ body { background: transparent; color: #f4e7d4; }
 
 
 /* trigger reactions */
-.lantern.message-ping .entity-wrap { transform: translateY(-2px) scale(1.02); }
-.lantern.react-neutral .flame-core { transform: scale(1.07); }
+.lantern.message-ping .entity-wrap { transform: translateY(-3px) scale(1.04); animation: chatNudge .32s ease-out; }
+.lantern.react-neutral .flame-core { transform: scale(1.1); filter: drop-shadow(0 0 16px rgba(255, 215, 150, .62)); }
 .lantern.react-heal .flame-core { transform: scale(1.1) translateY(-2px); filter: drop-shadow(0 0 18px rgba(255, 204, 121, .7)); }
 .lantern.react-heal .lantern-halo { transform: scale(1.08); }
 .lantern.react-corrupt .flame-core { transform: scale(.95) rotate(-4deg); filter: drop-shadow(0 0 14px rgba(121, 80, 170, .75)); }
@@ -427,22 +413,27 @@ body { background: transparent; color: #f4e7d4; }
 }
 
 .lantern.ivy-surge .flame-core {
-  transform: translateY(14px) scale(.82,.74);
-  opacity: .62;
+  transform: translateY(18px) scale(.76,.68);
+  opacity: .18;
 }
 
 .lantern.ivy-surge .flame-inner {
-  transform: translateY(16px) scale(.72);
-  opacity: .4;
+  transform: translateY(20px) scale(.6);
+  opacity: .08;
 }
 
 .lantern.ivy-surge .ivy-peeker {
-  opacity: .96;
+  opacity: 0;
+  transform: translateY(12px) scale(.7);
+}
+
+.lantern.ivy-surge.ivy-peek-open .ivy-peeker {
+  opacity: .98;
   transform: translateY(-4px) scale(1.08);
   animation: peekerBob .9s ease-in-out infinite;
 }
 
-.lantern.ivy-surge .peeker-eye {
+.lantern.ivy-surge.ivy-peek-open .peeker-eye {
   animation: peekerBlink 1.2s steps(1,end) infinite;
 }
 
@@ -461,11 +452,6 @@ body { background: transparent; color: #f4e7d4; }
 }
 .lantern.ivy-cooldown .ivy-peeker { opacity: 0; transform: translateY(12px) scale(.7); }
 
-.overlay-corner[data-mode='test'] .lantern.ivy-surge .ritual-text {
-  display: block;
-  opacity: .92;
-  animation: ritualTextPulse .9s ease-in-out infinite;
-}
 
 .lantern.blink .flame-core { transform: scaleY(.08); }
 .lantern.blink .flame-inner { transform: scale(.1); opacity: 0; }
@@ -558,15 +544,15 @@ body { background: transparent; color: #f4e7d4; }
 
 /* state visuals */
 .lantern.state-blissful {
-  --halo: rgba(255, 229, 178, .68);
-  --flame-main: #ffe2a5;
-  --flame-core: #fffdf0;
+  --halo: rgba(255, 236, 197, .78);
+  --flame-main: #ffe8b9;
+  --flame-core: #fffef7;
 }
-.lantern.state-blissful .flame-core { width: 42px; height: 58px; left: 12px; top: 22px; border-radius: 62% 38% 58% 42% / 44% 62% 38% 56%; filter: drop-shadow(0 0 16px rgba(255, 215, 120, .72)); animation-duration: 1.15s; }
-.lantern.state-blissful .flame-inner { left: 24px; top: 34px; width: 13px; height: 14px; }
+.lantern.state-blissful .flame-core { width: 44px; height: 60px; left: 11px; top: 20px; border-radius: 64% 36% 60% 40% / 46% 64% 36% 54%; filter: drop-shadow(0 0 18px rgba(255, 225, 162, .82)); animation-duration: 1.05s; }
+.lantern.state-blissful .flame-inner { left: 24px; top: 33px; width: 14px; height: 15px; }
 
 .lantern.state-awakened {
-  --halo: rgba(255, 214, 154, .52);
+  --halo: rgba(255, 224, 172, .6);
   --flame-main: #ffd38a;
   --flame-core: #fff8dd;
 }
@@ -649,9 +635,10 @@ body { background: transparent; color: #f4e7d4; }
   clip-path: none;
   border-radius: 58% 42% 62% 38% / 48% 52% 44% 56%;
   background: radial-gradient(circle at 49% 49%, #9ea8b2 0%, #4c5562 45%, #101216 100%);
-  animation: undeadLurch 3.8s cubic-bezier(.2,.6,.2,1) infinite;
+  animation: undeadLurch 4.2s cubic-bezier(.2,.6,.2,1) infinite; filter: saturate(.78) brightness(.86);
 }
-.lantern.state-dead .flame-inner { opacity: .42; width: 10px; height: 8px; top: 53px; left: 22px; background: radial-gradient(circle at 50% 50%, #1a1a20 0%, #09090d 100%); border-radius: 50%; animation: undeadBlink 4.2s steps(1,end) infinite; }
+.lantern.state-dead .flame-inner { opacity: .5; width: 10px; height: 8px; top: 54px; left: 22px; background: radial-gradient(circle at 50% 50%, #16171d 0%, #08090d 100%); border-radius: 52% 48% 64% 36%; animation: undeadBlink 4.8s steps(1,end) infinite; }
+.lantern.state-dead .flame-inner::before { opacity: .6; left: -1px; top: -1px; width: 11px; height: 4px; border-radius: 8px; background: rgba(178, 192, 168, .42); transform-origin: center top; animation: undeadLid 4.8s steps(1,end) infinite; }
 .lantern.state-dead .cracks, .lantern.state-dead .glass::after { opacity: 1; }
 .lantern.state-dead .glass::after { background: radial-gradient(circle at 48% 42%, rgba(16,18,22,.44), rgba(4,4,7,.86)); }
 .lantern.state-dead .frame.body { background: linear-gradient(145deg, rgba(72,69,67,.86), rgba(28,28,30,.98)); }
@@ -676,9 +663,11 @@ body { background: transparent; color: #f4e7d4; }
 @keyframes eyePulse { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.18,.88);} }
 @keyframes peekerBob { 0%,100%{ transform: translateY(-4px) scale(1.08);} 50%{ transform: translateY(-7px) scale(1.12);} }
 @keyframes peekerBlink { 0%,30%,55%,100%{ transform: scaleY(1);} 36%,42%{ transform: scaleY(.2);} 70%{ transform: scaleY(.65);} }
+@keyframes chatNudge { 0%{ transform: translateY(0) scale(1);} 45%{ transform: translateY(-3px) scale(1.04);} 100%{ transform: translateY(0) scale(1);} }
 @keyframes surgeBlob { 0%,100%{ transform: scale(1.04);} 50%{ transform: scale(1.18,.92);} }
 @keyframes undeadLurch { 0%,35%,100%{ transform: scale(1) translateY(0);} 45%{ transform: scale(1.03,.95) translateY(2px);} 70%{ transform: scale(.96,1.04) translateY(1px);} }
-@keyframes undeadBlink { 0%,40%,63%,100%{ transform: scaleY(1);} 46%,50%{ transform: scaleY(.25);} 70%{ transform: scaleY(.7);} }
+@keyframes undeadBlink { 0%,44%,66%,100%{ transform: scaleY(1);} 49%,55%{ transform: scaleY(.28);} 76%{ transform: scaleY(.62);} }
+@keyframes undeadLid { 0%,44%,66%,100%{ transform: scaleY(.55);} 49%,55%{ transform: scaleY(1);} 76%{ transform: scaleY(.75);} }
 @keyframes deadPulse { 0%,100%{ opacity:.62; transform: scale(.95);} 50%{ opacity:.3; transform: scale(1.02);} }
 @keyframes pupilTwitch { 0%,100%{ transform: translate(0,0);} 40%{ transform: translate(2px,-1px);} 65%{ transform: translate(-1px,1px);} }
 @keyframes rebirthFlare { 0%{ transform: scale(.52) translateY(14px); opacity:.2;} 100%{ transform: scale(1) translateY(0); opacity:1;} }

@@ -16,8 +16,8 @@
   const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
 
   const matchConfig = {
-    corruptWords: ['ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death', 'blood', 'kill', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession', 'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'angry', 'burn', 'chaos', 'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness', 'violent', 'insane', 'mad', 'destroy', 'ruin', 'pain', 'torment', 'sinister', 'malicious', 'unholy', 'infected', 'plague', 'parasite'],
-    healWords: ['love', 'lovely', 'cute', 'cozy', 'calm', 'gentle', 'safe', 'okay', 'sweet', 'warm', 'bloom', 'light', 'hope', 'kind', 'peaceful', 'peace', 'comfort', 'serene', 'tranquil', 'pretty', 'soft', 'hug', 'healing', 'heal', 'rest', 'home', 'alive', 'smile', 'happy', 'joy', 'joyful', 'bright', 'angel', 'sunshine', 'breathe', 'relax', 'adorable', 'tender', 'clean'],
+    corruptWords: ['ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death', 'blood', 'kill', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession', 'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'angry', 'burn', 'chaos', 'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness', 'violent', 'insane', 'mad', 'destroy', 'ruin', 'pain', 'torment', 'sinister', 'malicious', 'unholy', 'infected', 'plague', 'parasite', 'zombie', 'hollow'],
+    healWords: ['love', 'lovely', 'cute', 'cozy', 'calm', 'gentle', 'safe', 'okay', 'sweet', 'warm', 'bloom', 'light', 'hope', 'kind', 'peaceful', 'peace', 'comfort', 'serene', 'tranquil', 'pretty', 'soft', 'hug', 'healing', 'heal', 'rest', 'home', 'alive', 'smile', 'happy', 'joy', 'joyful', 'bright', 'angel', 'sunshine', 'breathe', 'relax', 'adorable', 'tender', 'clean', 'comfy'],
     resetWords: ['wake', 'awaken', 'revive', 'reborn', 'reset', 'blink', 'return', 'restore', 'renew', 'rebirth'],
     healPhrases: ['calm down', 'safe place'],
     corruptPhrases: ['fall apart', 'give in']
@@ -31,7 +31,7 @@
     ivySurgeActive: false,
     ivyPhase: 'charging',
     debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
-    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null }
+    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null, lookReset: null, peekReveal: null }
   };
 
   const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
@@ -129,10 +129,23 @@
     state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral'), 420);
   }
 
+
+  function glance(kind = 'neutral') {
+    if (kind === 'heal') eyeRoot.dataset.look = Math.random() > 0.5 ? 'left' : 'right';
+    else if (kind === 'corrupt') eyeRoot.dataset.look = Math.random() > 0.5 ? 'right' : 'left';
+    else eyeRoot.dataset.look = Math.random() > 0.55 ? 'left' : (Math.random() > 0.5 ? 'right' : 'center');
+
+    clearTimeout(state.timers.lookReset);
+    state.timers.lookReset = setTimeout(() => {
+      eyeRoot.dataset.look = 'center';
+    }, 300);
+  }
+
   function triggerMessageResponse(kind = 'neutral') {
     eyeRoot.classList.remove('message-ping');
     requestAnimationFrame(() => eyeRoot.classList.add('message-ping'));
     burst('pulse');
+    glance(kind);
     clearTimeout(state.timers.messageCleanup);
     state.timers.messageCleanup = setTimeout(() => eyeRoot.classList.remove('message-ping'), 320);
 
@@ -218,23 +231,31 @@
     state.debug.surgeActive = true;
 
     state.ivyPhase = 'surge';
+    eyeRoot.classList.remove('ivy-peek-open');
     render(`${source}:surge`);
     blink();
     burst('stress');
-    emitExternalDebris(14);
+    emitExternalDebris(10);
+
+    clearTimeout(state.timers.peekReveal);
+    state.timers.peekReveal = setTimeout(() => {
+      eyeRoot.classList.add('ivy-peek-open');
+    }, 260);
 
     clearTimeout(state.timers.ritualStep);
     state.timers.ritualStep = setTimeout(() => {
       state.ivyPhase = 'cooldown';
       state.ivyCounter = 0;
+      eyeRoot.classList.remove('ivy-peek-open');
       render(`${source}:cooldown`);
-      emitExternalDebris(6);
+      emitExternalDebris(4);
     }, 2300);
 
     clearTimeout(state.timers.ritualCleanup);
     state.timers.ritualCleanup = setTimeout(() => {
       state.ivySurgeActive = false;
       state.ivyPhase = 'charging';
+      eyeRoot.classList.remove('ivy-peek-open');
       state.debug.surgeActive = false;
       render(`${source}:reset`);
       updateStatus();
@@ -398,8 +419,8 @@
   }
 
   function bootstrapChat() {
-    appendChat('ivy-eye', 'the lantern creature is listening.');
-    if (testingMode) appendChat('ivy-eye', 'test: ivy x10 peek / love / lurking / ghost');
+    appendChat('ivy-eye', 'be kind, be cursed, or spam ivy to summon a peek.');
+    if (testingMode) appendChat('ivy-eye', 'test: comfort it / corrupt it / ivy x10');
   }
 
   function bootstrap() {
