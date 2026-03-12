@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cursed Lantern Overlay</title>
+    <title>Ivy Eye Overlay</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main id="overlay-root" class="overlay-corner" data-mode="live" data-state="awakened">
-      <section id="lantern" class="lantern state-awakened" aria-label="Reactive lantern companion">
+      <section id="lantern" class="lantern state-awakened" aria-label="Ivy Eye companion">
         <div class="chain" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="lantern-halo" aria-hidden="true"></div>
 
@@ -32,15 +32,15 @@
         <div class="burst-ring" aria-hidden="true"></div>
       </section>
 
-      <section class="interaction-header" aria-label="interaction header">
+      <section id="interaction-header" class="interaction-header" aria-label="interaction header">
         <p>Chat to stir the flame</p>
       </section>
 
-      <aside id="chat-panel" class="chat-panel" aria-label="Lantern companion chat panel">
+      <aside id="chat-panel" class="chat-panel" aria-label="Ivy Eye chat panel">
         <ol id="chat-list"></ol>
 
         <form id="chat-input-form" class="chat-input" hidden>
-          <input id="chat-input" type="text" maxlength="140" placeholder="Type to trigger states (love, burn, crack, cursed, dead, vine...)" autocomplete="off" />
+          <input id="chat-input" type="text" maxlength="180" placeholder="Type test chat: ghost demon cursed / love cozy / wake / ivy ivy..." autocomplete="off" />
           <button type="submit">Send</button>
         </form>
       </aside>

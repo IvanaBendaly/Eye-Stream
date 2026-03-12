@@ -5,29 +5,51 @@
   const chatInputForm = document.getElementById('chat-input-form');
   const chatInput = document.getElementById('chat-input');
   const tinyStatus = document.getElementById('tiny-status');
+  const interactionHeader = document.getElementById('interaction-header');
 
   const params = new URLSearchParams(window.location.search);
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
   const SCORE_MAX = 10;
+  const IVY_THRESHOLD = 10;
   const STATE_ORDER = ['awakened', 'overgrown', 'corrupted', 'rotten'];
   const STATE_ALIAS = { alive: 'awakened', alert: 'overgrown', zombified: 'rotten' };
 
   const keywords = {
-    corrupt: ['ghost', 'demon', 'cursed', 'run', 'hunt'],
-    heal: ['chill', 'safe', 'love', 'okay', 'cute'],
-    reset: ['wake', 'blink', 'revive']
+    corrupt: [
+      'ghost', 'demon', 'cursed', 'curse', 'haunted', 'haunt', 'hex', 'rot', 'rotten', 'decay', 'dead', 'death',
+      'kill', 'blood', 'scream', 'nightmare', 'hunt', 'run', 'shadow', 'void', 'evil', 'possessed', 'possession',
+      'monster', 'creep', 'creepy', 'horror', 'break', 'shatter', 'crack', 'rage', 'anger', 'burn', 'chaos',
+      'abyss', 'doom', 'fear', 'panic', 'wrath', 'dark', 'darkness'
+    ],
+    heal: [
+      'chill', 'safe', 'love', 'okay', 'cute', 'cozy', 'calm', 'gentle', 'soft', 'bloom', 'light', 'hope',
+      'lovely', 'sweet', 'warm', 'comfort', 'peace', 'peaceful', 'kind', 'heal', 'healing', 'rest', 'breathe',
+      'home', 'alive', 'clean', 'pretty', 'serene', 'tranquil', 'hug'
+    ],
+    reset: ['wake', 'blink', 'revive', 'reset', 'awaken', 'reborn', 'return']
   };
 
   const state = {
     testingMode,
     corruptionScore: 0,
+    ivyCounter: 0,
     renderedState: 'awakened',
     look: 'center',
+    exploding: false,
+    debug: {
+      matchedCorrupt: [],
+      matchedHeal: [],
+      ivyHits: 0,
+      resetTriggered: false,
+      explosionTriggered: false,
+      delta: 0
+    },
     timers: {
       particles: null,
       blinkCleanup: null,
-      bloomCleanup: null
+      bloomCleanup: null,
+      explodeCleanup: null
     }
   };
 
@@ -50,35 +72,40 @@
   }
 
   function render(reason = 'render') {
+    if (state.exploding) return;
     const derivedState = deriveStateFromScore();
     STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
     eyeRoot.classList.add(`state-${derivedState}`);
     overlayRoot.dataset.state = derivedState;
     state.renderedState = derivedState;
     updateStatus();
-    console.log(`[ChatEye] render state=${derivedState} score=${state.corruptionScore} reason=${reason}`);
+    console.log(`[ChatEye] state=${derivedState} score=${state.corruptionScore} ivy=${state.ivyCounter} reason=${reason}`);
   }
 
   function updateStatus() {
     if (!testingMode) return;
-    tinyStatus.textContent = `TEST • score: ${state.corruptionScore} • state: ${state.renderedState}`;
+
+    const corruptText = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
+    const healText = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
+    const ivyText = state.debug.ivyHits ? `x${state.debug.ivyHits}` : '0';
+    const resetText = state.debug.resetTriggered ? 'yes' : 'no';
+    const explosionText = state.debug.explosionTriggered ? 'yes' : 'no';
+    const deltaSign = state.debug.delta > 0 ? '+' : '';
+
+    tinyStatus.textContent = `TEST • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • IVY: ${state.ivyCounter}/${IVY_THRESHOLD} • CORRUPT: ${corruptText} • HEAL: ${healText} • IVYHITS: ${ivyText} • RESET: ${resetText} • EXPLODE: ${explosionText} • DELTA: ${deltaSign}${state.debug.delta}`;
   }
 
   function burst(type = 'pulse') {
     eyeRoot.classList.remove('burst');
     eyeRoot.classList.remove('stress');
-    if (type === 'stress') {
-      requestAnimationFrame(() => eyeRoot.classList.add('stress'));
-      return;
-    }
-    requestAnimationFrame(() => eyeRoot.classList.add('burst'));
+    requestAnimationFrame(() => eyeRoot.classList.add(type === 'stress' ? 'stress' : 'burst'));
   }
 
   function blink() {
     eyeRoot.classList.remove('blink');
     requestAnimationFrame(() => eyeRoot.classList.add('blink'));
     clearTimeout(state.timers.blinkCleanup);
-    state.timers.blinkCleanup = setTimeout(() => eyeRoot.classList.remove('blink'), 500);
+    state.timers.blinkCleanup = setTimeout(() => eyeRoot.classList.remove('blink'), 450);
   }
 
   function bloom() {
@@ -94,14 +121,13 @@
     eyeRoot.dataset.look = next;
   }
 
-  function mutateScore(delta, reason) {
-    state.corruptionScore = clampScore(state.corruptionScore + delta);
-    render(reason);
-  }
-
   function setScore(value, reason = 'setScore') {
     state.corruptionScore = clampScore(value);
     render(reason);
+  }
+
+  function mutateScore(delta, reason = 'mutateScore') {
+    setScore(state.corruptionScore + delta, reason);
   }
 
   function setState(nextStateRaw, reason = 'setState') {
@@ -119,28 +145,89 @@
       .filter(Boolean);
   }
 
-  function applyMessageTriggers(text, source = 'chat') {
-    const words = tokenize(text);
-    let delta = 0;
-    let sawReset = false;
+  function resetDebug() {
+    state.debug = {
+      matchedCorrupt: [],
+      matchedHeal: [],
+      ivyHits: 0,
+      resetTriggered: false,
+      explosionTriggered: false,
+      delta: 0
+    };
+  }
 
-    for (const word of words) {
-      if (keywords.corrupt.includes(word)) delta += 1;
-      if (keywords.heal.includes(word)) delta -= 1;
-      if (keywords.reset.includes(word)) sawReset = true;
-    }
+  function performIvyExplosion(source = 'ivyOverload') {
+    if (state.exploding) return;
+    state.exploding = true;
+    state.debug.explosionTriggered = true;
+    if (testingMode) tinyStatus.textContent = 'TEST • IVY OVERLOAD • EXPLODE + RESET';
 
-    if (sawReset) {
-      setScore(0, `${source}:reset`);
+    eyeRoot.classList.add('explode');
+    burst('stress');
+
+    const flashStates = ['overgrown', 'corrupted', 'rotten'];
+    flashStates.forEach((s, index) => {
+      setTimeout(() => {
+        STATE_ORDER.forEach((name) => eyeRoot.classList.remove(`state-${name}`));
+        eyeRoot.classList.add(`state-${s}`);
+      }, index * 120);
+    });
+
+    clearTimeout(state.timers.explodeCleanup);
+    state.timers.explodeCleanup = setTimeout(() => {
+      state.corruptionScore = 0;
+      state.ivyCounter = 0;
+      state.exploding = false;
+      eyeRoot.classList.remove('explode');
+      render(`${source}:reset`);
       bloom();
       blink();
+      updateStatus();
+    }, 680);
+  }
+
+  function applyMessageTriggers(text, source = 'chat') {
+    if (state.exploding) return;
+    resetDebug();
+
+    const words = tokenize(text);
+
+    for (const word of words) {
+      if (word === 'ivy') {
+        state.ivyCounter += 1;
+        state.debug.ivyHits += 1;
+        continue;
+      }
+      if (keywords.corrupt.includes(word)) {
+        state.debug.matchedCorrupt.push(word);
+        state.debug.delta += 1;
+      }
+      if (keywords.heal.includes(word)) {
+        state.debug.matchedHeal.push(word);
+        state.debug.delta -= 1;
+      }
+      if (keywords.reset.includes(word)) {
+        state.debug.resetTriggered = true;
+      }
+    }
+
+    if (state.debug.resetTriggered) {
+      setScore(0, `${source}:resetWord`);
+      bloom();
+      blink();
+    } else if (state.debug.delta !== 0) {
+      mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
+      if (state.debug.delta > 0) burst(state.corruptionScore >= 6 ? 'stress' : 'pulse');
+    } else {
+      updateStatus();
+    }
+
+    if (state.ivyCounter >= IVY_THRESHOLD) {
+      performIvyExplosion(`${source}:ivy`);
       return;
     }
 
-    if (delta !== 0) {
-      mutateScore(delta, `${source}:delta(${delta})`);
-      if (delta > 0) burst(state.corruptionScore >= 6 ? 'stress' : 'pulse');
-    }
+    updateStatus();
   }
 
   function appendChat(user, text) {
@@ -164,18 +251,25 @@
   }
 
   function ambient() {
-    if (state.renderedState === 'awakened' && Math.random() > 0.75) emitParticle('warm');
+    if (state.exploding) return;
+    if (state.renderedState === 'awakened') {
+      if (Math.random() > 0.73) emitParticle('warm');
+      return;
+    }
     if (state.renderedState === 'overgrown') {
       emitParticle('leaves');
-      if (Math.random() > 0.7) emitParticle('warm');
+      if (Math.random() > 0.65) emitParticle('warm');
+      return;
     }
     if (state.renderedState === 'corrupted') {
       emitParticle('ash');
-      if (Math.random() > 0.6) emitParticle('smoke');
+      if (Math.random() > 0.58) emitParticle('smoke');
+      return;
     }
     if (state.renderedState === 'rotten') {
       emitParticle('smoke');
-      if (Math.random() > 0.55) emitParticle('ash');
+      if (Math.random() > 0.52) emitParticle('ash');
+      if (Math.random() > 0.88) blink();
     }
   }
 
@@ -187,9 +281,15 @@
     if (act === 'corrupt') mutateScore(1, 'action:corrupt');
     if (act === 'heal') mutateScore(-1, 'action:heal');
     if (act === 'reset') {
+      resetDebug();
+      state.debug.resetTriggered = true;
       setScore(0, 'action:reset');
       bloom();
       blink();
+      updateStatus();
+    }
+    if (act === 'explode' || act === 'ivyburst') {
+      performIvyExplosion(`action:${act}`);
     }
   }
 
@@ -214,7 +314,11 @@
   }
 
   function setupTestingInput() {
-    if (!testingMode) return;
+    if (!testingMode) {
+      interactionHeader.hidden = true;
+      return;
+    }
+
     overlayRoot.dataset.mode = 'test';
     chatInputForm.hidden = false;
     tinyStatus.hidden = false;
@@ -228,8 +332,8 @@
   }
 
   function bootstrapChat() {
-    appendChat('ivy-eye', 'chat can heal or corrupt me.');
-    if (testingMode) appendChat('ivy-eye', 'type words like: demon / love / wake');
+    appendChat('ivy-eye', 'the flame still breathes.');
+    if (testingMode) appendChat('ivy-eye', 'test: ghost demon / love cozy / wake / ivy ivy...');
   }
 
   function bootstrap() {
