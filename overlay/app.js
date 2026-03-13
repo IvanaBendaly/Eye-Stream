@@ -1,17 +1,26 @@
 (function () {
   const overlayRoot = document.getElementById('overlay-root');
   const eyeRoot = document.getElementById('lantern');
+  const gameRoot = document.getElementById('ivy-game');
+  const runner = document.getElementById('runner');
+  const obstacleLayer = document.getElementById('obstacle-layer');
+  const gameHud = document.getElementById('game-hud');
+  const gameFlash = document.getElementById('game-flash');
+  const assistFill = document.getElementById('assist-fill');
+
   const chatList = document.getElementById('chat-list');
   const chatInputForm = document.getElementById('chat-input-form');
   const chatInput = document.getElementById('chat-input');
   const tinyStatus = document.getElementById('tiny-status');
   const interactionHeader = document.getElementById('interaction-header');
   const explosionField = document.getElementById('explosion-field');
+  const testControls = document.getElementById('test-controls');
 
   const params = new URLSearchParams(window.location.search);
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
   const IVY_THRESHOLD = 10;
+  const IVY_COOLDOWN_MS = 5000;
   const STATE_ORDER = ['blissful', 'awakened', 'curious', 'disturbed', 'corrupted', 'rotting', 'dead'];
   const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
 
@@ -28,13 +37,37 @@
     corruptionScore: 0,
     ivyCounter: 0,
     renderedState: 'awakened',
-    ivySurgeActive: false,
-    ivyPhase: 'charging',
-    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 },
-    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ritualCleanup: null, ritualStep: null, ivyHitCleanup: null, messageCleanup: null, lookReset: null, peekReveal: null }
+    mode: 'lantern',
+    ivyCooldownUntil: 0,
+    debug: { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, delta: 0, cooldown: false },
+    timers: { particles: null, blinkCleanup: null, bloomCleanup: null, reactionCleanup: null, ivyHitCleanup: null, messageCleanup: null, lookReset: null },
+    game: {
+      running: false,
+      raf: 0,
+      score: 0,
+      shieldTimer: 0,
+      pressureTimer: 0,
+      runnerY: 0,
+      runnerVY: 0,
+      grounded: true,
+      coyoteUntil: 0,
+      jumpBufferUntil: 0,
+      ducking: false,
+      duckKeyDown: false,
+      jumpAssist: 0,
+      jumpAssistGoal: 4,
+      queuedJumpUntil: 0,
+      runnerState: 'awakened',
+      spawnIn: 900,
+      speed: 182,
+      elapsed: 0,
+      obstacles: []
+    }
   };
 
   const clampScore = (v) => Math.max(-3, Math.min(12, Math.round(v)));
+
+  const isIvyCoolingDown = () => Date.now() < state.ivyCooldownUntil;
 
   function deriveStateFromScore(score = state.corruptionScore) {
     if (score <= -2) return 'blissful';
@@ -56,29 +89,14 @@
     return 10;
   }
 
-  function deriveIvyPhase() {
-    if (state.ivySurgeActive) return state.ivyPhase;
-    if (state.ivyCounter >= IVY_THRESHOLD - 2) return 'warning';
-    return 'charging';
-  }
-
   function resetDebug() {
-    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, surgeActive: false, delta: 0 };
+    state.debug = { matchedCorrupt: [], matchedHeal: [], ivyHits: 0, resetTriggered: false, delta: 0, cooldown: isIvyCoolingDown() };
   }
 
   function updateStatus() {
     if (!testingMode) return;
-
-    const phase = deriveIvyPhase().toUpperCase();
-    if (state.ivySurgeActive) {
-      tinyStatus.textContent = `TEST • IVY PEEK ACTIVE • PHASE: ${phase}`;
-      return;
-    }
-
-    const c = state.debug.matchedCorrupt.length ? state.debug.matchedCorrupt.join(',') : '-';
-    const h = state.debug.matchedHeal.length ? state.debug.matchedHeal.join(',') : '-';
-    const d = state.debug.delta > 0 ? `+${state.debug.delta}` : `${state.debug.delta}`;
-    tinyStatus.textContent = `TEST • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • PHASE: ${phase} • SCORE: ${state.corruptionScore} • STATE: ${state.renderedState.toUpperCase()} • CORRUPT: ${c} • HEAL: ${h} • IVYHITS: x${state.debug.ivyHits} • DELTA: ${d}`;
+    const cooldownMs = Math.max(0, state.ivyCooldownUntil - Date.now());
+    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • ASSIST:${state.game.jumpAssist}/${state.game.jumpAssistGoal} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
   }
 
   function render(reason = 'render') {
@@ -88,18 +106,20 @@
     overlayRoot.dataset.state = derived;
     state.renderedState = derived;
 
+    eyeRoot.classList.remove('ivy-charge', 'ivy-warning', 'ivy-cooldown');
     for (let i = 0; i <= 10; i += 1) eyeRoot.classList.remove(`ivy-level-${i}`);
     eyeRoot.classList.add(`ivy-level-${Math.max(0, Math.min(10, state.ivyCounter))}`);
 
-    eyeRoot.classList.remove('ivy-charge', 'ivy-warning', 'ivy-surge', 'ivy-cooldown');
-    const phase = deriveIvyPhase();
-    if (phase === 'charging') eyeRoot.classList.add('ivy-charge');
-    if (phase === 'warning') eyeRoot.classList.add('ivy-warning');
-    if (phase === 'surge') eyeRoot.classList.add('ivy-surge');
-    if (phase === 'cooldown') eyeRoot.classList.add('ivy-cooldown');
+    if (isIvyCoolingDown()) eyeRoot.classList.add('ivy-cooldown');
+    else if (state.ivyCounter >= IVY_THRESHOLD - 2) eyeRoot.classList.add('ivy-warning');
+    else eyeRoot.classList.add('ivy-charge');
+
+    overlayRoot.dataset.mode = state.mode;
+    eyeRoot.hidden = state.mode !== 'lantern';
+    gameRoot.hidden = state.mode !== 'game';
 
     updateStatus();
-    console.log(`[ChatEye] state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} ivyPhase=${phase} reason=${reason}`);
+    console.log(`[ChatEye] mode=${state.mode} state=${derived} score=${state.corruptionScore} ivy=${state.ivyCounter} reason=${reason}`);
   }
 
   function blink() {
@@ -129,16 +149,13 @@
     state.timers.reactionCleanup = setTimeout(() => eyeRoot.classList.remove('react-heal', 'react-corrupt', 'react-ivy', 'react-neutral'), 420);
   }
 
-
   function glance(kind = 'neutral') {
     if (kind === 'heal') eyeRoot.dataset.look = Math.random() > 0.5 ? 'left' : 'right';
     else if (kind === 'corrupt') eyeRoot.dataset.look = Math.random() > 0.5 ? 'right' : 'left';
     else eyeRoot.dataset.look = Math.random() > 0.55 ? 'left' : (Math.random() > 0.5 ? 'right' : 'center');
 
     clearTimeout(state.timers.lookReset);
-    state.timers.lookReset = setTimeout(() => {
-      eyeRoot.dataset.look = 'center';
-    }, 300);
+    state.timers.lookReset = setTimeout(() => { eyeRoot.dataset.look = 'center'; }, 300);
   }
 
   function triggerMessageResponse(kind = 'neutral') {
@@ -155,31 +172,25 @@
       blink();
       return;
     }
-
     if (kind === 'corrupt') {
       triggerReaction('corrupt');
-      burst('pulse');
       return;
     }
-
     if (kind === 'heal') {
       triggerReaction('heal');
       bloom();
       return;
     }
-
     eyeRoot.classList.remove('react-neutral');
     requestAnimationFrame(() => eyeRoot.classList.add('react-neutral'));
     blink();
   }
 
-  function emitExternalDebris(amount = 24) {
+  function emitExternalDebris(amount = 12) {
     if (!explosionField) return;
     for (let i = 0; i < amount; i += 1) {
-      const r = Math.random();
-      const type = r > 0.72 ? 'ember' : (r > 0.42 ? 'spore' : 'smoke');
       const d = document.createElement('span');
-      d.className = `debris ${type}`;
+      d.className = `debris ${Math.random() > 0.5 ? 'ember' : 'smoke'}`;
       d.style.left = `${108 + (Math.random() * 30 - 15)}px`;
       d.style.top = `${102 + (Math.random() * 18 - 9)}px`;
       d.style.setProperty('--dx', `${(Math.random() * 2 - 1) * 84}px`);
@@ -196,23 +207,11 @@
     requestAnimationFrame(() => eyeRoot.classList.add('ivy-surge-hit'));
     clearTimeout(state.timers.ivyHitCleanup);
     state.timers.ivyHitCleanup = setTimeout(() => eyeRoot.classList.remove('ivy-surge-hit'), 440);
-
-    const nearing = state.ivyCounter >= IVY_THRESHOLD - 2;
-    burst((intensity > 1 || nearing) ? 'stress' : 'pulse');
-    emitParticle('warm');
-    if (Math.random() > 0.45 || nearing) emitParticle('ash');
-    if (Math.random() > 0.65 || nearing) emitParticle('smoke');
+    burst(intensity > 1 ? 'stress' : 'pulse');
   }
 
-  function setScore(value, reason = 'setScore') {
-    state.corruptionScore = clampScore(value);
-    render(reason);
-  }
-
-  function mutateScore(delta, reason = 'mutate') {
-    setScore(state.corruptionScore + delta, reason);
-  }
-
+  function setScore(value, reason = 'setScore') { state.corruptionScore = clampScore(value); render(reason); }
+  function mutateScore(delta, reason = 'mutate') { setScore(state.corruptionScore + delta, reason); }
   function setState(nextStateRaw, reason = 'setState') {
     const alias = String(nextStateRaw || '').toLowerCase();
     const normalized = STATE_ALIAS[alias] || alias;
@@ -224,110 +223,303 @@
     return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   }
 
-  function performIvySurge(source = 'ivySurge') {
-    if (state.ivySurgeActive) return;
-
-    state.ivySurgeActive = true;
-    state.debug.surgeActive = true;
-
-    state.ivyPhase = 'surge';
-    eyeRoot.classList.remove('ivy-peek-open');
-    render(`${source}:surge`);
-    blink();
-    burst('stress');
-    emitExternalDebris(10);
-
-    clearTimeout(state.timers.peekReveal);
-    state.timers.peekReveal = setTimeout(() => {
-      eyeRoot.classList.add('ivy-peek-open');
-    }, 260);
-
-    clearTimeout(state.timers.ritualStep);
-    state.timers.ritualStep = setTimeout(() => {
-      state.ivyPhase = 'cooldown';
-      state.ivyCounter = 0;
-      eyeRoot.classList.remove('ivy-peek-open');
-      render(`${source}:cooldown`);
-      emitExternalDebris(4);
-    }, 2300);
-
-    clearTimeout(state.timers.ritualCleanup);
-    state.timers.ritualCleanup = setTimeout(() => {
-      state.ivySurgeActive = false;
-      state.ivyPhase = 'charging';
-      eyeRoot.classList.remove('ivy-peek-open');
-      state.debug.surgeActive = false;
-      render(`${source}:reset`);
-      updateStatus();
-    }, 3200);
+  function countExactIvyTokens(words) {
+    let hits = 0;
+    for (const word of words) if (word === 'ivy') hits += 1;
+    return hits;
   }
 
   function applyPhraseMatches(normalizedText) {
-    for (const phrase of matchConfig.healPhrases) {
-      if (normalizedText.includes(phrase)) {
-        state.debug.matchedHeal.push(phrase);
-        state.debug.delta -= 1;
+    for (const phrase of matchConfig.healPhrases) if (normalizedText.includes(phrase)) { state.debug.matchedHeal.push(phrase); state.debug.delta -= 1; }
+    for (const phrase of matchConfig.corruptPhrases) if (normalizedText.includes(phrase)) { state.debug.matchedCorrupt.push(phrase); state.debug.delta += 1; }
+  }
+
+  function grantGameChatEffect(kind) {
+    if (!state.game.running) return;
+    if (kind === 'heal') {
+      state.game.shieldTimer = Math.max(state.game.shieldTimer, 2400);
+      gameRoot.classList.add('buff-glow');
+      setTimeout(() => gameRoot.classList.remove('buff-glow'), 260);
+    }
+    if (kind === 'corrupt') {
+      state.game.pressureTimer = Math.max(state.game.pressureTimer, 2000);
+      gameRoot.classList.add('debuff-flash');
+      setTimeout(() => gameRoot.classList.remove('debuff-flash'), 220);
+    }
+  }
+
+  function createObstacle() {
+    const variants = ['root', 'gravestone', 'spike', 'candle', 'skull', 'branch'];
+    const type = variants[Math.floor(Math.random() * variants.length)];
+    const el = document.createElement('span');
+    el.className = `obstacle ${type}`;
+    obstacleLayer.appendChild(el);
+    return { el, x: 316, w: type === 'branch' ? 32 : 22, h: type === 'spike' ? 26 : 34, type, passed: false };
+  }
+
+  function resetGameObjects() {
+    for (const o of state.game.obstacles) o.el.remove();
+    state.game.obstacles = [];
+  }
+
+  function setRunnerY(px) {
+    runner.style.transform = `translateY(${-px}px)`;
+  }
+
+  function applyRunnerStateClass() {
+    STATE_ORDER.forEach((name) => runner.classList.remove(`state-${name}`));
+    runner.classList.add(`state-${state.game.runnerState}`);
+  }
+
+  function renderAssistMeter() {
+    if (!assistFill) return;
+    const pct = Math.max(0, Math.min(1, state.game.jumpAssist / state.game.jumpAssistGoal));
+    assistFill.style.transform = `scaleX(${pct})`;
+  }
+
+  function queueJump() {
+    if (!state.game.running) return;
+    const now = performance.now();
+    state.game.jumpBufferUntil = Math.max(state.game.jumpBufferUntil, now + 160);
+  }
+
+  function consumeAssistJump() {
+    state.game.jumpAssist = 0;
+    state.game.queuedJumpUntil = Math.max(state.game.queuedJumpUntil, performance.now() + 800);
+    renderAssistMeter();
+  }
+
+  function addChatJumpAssist() {
+    if (!state.game.running) return;
+    state.game.jumpAssist = Math.min(state.game.jumpAssistGoal, state.game.jumpAssist + 1);
+    renderAssistMeter();
+    if (state.game.jumpAssist >= state.game.jumpAssistGoal) consumeAssistJump();
+  }
+
+  function jump() {
+    queueJump();
+  }
+
+  function setDuck(active) {
+    const shouldDuck = Boolean(active && state.game.running && state.game.grounded);
+    state.game.ducking = shouldDuck;
+    runner.classList.toggle('duck', shouldDuck);
+  }
+
+  function updateDuck() {
+    if (!state.game.running) return;
+    setDuck(state.game.duckKeyDown);
+  }
+
+  function processJump(now) {
+    const canCoyote = now <= state.game.coyoteUntil;
+    const buffered = state.game.jumpBufferUntil > now || state.game.queuedJumpUntil > now;
+    if (buffered && (state.game.grounded || canCoyote)) {
+      state.game.runnerVY = 338;
+      state.game.grounded = false;
+      state.game.jumpBufferUntil = 0;
+      state.game.queuedJumpUntil = 0;
+      runner.classList.add('jump');
+      setTimeout(() => runner.classList.remove('jump'), 180);
+    }
+  }
+
+  function obstacleHit(o) {
+    const rx = 58;
+    const rw = state.game.ducking ? 28 : 26;
+    const rh = state.game.ducking ? 18 : 28;
+    const rbottom = 18 + state.game.runnerY;
+    const rtop = rbottom + rh;
+
+    const ox = o.x;
+    const ow = o.w;
+    const otop = 18 + o.h;
+
+    const overlapX = rx + rw - 4 > ox && rx + 4 < ox + ow;
+    const overlapY = rbottom + 2 < otop && rtop - 4 > 18;
+    return overlapX && overlapY;
+  }
+
+  function endGame(reason = 'collision') {
+    state.game.running = false;
+    cancelAnimationFrame(state.game.raf);
+    setState('dead', 'game-over-zombie');
+    state.ivyCooldownUntil = Date.now() + IVY_COOLDOWN_MS;
+    state.ivyCounter = 0;
+    state.mode = 'lantern';
+    gameFlash.classList.add('show');
+    setTimeout(() => gameFlash.classList.remove('show'), 220);
+    state.game.duckKeyDown = false;
+    state.game.jumpAssist = 0;
+    state.game.queuedJumpUntil = 0;
+    setDuck(false);
+    resetGameObjects();
+    render(`game-over:${reason}`);
+    if (testingMode && chatInput && !chatInputForm.hidden) {
+      setTimeout(() => chatInput.focus(), 0);
+    }
+  }
+
+  function gameFrame(now, prev) {
+    if (!state.game.running) return;
+    const dt = Math.min(0.032, (now - prev) / 1000);
+    const g = state.game;
+
+    g.elapsed += dt;
+    g.score += dt * 12;
+    g.shieldTimer = Math.max(0, g.shieldTimer - dt * 1000);
+    g.pressureTimer = Math.max(0, g.pressureTimer - dt * 1000);
+
+    const difficulty = Math.min(1, g.elapsed / 28);
+    const pressureBoost = g.pressureTimer > 0 ? 26 : 0;
+    g.speed = 172 + difficulty * 90 + pressureBoost;
+
+    g.spawnIn -= dt * 1000;
+    if (g.spawnIn <= 0) {
+      g.obstacles.push(createObstacle());
+      g.spawnIn = 920 - difficulty * 340 + Math.random() * 260;
+      if (g.shieldTimer > 0) g.spawnIn += 120;
+    }
+
+    const prevY = g.runnerY;
+    g.runnerVY -= 660 * dt;
+    g.runnerY += g.runnerVY * dt;
+
+    if (prevY <= 0 && g.runnerY > 0) g.grounded = false;
+
+    if (g.runnerY <= 0) {
+      if (!g.grounded) g.coyoteUntil = now + 100;
+      g.runnerY = 0;
+      g.runnerVY = 0;
+      g.grounded = true;
+    }
+
+    processJump(now);
+    updateDuck();
+    setRunnerY(g.runnerY);
+
+    const worldSpeed = g.speed * (g.shieldTimer > 0 ? 0.95 : 1);
+    for (let i = g.obstacles.length - 1; i >= 0; i -= 1) {
+      const o = g.obstacles[i];
+      o.x -= worldSpeed * dt;
+      o.el.style.transform = `translateX(${o.x}px)`;
+
+      if (!o.passed && o.x + o.w < 58) {
+        o.passed = true;
+        g.score += 5;
+      }
+
+      if (o.x + o.w < -40) {
+        o.el.remove();
+        g.obstacles.splice(i, 1);
+        continue;
+      }
+
+      if (obstacleHit(o)) {
+        if (g.shieldTimer > 0) {
+          g.shieldTimer = 0;
+          o.el.remove();
+          g.obstacles.splice(i, 1);
+          gameRoot.classList.add('shield-pop');
+          setTimeout(() => gameRoot.classList.remove('shield-pop'), 180);
+          continue;
+        }
+        endGame('collision');
+        return;
       }
     }
-    for (const phrase of matchConfig.corruptPhrases) {
-      if (normalizedText.includes(phrase)) {
-        state.debug.matchedCorrupt.push(phrase);
-        state.debug.delta += 1;
-      }
-    }
+
+    gameHud.textContent = `SCORE ${Math.floor(g.score)}`;
+    state.game.raf = requestAnimationFrame((next) => gameFrame(next, now));
+  }
+
+  function startGame(source = 'ivy-threshold') {
+    if (state.game.running) return;
+    state.mode = 'game';
+    state.ivyCounter = 0;
+
+    state.game.running = true;
+    state.game.score = 0;
+    state.game.shieldTimer = 0;
+    state.game.pressureTimer = 0;
+    state.game.runnerY = 0;
+    state.game.runnerVY = 0;
+    state.game.grounded = true;
+    state.game.coyoteUntil = 0;
+    state.game.jumpBufferUntil = 0;
+    state.game.ducking = false;
+    state.game.duckKeyDown = false;
+    state.game.jumpAssist = 0;
+    state.game.queuedJumpUntil = 0;
+    state.game.runnerState = state.renderedState;
+    state.game.spawnIn = 1000;
+    state.game.speed = 172;
+    state.game.elapsed = 0;
+    resetGameObjects();
+    setRunnerY(0);
+    setDuck(false);
+    applyRunnerStateClass();
+    renderAssistMeter();
+    if (document.activeElement === chatInput) chatInput.blur();
+    render(`game-start:${source}`);
+
+    state.game.raf = requestAnimationFrame((now) => gameFrame(now, now));
   }
 
   function applyMessageTriggers(text, source = 'chat') {
     resetDebug();
-    const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
+    const raw = String(text || '').trim().toLowerCase();
+    const normalizedText = raw.replace(/[^a-z\s]/g, ' ');
     const words = tokenize(normalizedText);
     applyPhraseMatches(normalizedText);
 
+    const ivyHits = countExactIvyTokens(words);
+    state.debug.ivyHits = ivyHits;
+
     for (const word of words) {
-      if (word === 'ivy') {
-        state.debug.ivyHits += 1;
-        continue;
-      }
-      if (matchConfig.corruptWords.includes(word)) {
-        state.debug.matchedCorrupt.push(word);
-        state.debug.delta += 1;
-      }
-      if (matchConfig.healWords.includes(word)) {
-        state.debug.matchedHeal.push(word);
-        state.debug.delta -= 1;
-      }
+      if (word === 'ivy') continue;
+      if (matchConfig.corruptWords.includes(word)) { state.debug.matchedCorrupt.push(word); state.debug.delta += 1; }
+      if (matchConfig.healWords.includes(word)) { state.debug.matchedHeal.push(word); state.debug.delta -= 1; }
       if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
     }
 
-    let messageKind = 'neutral';
-
-    if (state.debug.ivyHits > 0) {
-      if (!state.ivySurgeActive) {
-        state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + state.debug.ivyHits);
+    if (state.mode === 'game') {
+      if (raw === 'jump') {
+        addChatJumpAssist();
+        render(`${source}:assist-jump`);
+        return;
       }
-      triggerIvyHitFeedback(state.debug.ivyHits);
-      messageKind = 'ivy';
     }
+
+    let messageKind = 'neutral';
 
     if (state.debug.resetTriggered) {
       setScore(0, `${source}:resetWord`);
       bloom();
       blink();
-      if (messageKind === 'neutral') messageKind = 'heal';
+      messageKind = 'heal';
     } else if (state.debug.delta !== 0) {
       mutateScore(state.debug.delta, `${source}:delta(${state.debug.delta})`);
-      if (state.debug.delta > 0) {
-        messageKind = messageKind === 'ivy' ? 'ivy' : 'corrupt';
-      }
-      if (state.debug.delta < 0) {
-        if (messageKind === 'neutral') messageKind = 'heal';
-      }
+      messageKind = state.debug.delta > 0 ? 'corrupt' : 'heal';
+    }
+
+    if (state.mode === 'game') {
+      if (messageKind === 'heal') grantGameChatEffect('heal');
+      if (messageKind === 'corrupt') grantGameChatEffect('corrupt');
+      render(`${source}:game-post`);
+      return;
+    }
+
+    if (ivyHits > 0 && !isIvyCoolingDown()) {
+      state.ivyCounter = Math.min(IVY_THRESHOLD, state.ivyCounter + ivyHits);
+      triggerIvyHitFeedback(ivyHits);
+      messageKind = 'ivy';
     }
 
     triggerMessageResponse(messageKind);
 
-    if (state.ivyCounter >= IVY_THRESHOLD && !state.ivySurgeActive) {
-      performIvySurge(`${source}:ivy`);
+    if (state.ivyCounter >= IVY_THRESHOLD) {
+      startGame(`${source}:ivy`);
       return;
     }
 
@@ -355,12 +547,7 @@
   }
 
   function ambient() {
-    if (state.ivySurgeActive) {
-      emitParticle('warm');
-      if (Math.random() > 0.45) emitParticle('smoke');
-      return;
-    }
-
+    if (state.mode !== 'lantern') return;
     if (['blissful', 'awakened'].includes(state.renderedState)) {
       if (Math.random() > 0.65) emitParticle('warm');
     } else if (['curious', 'disturbed'].includes(state.renderedState)) {
@@ -381,7 +568,10 @@
     if (act === 'corrupt') { mutateScore(1, 'action:corrupt'); triggerReaction('corrupt'); }
     if (act === 'heal') { mutateScore(-1, 'action:heal'); triggerReaction('heal'); }
     if (act === 'reset') { resetDebug(); setScore(0, 'action:reset'); bloom(); blink(); updateStatus(); }
-    if (act === 'explode' || act === 'ivyburst') performIvySurge(`action:${act}`);
+    if (act === 'ivyburst' && !isIvyCoolingDown()) {
+      state.ivyCounter = IVY_THRESHOLD;
+      startGame('action:ivyburst');
+    }
   }
 
   function receive(payload = {}) {
@@ -410,21 +600,56 @@
     overlayRoot.dataset.mode = 'test';
     chatInputForm.hidden = false;
     tinyStatus.hidden = false;
+    testControls.hidden = false;
+
     chatInputForm.addEventListener('submit', (event) => {
       event.preventDefault();
       handleTypedMessage(chatInput.value);
       chatInput.value = '';
       chatInput.focus();
     });
+
+    testControls.addEventListener('click', (event) => {
+      const actionName = event.target?.getAttribute('data-test-action');
+      if (!actionName) return;
+      if (actionName === 'ivy') handleTypedMessage('ivy');
+      if (actionName === 'ten-ivy') handleTypedMessage('ivy ivy ivy ivy ivy ivy ivy ivy ivy ivy');
+      if (actionName === 'jump') jump();
+      if (actionName === 'start' && !state.game.running && !isIvyCoolingDown()) startGame('test:start');
+    });
   }
 
   function bootstrapChat() {
-    appendChat('ivy-eye', 'be kind, be cursed, or spam ivy to summon a peek.');
-    if (testingMode) appendChat('ivy-eye', 'test: comfort it / corrupt it / ivy x10');
+    appendChat('ivy-eye', 'lantern is listening...');
+    if (testingMode) appendChat('ivy-eye', 'test mode: ivy x10 starts run, chat uses jump assist (keys optional)');
+  }
+
+  function setupKeybinds() {
+    window.addEventListener('keydown', (event) => {
+      if (!state.game.running || !testingMode) return;
+
+      if (event.code === 'Space' || event.code === 'ArrowUp') {
+        event.preventDefault();
+        jump();
+      }
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        state.game.duckKeyDown = true;
+      }
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (!state.game.running || !testingMode) return;
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        state.game.duckKeyDown = false;
+      }
+    });
   }
 
   function bootstrap() {
     setupTestingInput();
+    setupKeybinds();
     bootstrapChat();
     eyeRoot.dataset.look = 'center';
     render('bootstrap');
@@ -436,7 +661,8 @@
     setScore: (value) => setScore(value, 'api:setScore'),
     setState: (name) => setState(name, 'api:setState'),
     action,
-    sendLocalMessage: handleTypedMessage
+    sendLocalMessage: handleTypedMessage,
+    jump
   };
 
   bootstrap();
