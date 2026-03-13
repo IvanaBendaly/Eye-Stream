@@ -51,6 +51,7 @@
       grounded: true,
       coyoteUntil: 0,
       jumpBufferUntil: 0,
+      ducking: false,
       spawnIn: 900,
       speed: 182,
       elapsed: 0,
@@ -216,6 +217,12 @@
     return String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   }
 
+  function countExactIvyTokens(words) {
+    let hits = 0;
+    for (const word of words) if (word === 'ivy') hits += 1;
+    return hits;
+  }
+
   function applyPhraseMatches(normalizedText) {
     for (const phrase of matchConfig.healPhrases) if (normalizedText.includes(phrase)) { state.debug.matchedHeal.push(phrase); state.debug.delta -= 1; }
     for (const phrase of matchConfig.corruptPhrases) if (normalizedText.includes(phrase)) { state.debug.matchedCorrupt.push(phrase); state.debug.delta += 1; }
@@ -258,6 +265,12 @@
     state.game.jumpBufferUntil = performance.now() + 140;
   }
 
+  function setDuck(active) {
+    const shouldDuck = Boolean(active && state.game.running && state.game.grounded);
+    state.game.ducking = shouldDuck;
+    runner.classList.toggle('duck', shouldDuck);
+  }
+
   function processJump(now) {
     const canCoyote = now <= state.game.coyoteUntil;
     if (state.game.jumpBufferUntil > now && (state.game.grounded || canCoyote)) {
@@ -271,8 +284,8 @@
 
   function obstacleHit(o) {
     const rx = 58;
-    const rw = 26;
-    const rh = 28;
+    const rw = state.game.ducking ? 28 : 26;
+    const rh = state.game.ducking ? 18 : 28;
     const rbottom = 18 + state.game.runnerY;
     const rtop = rbottom + rh;
 
@@ -294,8 +307,12 @@
     state.mode = 'lantern';
     gameFlash.classList.add('show');
     setTimeout(() => gameFlash.classList.remove('show'), 220);
+    setDuck(false);
     resetGameObjects();
     render(`game-over:${reason}`);
+    if (testingMode && chatInput && !chatInputForm.hidden) {
+      setTimeout(() => chatInput.focus(), 0);
+    }
   }
 
   function gameFrame(now, prev) {
@@ -384,11 +401,14 @@
     state.game.grounded = true;
     state.game.coyoteUntil = 0;
     state.game.jumpBufferUntil = 0;
+    state.game.ducking = false;
     state.game.spawnIn = 1000;
     state.game.speed = 172;
     state.game.elapsed = 0;
     resetGameObjects();
     setRunnerY(0);
+    setDuck(false);
+    if (document.activeElement === chatInput) chatInput.blur();
     render(`game-start:${source}`);
 
     state.game.raf = requestAnimationFrame((now) => gameFrame(now, now));
@@ -400,13 +420,11 @@
     const words = tokenize(normalizedText);
     applyPhraseMatches(normalizedText);
 
-    let ivyHits = 0;
+    const ivyHits = countExactIvyTokens(words);
+    state.debug.ivyHits = ivyHits;
+
     for (const word of words) {
-      if (word === 'ivy') {
-        ivyHits += 1;
-        state.debug.ivyHits += 1;
-        continue;
-      }
+      if (word === 'ivy') continue;
       if (matchConfig.corruptWords.includes(word)) { state.debug.matchedCorrupt.push(word); state.debug.delta += 1; }
       if (matchConfig.healWords.includes(word)) { state.debug.matchedHeal.push(word); state.debug.delta -= 1; }
       if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
@@ -547,12 +565,23 @@
 
   function setupKeybinds() {
     window.addEventListener('keydown', (event) => {
+      if (!state.game.running) return;
+
       if (event.code === 'Space' || event.code === 'ArrowUp') {
         event.preventDefault();
         jump();
       }
-      if (testingMode && event.code === 'Enter' && !state.game.running && !isIvyCoolingDown()) {
-        startGame('test:enter');
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        setDuck(true);
+      }
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (!state.game.running) return;
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        setDuck(false);
       }
     });
   }

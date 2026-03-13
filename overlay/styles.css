@@ -725,6 +725,8 @@ body { background: transparent; color: #f4e7d4; }
   background: radial-gradient(circle at 50% 50%, #16141c 0%, #372a48 65%, rgba(255, 214, 151, .9) 100%);
 }
 .runner.jump .runner-core { animation: runnerStretch .18s ease-out; }
+.runner.duck { height: 18px; width: 34px; bottom: 18px; }
+.runner.duck .runner-core { border-radius: 52% 48% 58% 42% / 60% 60% 40% 40%; }
 
 .obstacle-layer { position: absolute; inset: 0; }
 .obstacle {
