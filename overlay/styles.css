@@ -728,6 +728,32 @@ body { background: transparent; color: #f4e7d4; }
 .runner.duck { height: 18px; width: 34px; bottom: 18px; }
 .runner.duck .runner-core { border-radius: 52% 48% 58% 42% / 60% 60% 40% 40%; }
 
+
+.runner.state-blissful .runner-core {
+  background: radial-gradient(circle at 45% 35%, #fff8d8 0%, #ffd891 46%, #ffbe68 100%);
+}
+.runner.state-curious .runner-eye { transform: scale(1.05); }
+.runner.state-disturbed .runner-core { filter: drop-shadow(0 0 8px rgba(210, 126, 136, .58)); }
+.runner.state-corrupted .runner-core {
+  background: radial-gradient(circle at 45% 35%, #d7c6ff 0%, #9576cc 46%, #3e2f61 100%);
+  filter: drop-shadow(0 0 10px rgba(142, 108, 208, .74));
+}
+.runner.state-corrupted .runner-eye {
+  background: radial-gradient(circle at 50% 50%, #110f19 0%, #2b2141 62%, #8d73cf 100%);
+}
+.runner.state-rotting .runner-core {
+  background: radial-gradient(circle at 45% 35%, #cfd4d9 0%, #7f8a95 48%, #2b3038 100%);
+}
+.runner.state-rotting .runner-eye { opacity: .72; }
+.runner.state-dead .runner-core {
+  background: radial-gradient(circle at 45% 35%, #aeb7c2 0%, #5a6470 46%, #171b22 100%);
+  filter: drop-shadow(0 0 6px rgba(124, 141, 152, .48));
+}
+.runner.state-dead .runner-eye {
+  background: radial-gradient(circle at 50% 50%, #0f1016 0%, #090b10 100%);
+  opacity: .62;
+}
+
 .obstacle-layer { position: absolute; inset: 0; }
 .obstacle {
   position: absolute;

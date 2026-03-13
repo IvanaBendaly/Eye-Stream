@@ -52,6 +52,10 @@
       coyoteUntil: 0,
       jumpBufferUntil: 0,
       ducking: false,
+      duckKeyDown: false,
+      chatDuckUntil: 0,
+      queuedJumpUntil: 0,
+      runnerState: 'awakened',
       spawnIn: 900,
       speed: 182,
       elapsed: 0,
@@ -90,7 +94,7 @@
   function updateStatus() {
     if (!testingMode) return;
     const cooldownMs = Math.max(0, state.ivyCooldownUntil - Date.now());
-    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
+    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
   }
 
   function render(reason = 'render') {
@@ -260,9 +264,20 @@
     runner.style.transform = `translateY(${-px}px)`;
   }
 
-  function jump() {
+  function applyRunnerStateClass() {
+    STATE_ORDER.forEach((name) => runner.classList.remove(`state-${name}`));
+    runner.classList.add(`state-${state.game.runnerState}`);
+  }
+
+  function queueJump(fromChat = false) {
     if (!state.game.running) return;
-    state.game.jumpBufferUntil = performance.now() + 140;
+    const now = performance.now();
+    state.game.jumpBufferUntil = Math.max(state.game.jumpBufferUntil, now + (fromChat ? 240 : 140));
+    if (fromChat) state.game.queuedJumpUntil = Math.max(state.game.queuedJumpUntil, now + 900);
+  }
+
+  function jump() {
+    queueJump(false);
   }
 
   function setDuck(active) {
@@ -271,12 +286,25 @@
     runner.classList.toggle('duck', shouldDuck);
   }
 
+  function requestChatDuck() {
+    if (!state.game.running) return;
+    state.game.chatDuckUntil = Math.max(state.game.chatDuckUntil, performance.now() + 420);
+  }
+
+  function updateDuck(now) {
+    if (!state.game.running) return;
+    const wantsDuck = state.game.duckKeyDown || state.game.chatDuckUntil > now;
+    setDuck(wantsDuck);
+  }
+
   function processJump(now) {
     const canCoyote = now <= state.game.coyoteUntil;
-    if (state.game.jumpBufferUntil > now && (state.game.grounded || canCoyote)) {
+    const buffered = state.game.jumpBufferUntil > now || state.game.queuedJumpUntil > now;
+    if (buffered && (state.game.grounded || canCoyote)) {
       state.game.runnerVY = 338;
       state.game.grounded = false;
       state.game.jumpBufferUntil = 0;
+      state.game.queuedJumpUntil = 0;
       runner.classList.add('jump');
       setTimeout(() => runner.classList.remove('jump'), 180);
     }
@@ -307,6 +335,9 @@
     state.mode = 'lantern';
     gameFlash.classList.add('show');
     setTimeout(() => gameFlash.classList.remove('show'), 220);
+    state.game.duckKeyDown = false;
+    state.game.chatDuckUntil = 0;
+    state.game.queuedJumpUntil = 0;
     setDuck(false);
     resetGameObjects();
     render(`game-over:${reason}`);
@@ -350,6 +381,7 @@
     }
 
     processJump(now);
+    updateDuck(now);
     setRunnerY(g.runnerY);
 
     const worldSpeed = g.speed * (g.shieldTimer > 0 ? 0.95 : 1);
@@ -402,12 +434,17 @@
     state.game.coyoteUntil = 0;
     state.game.jumpBufferUntil = 0;
     state.game.ducking = false;
+    state.game.duckKeyDown = false;
+    state.game.chatDuckUntil = 0;
+    state.game.queuedJumpUntil = 0;
+    state.game.runnerState = state.renderedState;
     state.game.spawnIn = 1000;
     state.game.speed = 172;
     state.game.elapsed = 0;
     resetGameObjects();
     setRunnerY(0);
     setDuck(false);
+    applyRunnerStateClass();
     if (document.activeElement === chatInput) chatInput.blur();
     render(`game-start:${source}`);
 
@@ -416,7 +453,8 @@
 
   function applyMessageTriggers(text, source = 'chat') {
     resetDebug();
-    const normalizedText = String(text || '').toLowerCase().replace(/[^a-z\s]/g, ' ');
+    const raw = String(text || '').trim().toLowerCase();
+    const normalizedText = raw.replace(/[^a-z\s]/g, ' ');
     const words = tokenize(normalizedText);
     applyPhraseMatches(normalizedText);
 
@@ -428,6 +466,19 @@
       if (matchConfig.corruptWords.includes(word)) { state.debug.matchedCorrupt.push(word); state.debug.delta += 1; }
       if (matchConfig.healWords.includes(word)) { state.debug.matchedHeal.push(word); state.debug.delta -= 1; }
       if (matchConfig.resetWords.includes(word)) state.debug.resetTriggered = true;
+    }
+
+    if (state.mode === 'game') {
+      if (raw === '!jump') {
+        queueJump(true);
+        render(`${source}:command-jump`);
+        return;
+      }
+      if (raw === '!duck') {
+        requestChatDuck();
+        render(`${source}:command-duck`);
+        return;
+      }
     }
 
     let messageKind = 'neutral';
@@ -560,12 +611,12 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'lantern is listening...');
-    if (testingMode) appendChat('ivy-eye', 'test mode: use chat + controls to trigger ivy run');
+    if (testingMode) appendChat('ivy-eye', 'test mode: ivy x10 starts run, then use !jump / !duck (or keys)');
   }
 
   function setupKeybinds() {
     window.addEventListener('keydown', (event) => {
-      if (!state.game.running) return;
+      if (!state.game.running || !testingMode) return;
 
       if (event.code === 'Space' || event.code === 'ArrowUp') {
         event.preventDefault();
@@ -573,15 +624,15 @@
       }
       if (event.code === 'ArrowDown') {
         event.preventDefault();
-        setDuck(true);
+        state.game.duckKeyDown = true;
       }
     });
 
     window.addEventListener('keyup', (event) => {
-      if (!state.game.running) return;
+      if (!state.game.running || !testingMode) return;
       if (event.code === 'ArrowDown') {
         event.preventDefault();
-        setDuck(false);
+        state.game.duckKeyDown = false;
       }
     });
   }
