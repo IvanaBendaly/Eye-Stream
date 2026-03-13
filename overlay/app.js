@@ -6,6 +6,7 @@
   const obstacleLayer = document.getElementById('obstacle-layer');
   const gameHud = document.getElementById('game-hud');
   const gameFlash = document.getElementById('game-flash');
+  const assistFill = document.getElementById('assist-fill');
 
   const chatList = document.getElementById('chat-list');
   const chatInputForm = document.getElementById('chat-input-form');
@@ -53,7 +54,8 @@
       jumpBufferUntil: 0,
       ducking: false,
       duckKeyDown: false,
-      chatDuckUntil: 0,
+      jumpAssist: 0,
+      jumpAssistGoal: 4,
       queuedJumpUntil: 0,
       runnerState: 'awakened',
       spawnIn: 900,
@@ -94,7 +96,7 @@
   function updateStatus() {
     if (!testingMode) return;
     const cooldownMs = Math.max(0, state.ivyCooldownUntil - Date.now());
-    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
+    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • ASSIST:${state.game.jumpAssist}/${state.game.jumpAssistGoal} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
   }
 
   function render(reason = 'render') {
@@ -269,15 +271,33 @@
     runner.classList.add(`state-${state.game.runnerState}`);
   }
 
-  function queueJump(fromChat = false) {
+  function renderAssistMeter() {
+    if (!assistFill) return;
+    const pct = Math.max(0, Math.min(1, state.game.jumpAssist / state.game.jumpAssistGoal));
+    assistFill.style.transform = `scaleX(${pct})`;
+  }
+
+  function queueJump() {
     if (!state.game.running) return;
     const now = performance.now();
-    state.game.jumpBufferUntil = Math.max(state.game.jumpBufferUntil, now + (fromChat ? 240 : 140));
-    if (fromChat) state.game.queuedJumpUntil = Math.max(state.game.queuedJumpUntil, now + 900);
+    state.game.jumpBufferUntil = Math.max(state.game.jumpBufferUntil, now + 160);
+  }
+
+  function consumeAssistJump() {
+    state.game.jumpAssist = 0;
+    state.game.queuedJumpUntil = Math.max(state.game.queuedJumpUntil, performance.now() + 800);
+    renderAssistMeter();
+  }
+
+  function addChatJumpAssist() {
+    if (!state.game.running) return;
+    state.game.jumpAssist = Math.min(state.game.jumpAssistGoal, state.game.jumpAssist + 1);
+    renderAssistMeter();
+    if (state.game.jumpAssist >= state.game.jumpAssistGoal) consumeAssistJump();
   }
 
   function jump() {
-    queueJump(false);
+    queueJump();
   }
 
   function setDuck(active) {
@@ -286,15 +306,9 @@
     runner.classList.toggle('duck', shouldDuck);
   }
 
-  function requestChatDuck() {
+  function updateDuck() {
     if (!state.game.running) return;
-    state.game.chatDuckUntil = Math.max(state.game.chatDuckUntil, performance.now() + 420);
-  }
-
-  function updateDuck(now) {
-    if (!state.game.running) return;
-    const wantsDuck = state.game.duckKeyDown || state.game.chatDuckUntil > now;
-    setDuck(wantsDuck);
+    setDuck(state.game.duckKeyDown);
   }
 
   function processJump(now) {
@@ -336,7 +350,7 @@
     gameFlash.classList.add('show');
     setTimeout(() => gameFlash.classList.remove('show'), 220);
     state.game.duckKeyDown = false;
-    state.game.chatDuckUntil = 0;
+    state.game.jumpAssist = 0;
     state.game.queuedJumpUntil = 0;
     setDuck(false);
     resetGameObjects();
@@ -381,7 +395,7 @@
     }
 
     processJump(now);
-    updateDuck(now);
+    updateDuck();
     setRunnerY(g.runnerY);
 
     const worldSpeed = g.speed * (g.shieldTimer > 0 ? 0.95 : 1);
@@ -435,7 +449,7 @@
     state.game.jumpBufferUntil = 0;
     state.game.ducking = false;
     state.game.duckKeyDown = false;
-    state.game.chatDuckUntil = 0;
+    state.game.jumpAssist = 0;
     state.game.queuedJumpUntil = 0;
     state.game.runnerState = state.renderedState;
     state.game.spawnIn = 1000;
@@ -445,6 +459,7 @@
     setRunnerY(0);
     setDuck(false);
     applyRunnerStateClass();
+    renderAssistMeter();
     if (document.activeElement === chatInput) chatInput.blur();
     render(`game-start:${source}`);
 
@@ -469,14 +484,9 @@
     }
 
     if (state.mode === 'game') {
-      if (raw === '!jump') {
-        queueJump(true);
-        render(`${source}:command-jump`);
-        return;
-      }
-      if (raw === '!duck') {
-        requestChatDuck();
-        render(`${source}:command-duck`);
+      if (raw === 'jump') {
+        addChatJumpAssist();
+        render(`${source}:assist-jump`);
         return;
       }
     }
@@ -611,7 +621,7 @@
 
   function bootstrapChat() {
     appendChat('ivy-eye', 'lantern is listening...');
-    if (testingMode) appendChat('ivy-eye', 'test mode: ivy x10 starts run, then use !jump / !duck (or keys)');
+    if (testingMode) appendChat('ivy-eye', 'test mode: ivy x10 starts run, chat uses jump assist (keys optional)');
   }
 
   function setupKeybinds() {
