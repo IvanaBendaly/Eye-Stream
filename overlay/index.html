@@ -7,31 +7,33 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main id="overlay-root" class="overlay-corner" data-mode="live" data-game-state="idle">
+    <main id="overlay-root" class="overlay-corner" data-mode="live" data-game-state="idle" data-mood="healthy">
       <section id="lantern-card" class="lantern-card" aria-label="Lantern companion and mini-game">
         <header class="panel-title">
           <p id="mode-label">Lantern Companion</p>
           <p id="score-label" hidden>Score: 0 • Best: 0</p>
         </header>
 
-        <section id="lantern-stage" class="lantern-stage mode-idle" aria-live="polite">
+        <section id="lantern-stage" class="lantern-stage" aria-live="polite">
           <div class="lantern-shell" aria-hidden="true">
-            <span class="halo"></span>
-            <span id="runner" class="runner mood-idle">
+            <span id="lantern-halo" class="halo"></span>
+            <span id="lantern-blob" class="blob blob-main mood-healthy">
               <span class="eyes"></span>
             </span>
           </div>
 
-          <div id="game-strip" class="game-strip" role="img" aria-label="Lantern Run game lane">
+          <div id="game-strip" class="game-strip" role="img" aria-label="Lantern Run game lane" hidden>
             <div class="lane-glow" aria-hidden="true"></div>
-            <div id="ground-runner" class="ground-runner"></div>
+            <div id="run-blob" class="blob blob-runner mood-healthy">
+              <span class="eyes"></span>
+            </div>
             <div id="obstacle-layer" class="obstacle-layer"></div>
-            <div id="ivy-aura" class="ivy-aura" hidden></div>
           </div>
 
           <div class="meters" aria-hidden="true">
             <div class="meter-label">Ivy</div>
             <div class="meter-track"><div id="ivy-meter" class="meter-fill"></div></div>
+            <div id="ivy-count" class="meter-count">0/10</div>
           </div>
         </section>
       </section>
@@ -39,18 +41,17 @@
       <aside id="chat-panel" class="chat-panel" aria-label="Lantern chat panel">
         <ol id="chat-list"></ol>
         <form id="chat-input-form" class="chat-input" hidden>
-          <input id="chat-input" type="text" maxlength="180" placeholder="try: start / ivy / love / summon / curse" autocomplete="off" />
+          <input id="chat-input" type="text" maxlength="180" placeholder="try: love / curse / ivy ivy ivy" autocomplete="off" />
           <button type="submit">Send</button>
         </form>
       </aside>
 
       <section id="test-controls" class="test-controls" hidden>
-        <button data-cmd="start">Start</button>
         <button data-cmd="jump">Jump</button>
-        <button data-cmd="duck">Duck</button>
-        <button data-cmd="ivy">Ivy</button>
         <button data-cmd="love">Love</button>
         <button data-cmd="curse">Curse</button>
+        <button data-cmd="ivy">Ivy</button>
+        <button data-cmd="ivyx10">Ivy x10</button>
       </section>
 
       <p id="tiny-status" class="tiny-status" hidden></p>
