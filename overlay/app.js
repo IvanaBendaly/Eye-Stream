@@ -192,7 +192,7 @@
       clearObstacles();
       resetRunner();
       setGameState('running');
-      setModeLabel('Lantern Run');
+      setModeLabel('Lantern Run Event');
       updateScore();
       addChat('lantern', `Ivy x${GAME.ivyThreshold} reached. Entering Lantern Run (${source}).`);
     }, 420);
@@ -221,7 +221,7 @@
       setTimeout(() => {
         setOverlayMode('lantern');
         setGameState('idle');
-        setModeLabel('Lantern Companion • Zombified');
+        setModeLabel('Lantern Companion • Dead State');
         updateScore();
         addChat('lantern', `${reason}. Blob returned in zombie state. Ivy cooldown: 5s.`);
       }, 540);
@@ -413,6 +413,7 @@
     setupTesting();
 
     addChat('lantern', 'Lantern mode is default. Ivy x10 triggers full Lantern Run takeover.');
+    addChat('lantern', 'After a loss: returns dead/zombie + 5s ivy cooldown.');
     if (testingMode) addChat('lantern', 'Test: type ivy spam, then jump with Space/ArrowUp.');
 
     requestAnimationFrame(tick);
