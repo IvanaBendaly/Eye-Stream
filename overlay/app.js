@@ -18,16 +18,19 @@
   const testingMode = params.get('test') === '1' || params.get('mode') === 'test' || params.get('preview') === '1';
 
   const GAME = {
-    gravity: 2200,
-    jumpVelocity: 760,
+    gravity: 1880,
+    jumpVelocity: 820,
     duckScale: 0.58,
     groundY: 10,
     runnerX: 30,
     runnerW: 24,
     runnerH: 24,
-    baseSpeed: 172,
+    baseSpeed: 156,
     maxSpeed: 292,
     spawnBaseMs: 1220,
+    jumpBufferMs: 145,
+    coyoteMs: 120,
+    difficultyRampMs: 60000,
     ivyThreshold: 5,
     ivyDurationMs: 2300,
     darkDurationMs: 2600,
@@ -43,10 +46,13 @@
     roundActive: false,
     y: GAME.groundY,
     vy: 0,
+    jumpBufferUntil: 0,
+    lastGroundedAt: 0,
     ducking: false,
     obstacles: [],
     speed: GAME.baseSpeed,
     spawnTimer: 0,
+    roundElapsedMs: 0,
     score: 0,
     best: Number(window.localStorage.getItem('lantern-run-best') || 0),
     ivyCharge: 0,
@@ -114,6 +120,8 @@
   function resetRunnerPose() {
     state.y = GAME.groundY;
     state.vy = 0;
+    state.lastGroundedAt = performance.now();
+    state.jumpBufferUntil = 0;
     state.ducking = false;
     applyRunnerTransform();
   }
@@ -125,7 +133,8 @@
     setGameState('starting');
     state.score = 0;
     state.speed = GAME.baseSpeed;
-    state.spawnTimer = 320;
+    state.spawnTimer = 920;
+    state.roundElapsedMs = 0;
     state.darkPulseUntil = 0;
     state.slowUntil = 0;
     state.summonGraceUntil = 0;
@@ -171,10 +180,20 @@
 
   function jump(force = false) {
     if (!state.roundActive || state.gameState !== 'running') return;
-    if (!force && state.y > GAME.groundY + 1) return;
+    const now = performance.now();
+    state.jumpBufferUntil = now + GAME.jumpBufferMs + (force ? 60 : 0);
+    if (!canJump(now) && !force) return;
+    if (!canJump(now) && force) return;
+    state.jumpBufferUntil = 0;
     state.vy = GAME.jumpVelocity;
     runner.classList.add('mood-jump');
     setTimeout(() => runner.classList.remove('mood-jump'), 140);
+  }
+
+  function canJump(now) {
+    const grounded = state.y <= GAME.groundY + 0.6;
+    const coyote = now - state.lastGroundedAt <= GAME.coyoteMs;
+    return grounded || coyote;
   }
 
   function duck(active) {
@@ -319,29 +338,41 @@
     state.lastFrame = ts;
 
     if (state.roundActive && state.gameState === 'running') {
+      state.roundElapsedMs += dt * 1000;
       const darkActive = ts < state.darkPulseUntil;
       const slowActive = ts < state.slowUntil;
       const graceActive = ts < state.summonGraceUntil;
       const speedFactor = slowActive ? 0.7 : 1;
+      const ramp = Math.min(1, state.roundElapsedMs / GAME.difficultyRampMs);
 
-      state.speed = Math.min(
+      const targetSpeed = Math.min(
         GAME.maxSpeed,
-        state.speed + dt * (darkActive ? 16 : 8)
+        GAME.baseSpeed + (GAME.maxSpeed - GAME.baseSpeed) * ramp + (darkActive ? 16 : 0)
       );
+      state.speed += (targetSpeed - state.speed) * Math.min(1, dt * 1.7);
 
       autoDriveAssist();
+
+      if (state.jumpBufferUntil >= ts && canJump(ts)) {
+        state.vy = GAME.jumpVelocity;
+        state.jumpBufferUntil = 0;
+        runner.classList.add('mood-jump');
+        setTimeout(() => runner.classList.remove('mood-jump'), 140);
+      }
 
       state.vy -= GAME.gravity * dt;
       state.y += state.vy * dt;
       if (state.y <= GAME.groundY) {
         state.y = GAME.groundY;
         state.vy = 0;
+        state.lastGroundedAt = ts;
       }
 
       applyRunnerTransform();
 
       state.spawnTimer -= dt * 1000;
-      const spawnWindow = darkActive ? GAME.spawnBaseMs * 0.72 : GAME.spawnBaseMs;
+      const spawnWindowBase = GAME.spawnBaseMs * (1.2 - ramp * 0.35);
+      const spawnWindow = (darkActive ? spawnWindowBase * 0.82 : spawnWindowBase);
       if (state.spawnTimer <= 0) {
         if (state.cursedWaveCount > 0) {
           makeObstacle(Math.random() > 0.5 ? 'spike' : 'root');
@@ -353,13 +384,23 @@
       }
 
       const runnerHeight = state.ducking ? GAME.runnerH * GAME.duckScale : GAME.runnerH;
-      const runnerBox = { x: GAME.runnerX, y: state.y, w: GAME.runnerW, h: runnerHeight };
+      const runnerBox = {
+        x: GAME.runnerX + 2,
+        y: state.y + 2,
+        w: Math.max(8, GAME.runnerW - 4),
+        h: Math.max(8, runnerHeight - 4)
+      };
 
       for (const obs of state.obstacles) {
         obs.x -= state.speed * speedFactor * dt;
         obs.el.style.left = `${obs.x}px`;
 
-        const obsBox = { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+        const obsBox = {
+          x: obs.x + 2,
+          y: obs.y + 2,
+          w: Math.max(8, obs.width - 4),
+          h: Math.max(8, obs.height - 4)
+        };
 
         if (!obs.passed && obsBox.x + obsBox.w < GAME.runnerX) {
           obs.passed = true;
