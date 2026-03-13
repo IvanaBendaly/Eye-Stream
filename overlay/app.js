@@ -10,7 +10,6 @@
   const scoreLabel = document.getElementById('score-label');
   const lanternBlob = document.getElementById('lantern-blob');
   const runBlob = document.getElementById('run-blob');
-  const gameStrip = document.getElementById('game-strip');
   const obstacleLayer = document.getElementById('obstacle-layer');
   const ivyMeter = document.getElementById('ivy-meter');
   const ivyCount = document.getElementById('ivy-count');
@@ -20,6 +19,7 @@
 
   const GAME = {
     ivyThreshold: 10,
+    ivyCooldownMs: 5000,
     gravity: 1840,
     jumpVelocity: 790,
     groundY: 10,
@@ -43,10 +43,11 @@
   };
 
   const state = {
-    testingMode,
     gameState: 'idle', // idle | charging | transition | running | hit | gameover | returning
+    overlayMode: 'lantern', // lantern | game
     moodScore: 0,
     ivyCounter: 0,
+    ivyCooldownUntil: 0,
     roundActive: false,
     y: GAME.groundY,
     vy: 0,
@@ -69,6 +70,15 @@
     overlayRoot.dataset.gameState = next;
   }
 
+  function setOverlayMode(next) {
+    state.overlayMode = next;
+    overlayRoot.dataset.overlayMode = next;
+  }
+
+  function setModeLabel(text) {
+    modeLabel.textContent = text;
+  }
+
   function addChat(user, text) {
     const item = document.createElement('li');
     item.innerHTML = `<span class="tag">${user}</span>${text}`;
@@ -76,41 +86,12 @@
     while (chatList.children.length > 6) chatList.removeChild(chatList.lastChild);
   }
 
-  function updateMoodVisual() {
-    let mood = 'healthy';
-    if (state.moodScore >= 4) mood = 'comforted';
-    if (state.moodScore >= 8) mood = 'bliss';
-    if (state.moodScore <= -4) mood = 'corrupted';
-    if (state.moodScore <= -8) mood = 'zombified';
-    overlayRoot.dataset.mood = mood;
+  function countWord(text, target) {
+    return (String(text).toLowerCase().match(new RegExp(`\\b${target}\\b`, 'g')) || []).length;
   }
 
-  function setModeLabel(text) {
-    modeLabel.textContent = text;
-  }
-
-  function updateScore() {
-    scoreLabel.hidden = !state.roundActive;
-    scoreLabel.textContent = `Score: ${Math.floor(state.score)} • Best: ${Math.floor(state.best)}`;
-  }
-
-  function updateIvyUI() {
-    const pct = Math.min(100, (state.ivyCounter / GAME.ivyThreshold) * 100);
-    ivyMeter.style.width = `${pct}%`;
-    ivyCount.textContent = `${state.ivyCounter}/${GAME.ivyThreshold}`;
-  }
-
-  function pulseReaction(kind = 'neutral') {
-    overlayRoot.classList.remove('reaction-pop', 'reaction-ivy', 'reaction-comfort', 'reaction-corrupt');
-    overlayRoot.classList.add(kind === 'ivy' ? 'reaction-ivy' : (kind === 'comfort' ? 'reaction-comfort' : (kind === 'corrupt' ? 'reaction-corrupt' : 'reaction-pop')));
-    setTimeout(() => {
-      overlayRoot.classList.remove('reaction-pop', 'reaction-ivy', 'reaction-comfort', 'reaction-corrupt');
-    }, 220);
-  }
-
-  function blinkBlob(target = lanternBlob) {
-    target.style.transform += ' scaleY(0.9)';
-    setTimeout(() => { target.style.transform = target.style.transform.replace(' scaleY(0.9)', ''); }, 120);
+  function tokenize(text) {
+    return String(text).toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   }
 
   function clearObstacles() {
@@ -130,62 +111,36 @@
     applyRunnerTransform();
   }
 
-  function countWord(text, target) {
-    return (String(text).toLowerCase().match(new RegExp(`\\b${target}\\b`, 'g')) || []).length;
+  function updateMoodVisual() {
+    let mood = 'healthy';
+    if (state.moodScore >= 4) mood = 'comforted';
+    if (state.moodScore <= -4) mood = 'corrupted';
+    if (state.moodScore <= -8) mood = 'zombified';
+    overlayRoot.dataset.mood = mood;
   }
 
-  function tokenize(text) {
-    return String(text).toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  function updateIvyUI() {
+    const pct = Math.min(100, (state.ivyCounter / GAME.ivyThreshold) * 100);
+    ivyMeter.style.width = `${pct}%`;
+    ivyCount.textContent = `${state.ivyCounter}/${GAME.ivyThreshold}`;
   }
 
-  function startRunEvent(source = 'ivy') {
-    if (state.roundActive) return;
-    state.ivyCounter = 0;
-    updateIvyUI();
-    state.roundActive = true;
-    setGameState('transition');
-    setModeLabel('Lantern Run Awakening');
-    gameStrip.hidden = false;
-    scoreLabel.hidden = false;
-    pulseReaction('ivy');
-
-    setTimeout(() => {
-      state.score = 0;
-      state.speed = GAME.baseSpeed;
-      state.roundElapsedMs = 0;
-      state.spawnTimer = 900;
-      state.shieldUntil = 0;
-      state.darkPulseUntil = 0;
-      resetRunner();
-      setGameState('running');
-      setModeLabel('Lantern Run');
-      addChat('lantern', `Ivy threshold reached! ${source} summoned Lantern Run.`);
-      updateScore();
-    }, 420);
+  function updateScore() {
+    scoreLabel.hidden = state.overlayMode !== 'game';
+    scoreLabel.textContent = `Score: ${Math.floor(state.score)} • Best: ${Math.floor(state.best)}`;
   }
 
-  function finishRun(reason = 'collision') {
-    state.roundActive = false;
-    setGameState('gameover');
-    runBlob.classList.add('hit-flash');
-    setTimeout(() => runBlob.classList.remove('hit-flash'), 300);
-    state.best = Math.max(state.best, state.score);
-    window.localStorage.setItem('lantern-run-best', String(Math.floor(state.best)));
-    updateScore();
-    setModeLabel(`Run End • ${Math.floor(state.score)}`);
+  function pulseReaction(kind = 'neutral') {
+    overlayRoot.classList.remove('reaction-pop', 'reaction-ivy', 'reaction-comfort', 'reaction-corrupt');
+    const klass = kind === 'ivy' ? 'reaction-ivy' : (kind === 'comfort' ? 'reaction-comfort' : (kind === 'corrupt' ? 'reaction-corrupt' : 'reaction-pop'));
+    overlayRoot.classList.add(klass);
+    setTimeout(() => overlayRoot.classList.remove('reaction-pop', 'reaction-ivy', 'reaction-comfort', 'reaction-corrupt'), 220);
+  }
 
-    state.returnTimeout = setTimeout(() => {
-      setGameState('returning');
-      setModeLabel('Returning Home');
-      clearObstacles();
-      setTimeout(() => {
-        gameStrip.hidden = true;
-        setGameState('idle');
-        setModeLabel('Lantern Companion');
-        updateScore();
-        addChat('lantern', `The blob returns home. Round score: ${Math.floor(state.score)}.`);
-      }, 520);
-    }, GAME.returnDelayMs);
+  function blinkBlob(target = lanternBlob) {
+    const prior = target.style.transform;
+    target.style.transform = `${prior} scaleY(0.88)`;
+    setTimeout(() => { target.style.transform = prior; }, 110);
   }
 
   function canJump(now) {
@@ -194,8 +149,7 @@
 
   function requestJump() {
     if (!state.roundActive || state.gameState !== 'running') return;
-    const now = performance.now();
-    state.jumpBufferUntil = now + GAME.jumpBufferMs;
+    state.jumpBufferUntil = performance.now() + GAME.jumpBufferMs;
   }
 
   function spawnObstacle(typeForced = null) {
@@ -210,18 +164,72 @@
     el.style.left = '336px';
     obstacleLayer.appendChild(el);
 
-    state.obstacles.push({ el, type, x: 336, y, width, height, passed: false });
+    state.obstacles.push({ el, x: 336, y, width, height, passed: false });
   }
 
   function intersects(a, b) {
     return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
-  function applyChatMessage(raw, user = 'chat') {
-    const text = String(raw || '').trim();
-    if (!text) return;
-    addChat(user, text);
-    blinkBlob();
+  function startRunEvent(source = 'ivy') {
+    if (state.roundActive) return;
+    state.ivyCounter = 0;
+    updateIvyUI();
+
+    state.roundActive = true;
+    setGameState('transition');
+    setOverlayMode('game');
+    setModeLabel('Lantern Run Awakening');
+
+    pulseReaction('ivy');
+    setTimeout(() => {
+      state.score = 0;
+      state.speed = GAME.baseSpeed;
+      state.roundElapsedMs = 0;
+      state.spawnTimer = 900;
+      state.shieldUntil = 0;
+      state.darkPulseUntil = 0;
+      clearObstacles();
+      resetRunner();
+      setGameState('running');
+      setModeLabel('Lantern Run');
+      updateScore();
+      addChat('lantern', `Ivy x${GAME.ivyThreshold} reached. Entering Lantern Run (${source}).`);
+    }, 420);
+  }
+
+  function finishRun(reason = 'hit') {
+    state.roundActive = false;
+    setGameState('gameover');
+    runBlob.classList.add('hit-flash');
+    setTimeout(() => runBlob.classList.remove('hit-flash'), 300);
+
+    state.best = Math.max(state.best, state.score);
+    window.localStorage.setItem('lantern-run-best', String(Math.floor(state.best)));
+    state.moodScore = -10;
+    updateMoodVisual();
+    state.ivyCooldownUntil = performance.now() + GAME.ivyCooldownMs;
+
+    setModeLabel(`Run End • ${Math.floor(state.score)}`);
+    updateScore();
+
+    state.returnTimeout = setTimeout(() => {
+      setGameState('returning');
+      setModeLabel('Returning to Lantern');
+      clearObstacles();
+
+      setTimeout(() => {
+        setOverlayMode('lantern');
+        setGameState('idle');
+        setModeLabel('Lantern Companion • Zombified');
+        updateScore();
+        addChat('lantern', `${reason}. Blob returned in zombie state. Ivy cooldown: 5s.`);
+      }, 540);
+    }, GAME.returnDelayMs);
+  }
+
+  function handleLanternChatEffects(text) {
+    blinkBlob(lanternBlob);
 
     const tokens = tokenize(text);
     let comfortHits = 0;
@@ -231,34 +239,48 @@
       if (words.corrupt.includes(t)) corruptHits += 1;
     });
 
-    const ivyHits = countWord(text, 'ivy');
-    if (!state.roundActive && ivyHits > 0) {
-      state.ivyCounter = Math.min(GAME.ivyThreshold, state.ivyCounter + ivyHits);
-      pulseReaction('ivy');
-      if (state.ivyCounter >= GAME.ivyThreshold) {
-        startRunEvent('ivy');
-      }
-    }
-
     if (comfortHits > 0) {
       state.moodScore = Math.min(10, state.moodScore + comfortHits);
       pulseReaction('comfort');
-      if (state.roundActive) state.shieldUntil = Math.max(state.shieldUntil, performance.now() + GAME.shieldMs);
     } else if (corruptHits > 0) {
       state.moodScore = Math.max(-10, state.moodScore - corruptHits);
       pulseReaction('corrupt');
-      if (state.roundActive) state.darkPulseUntil = Math.max(state.darkPulseUntil, performance.now() + GAME.darkPulseMs);
     } else {
       pulseReaction('neutral');
     }
 
-    if (state.roundActive && /\bjump\b/i.test(text)) requestJump();
+    const ivyHits = countWord(text, 'ivy');
+    const cooldownActive = performance.now() < state.ivyCooldownUntil;
+    if (ivyHits > 0) {
+      if (!cooldownActive) {
+        state.ivyCounter = Math.min(GAME.ivyThreshold, state.ivyCounter + ivyHits);
+        pulseReaction('ivy');
+        if (state.ivyCounter >= GAME.ivyThreshold) startRunEvent('ivy-spam');
+      } else if (testingMode) {
+        addChat('lantern', 'Ivy ignored: cooldown active.');
+      }
+    }
 
     if (testingMode && /\bstart\b/i.test(text) && !state.roundActive) startRunEvent('test');
 
     updateMoodVisual();
     updateIvyUI();
-    updateScore();
+  }
+
+  function applyChatMessage(raw, user = 'chat') {
+    const text = String(raw || '').trim();
+    if (!text) return;
+    addChat(user, text);
+
+    if (state.overlayMode === 'lantern') {
+      handleLanternChatEffects(text);
+      return;
+    }
+
+    // Game mode chat influence
+    if (/\bjump\b/i.test(text)) requestJump();
+    if (/\b(love|light)\b/i.test(text)) state.shieldUntil = Math.max(state.shieldUntil, performance.now() + GAME.shieldMs);
+    if (/\b(curse|dead|demon)\b/i.test(text)) state.darkPulseUntil = Math.max(state.darkPulseUntil, performance.now() + GAME.darkPulseMs);
   }
 
   function tick(ts) {
@@ -316,7 +338,7 @@
             state.score += 4;
           } else {
             setGameState('hit');
-            finishRun('hit');
+            finishRun('loss');
             break;
           }
         }
@@ -333,7 +355,8 @@
     }
 
     if (testingMode) {
-      tinyStatus.textContent = `TEST • state=${state.gameState} • mood=${overlayRoot.dataset.mood} • ivy=${state.ivyCounter}/${GAME.ivyThreshold} • speed=${Math.round(state.speed)} • score=${Math.floor(state.score)}`;
+      const cooldownMs = Math.max(0, Math.ceil(state.ivyCooldownUntil - performance.now()));
+      tinyStatus.textContent = `TEST • mode=${state.overlayMode} • state=${state.gameState} • mood=${overlayRoot.dataset.mood} • ivy=${state.ivyCounter}/${GAME.ivyThreshold} • cooldown=${cooldownMs}ms • score=${Math.floor(state.score)}`;
     }
 
     requestAnimationFrame(tick);
@@ -363,11 +386,11 @@
     });
 
     window.addEventListener('keydown', (event) => {
-      if ((event.code === 'Space' || event.code === 'ArrowUp') && state.roundActive) {
+      if ((event.code === 'Space' || event.code === 'ArrowUp') && state.overlayMode === 'game') {
         event.preventDefault();
         requestJump();
       }
-      if (event.code === 'Enter' && !state.roundActive) {
+      if (event.code === 'Enter' && state.overlayMode === 'lantern' && !state.roundActive) {
         event.preventDefault();
         startRunEvent('keyboard');
       }
@@ -381,6 +404,7 @@
   }
 
   function bootstrap() {
+    setOverlayMode('lantern');
     setGameState('idle');
     setModeLabel('Lantern Companion');
     updateMoodVisual();
@@ -388,8 +412,8 @@
     updateScore();
     setupTesting();
 
-    addChat('lantern', 'Kind words comfort. Dark words corrupt. Ivy x10 summons a run.');
-    if (testingMode) addChat('lantern', 'Test: Enter/start to force run, Space to jump.');
+    addChat('lantern', 'Lantern mode is default. Ivy x10 triggers full Lantern Run takeover.');
+    if (testingMode) addChat('lantern', 'Test: type ivy spam, then jump with Space/ArrowUp.');
 
     requestAnimationFrame(tick);
   }

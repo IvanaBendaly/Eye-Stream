@@ -7,33 +7,31 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main id="overlay-root" class="overlay-corner" data-mode="live" data-game-state="idle" data-mood="healthy">
+    <main id="overlay-root" class="overlay-corner" data-mode="live" data-overlay-mode="lantern" data-game-state="idle" data-mood="healthy">
       <section id="lantern-card" class="lantern-card" aria-label="Lantern companion and mini-game">
         <header class="panel-title">
           <p id="mode-label">Lantern Companion</p>
           <p id="score-label" hidden>Score: 0 • Best: 0</p>
         </header>
 
-        <section id="lantern-stage" class="lantern-stage" aria-live="polite">
+        <section id="lantern-view" class="lantern-stage" aria-live="polite">
           <div class="lantern-shell" aria-hidden="true">
-            <span id="lantern-halo" class="halo"></span>
-            <span id="lantern-blob" class="blob blob-main mood-healthy">
-              <span class="eyes"></span>
-            </span>
-          </div>
-
-          <div id="game-strip" class="game-strip" role="img" aria-label="Lantern Run game lane" hidden>
-            <div class="lane-glow" aria-hidden="true"></div>
-            <div id="run-blob" class="blob blob-runner mood-healthy">
-              <span class="eyes"></span>
-            </div>
-            <div id="obstacle-layer" class="obstacle-layer"></div>
+            <span class="halo"></span>
+            <span id="lantern-blob" class="blob blob-main"><span class="eyes"></span></span>
           </div>
 
           <div class="meters" aria-hidden="true">
             <div class="meter-label">Ivy</div>
             <div class="meter-track"><div id="ivy-meter" class="meter-fill"></div></div>
             <div id="ivy-count" class="meter-count">0/10</div>
+          </div>
+        </section>
+
+        <section id="game-view" class="game-view" hidden>
+          <div id="game-strip" class="game-strip" role="img" aria-label="Lantern Run game lane">
+            <div class="lane-glow" aria-hidden="true"></div>
+            <div id="run-blob" class="blob blob-runner"><span class="eyes"></span></div>
+            <div id="obstacle-layer" class="obstacle-layer"></div>
           </div>
         </section>
       </section>
