@@ -37,6 +37,24 @@
                   </div>
       </section>
 
+      <section id="ivy-game" class="ivy-game" aria-label="Ivy runner mini game" hidden>
+        <div class="game-shell">
+          <div class="game-sky"></div>
+          <div class="game-lane"></div>
+          <div id="runner" class="runner">
+            <span class="runner-core"></span>
+            <span class="runner-eye"></span>
+          </div>
+          <div id="obstacle-layer" class="obstacle-layer" aria-hidden="true"></div>
+          <div id="game-flash" class="game-flash" aria-hidden="true"></div>
+          <div id="game-hud" class="game-hud">SCORE 0</div>
+          <div class="assist-wrap" aria-label="jump assist">
+            <span class="assist-label">JUMP ASSIST</span>
+            <div class="assist-meter"><span id="assist-fill" class="assist-fill"></span></div>
+          </div>
+        </div>
+      </section>
+
       <section id="interaction-header" class="interaction-header" aria-label="interaction header">
         <p>Comfort it • Corrupt it • Ivy to summon</p>
       </section>
@@ -51,6 +69,13 @@
       </aside>
 
       <p id="tiny-status" class="tiny-status" hidden></p>
+
+      <section id="test-controls" class="test-controls" hidden>
+        <button type="button" data-test-action="ivy">+ ivy</button>
+        <button type="button" data-test-action="ten-ivy">ivy x10</button>
+        <button type="button" data-test-action="start">start round</button>
+        <button type="button" data-test-action="jump">jump</button>
+      </section>
     </main>
 
     <script src="app.js"></script>

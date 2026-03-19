@@ -676,3 +676,174 @@ body { background: transparent; color: #f4e7d4; }
 @media (max-width: 900px) {
   .overlay-corner { right: 10px; bottom: 10px; transform: scale(.92); transform-origin: bottom right; }
 }
+
+.ivy-game {
+  width: 296px;
+  height: 186px;
+  border-radius: 16px;
+  border: 1px solid rgba(193, 148, 108, .36);
+  background: linear-gradient(180deg, rgba(17, 13, 15, .95), rgba(10, 9, 13, .94));
+  box-shadow: 0 10px 20px rgba(0,0,0,.46);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.game-shell { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.game-sky { position: absolute; inset: 0; background: radial-gradient(circle at 25% 18%, rgba(248, 216, 149, .12), transparent 38%), linear-gradient(180deg, rgba(38, 27, 34, .78), rgba(9, 10, 15, .95)); }
+.game-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  height: 38px;
+  background: linear-gradient(180deg, rgba(55, 45, 52, .9), rgba(24, 21, 29, .95));
+  border-top: 1px solid rgba(196, 159, 126, .25);
+}
+
+.runner {
+  position: absolute;
+  left: 58px;
+  bottom: 18px;
+  width: 30px;
+  height: 30px;
+  transition: filter .18s ease;
+}
+.runner-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 58% 42% 62% 38% / 48% 58% 42% 52%;
+  background: radial-gradient(circle at 45% 35%, #fff0bd 0%, #ffc875 42%, #ffaf54 100%);
+  filter: drop-shadow(0 0 8px rgba(255, 183, 110, .6));
+}
+.runner-eye {
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  width: 10px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #16141c 0%, #372a48 65%, rgba(255, 214, 151, .9) 100%);
+}
+.runner.jump .runner-core { animation: runnerStretch .18s ease-out; }
+.runner.duck { height: 18px; width: 34px; bottom: 18px; }
+.runner.duck .runner-core { border-radius: 52% 48% 58% 42% / 60% 60% 40% 40%; }
+
+
+.runner.state-blissful .runner-core {
+  background: radial-gradient(circle at 45% 35%, #fff8d8 0%, #ffd891 46%, #ffbe68 100%);
+}
+.runner.state-curious .runner-eye { transform: scale(1.05); }
+.runner.state-disturbed .runner-core { filter: drop-shadow(0 0 8px rgba(210, 126, 136, .58)); }
+.runner.state-corrupted .runner-core {
+  background: radial-gradient(circle at 45% 35%, #d7c6ff 0%, #9576cc 46%, #3e2f61 100%);
+  filter: drop-shadow(0 0 10px rgba(142, 108, 208, .74));
+}
+.runner.state-corrupted .runner-eye {
+  background: radial-gradient(circle at 50% 50%, #110f19 0%, #2b2141 62%, #8d73cf 100%);
+}
+.runner.state-rotting .runner-core {
+  background: radial-gradient(circle at 45% 35%, #cfd4d9 0%, #7f8a95 48%, #2b3038 100%);
+}
+.runner.state-rotting .runner-eye { opacity: .72; }
+.runner.state-dead .runner-core {
+  background: radial-gradient(circle at 45% 35%, #aeb7c2 0%, #5a6470 46%, #171b22 100%);
+  filter: drop-shadow(0 0 6px rgba(124, 141, 152, .48));
+}
+.runner.state-dead .runner-eye {
+  background: radial-gradient(circle at 50% 50%, #0f1016 0%, #090b10 100%);
+  opacity: .62;
+}
+
+.obstacle-layer { position: absolute; inset: 0; }
+.obstacle {
+  position: absolute;
+  bottom: 18px;
+  width: 22px;
+  height: 34px;
+  transform: translateX(316px);
+}
+.obstacle.root { background: linear-gradient(180deg, #7d5b40, #3f2f24); clip-path: polygon(8% 100%, 0 62%, 34% 30%, 45% 58%, 65% 25%, 100% 58%, 78% 100%); }
+.obstacle.candle { background: linear-gradient(180deg, #c7c6b5 0 70%, #734337 70% 100%); border-radius: 4px 4px 2px 2px; }
+.obstacle.gravestone { background: linear-gradient(180deg, #8a8f98, #3b3f46); border-radius: 10px 10px 3px 3px; }
+.obstacle.spike { width: 26px; height: 26px; background: linear-gradient(180deg, #5f646f, #1a1d23); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.obstacle.skull { background: radial-gradient(circle at 50% 35%, #d1d1d1 0 42%, #5a5d63 68%, #262930 100%); border-radius: 50%; }
+.obstacle.branch { width: 32px; height: 20px; background: linear-gradient(180deg, #453933, #251f1b); border-radius: 6px; bottom: 24px; }
+
+.game-hud {
+  position: absolute;
+  right: 9px;
+  top: 8px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: rgba(248, 226, 196, .94);
+  background: rgba(22, 17, 19, .58);
+  border: 1px solid rgba(205, 158, 120, .28);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.game-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 182, 122, .45), rgba(28, 9, 16, 0));
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.game-flash.show { opacity: 1; }
+
+.ivy-game.buff-glow .runner-core { filter: drop-shadow(0 0 12px rgba(255, 226, 157, .9)); }
+.ivy-game.debuff-flash { box-shadow: 0 0 0 1px rgba(157, 102, 164, .5), 0 10px 20px rgba(0,0,0,.5); }
+.ivy-game.shield-pop .game-flash { opacity: .85; }
+
+.assist-wrap {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  width: 128px;
+  display: grid;
+  gap: 3px;
+}
+.assist-label {
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: rgba(245, 225, 200, .82);
+}
+.assist-meter {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 168, 130, .4);
+  background: rgba(16, 12, 15, .75);
+}
+.assist-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, rgba(255, 203, 125, .7), rgba(255, 239, 188, .95));
+  transition: transform .15s ease;
+}
+
+.test-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 296px;
+  pointer-events: auto;
+}
+.test-controls button {
+  border-radius: 8px;
+  border: 1px solid rgba(200, 158, 120, .38);
+  background: rgba(20, 16, 18, .92);
+  color: #f3eadf;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+@keyframes runnerStretch {
+  0% { transform: scale(1); }
+  45% { transform: scale(.92, 1.1); }
+  100% { transform: scale(1); }
+}
