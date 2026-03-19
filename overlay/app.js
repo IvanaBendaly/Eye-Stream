@@ -21,6 +21,8 @@
 
   const IVY_THRESHOLD = 10;
   const IVY_COOLDOWN_MS = 5000;
+  const ACTIVE_CHAT_WINDOW_MS = 45000;
+  const JUMP_CONTRIBUTION_COOLDOWN_MS = 1000;
   const STATE_ORDER = ['blissful', 'awakened', 'curious', 'disturbed', 'corrupted', 'rotting', 'dead'];
   const STATE_ALIAS = { alive: 'awakened', alert: 'curious', zombified: 'dead' };
 
@@ -55,8 +57,12 @@
       ducking: false,
       duckKeyDown: false,
       jumpAssist: 0,
-      jumpAssistGoal: 4,
+      jumpAssistGoal: 3,
+      activeChatters: 1,
       queuedJumpUntil: 0,
+      chatterActivity: {},
+      chatterJumpContribution: {},
+      lastAssistGainAt: 0,
       runnerState: 'awakened',
       spawnIn: 900,
       speed: 182,
@@ -96,7 +102,7 @@
   function updateStatus() {
     if (!testingMode) return;
     const cooldownMs = Math.max(0, state.ivyCooldownUntil - Date.now());
-    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • ASSIST:${state.game.jumpAssist}/${state.game.jumpAssistGoal} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
+    tinyStatus.textContent = `TEST • MODE:${state.mode.toUpperCase()} • IVY ${state.ivyCounter}/${IVY_THRESHOLD} • COOLDOWN:${cooldownMs > 0 ? `${(cooldownMs / 1000).toFixed(1)}s` : 'ready'} • SCORE:${state.corruptionScore}(${state.renderedState}) • RUNNER:${state.game.runnerState} • CHATTERS:${state.game.activeChatters} • ASSIST:${state.game.jumpAssist.toFixed(1)}/${state.game.jumpAssistGoal} • GAME:${state.game.running ? `on ${Math.floor(state.game.score)}` : 'off'}`;
   }
 
   function render(reason = 'render') {
@@ -277,6 +283,42 @@
     assistFill.style.transform = `scaleX(${pct})`;
   }
 
+  function normalizeChatterId(rawUser = '') {
+    const value = String(rawUser || '').trim().toLowerCase();
+    return value || 'anon';
+  }
+
+  function computeAssistGoal(activeChatters) {
+    if (activeChatters <= 2) return 2;
+    if (activeChatters <= 5) return 3;
+    if (activeChatters <= 9) return 4;
+    if (activeChatters <= 15) return 5;
+    if (activeChatters <= 24) return 6;
+    return 7;
+  }
+
+  function pruneActiveChatters(nowMs) {
+    const activity = state.game.chatterActivity;
+    const contribution = state.game.chatterJumpContribution;
+
+    for (const [id, ts] of Object.entries(activity)) {
+      if (nowMs - ts > ACTIVE_CHAT_WINDOW_MS) delete activity[id];
+    }
+
+    for (const [id, ts] of Object.entries(contribution)) {
+      if (nowMs - ts > ACTIVE_CHAT_WINDOW_MS) delete contribution[id];
+    }
+
+    state.game.activeChatters = Math.max(1, Object.keys(activity).length);
+    state.game.jumpAssistGoal = computeAssistGoal(state.game.activeChatters);
+    if (state.game.jumpAssist > state.game.jumpAssistGoal) state.game.jumpAssist = state.game.jumpAssistGoal;
+  }
+
+  function markChatterActive(chatterId, nowMs = Date.now()) {
+    state.game.chatterActivity[chatterId] = nowMs;
+    pruneActiveChatters(nowMs);
+  }
+
   function queueJump() {
     if (!state.game.running) return;
     const now = performance.now();
@@ -286,14 +328,25 @@
   function consumeAssistJump() {
     state.game.jumpAssist = 0;
     state.game.queuedJumpUntil = Math.max(state.game.queuedJumpUntil, performance.now() + 800);
+    state.game.lastAssistGainAt = performance.now();
     renderAssistMeter();
   }
 
-  function addChatJumpAssist() {
-    if (!state.game.running) return;
+  function addChatJumpAssist(chatterId) {
+    if (!state.game.running) return false;
+
+    const nowMs = Date.now();
+    markChatterActive(chatterId, nowMs);
+
+    const lastContribAt = state.game.chatterJumpContribution[chatterId] || 0;
+    if (nowMs - lastContribAt < JUMP_CONTRIBUTION_COOLDOWN_MS) return false;
+
+    state.game.chatterJumpContribution[chatterId] = nowMs;
     state.game.jumpAssist = Math.min(state.game.jumpAssistGoal, state.game.jumpAssist + 1);
+    state.game.lastAssistGainAt = performance.now();
     renderAssistMeter();
     if (state.game.jumpAssist >= state.game.jumpAssistGoal) consumeAssistJump();
+    return true;
   }
 
   function jump() {
@@ -351,7 +404,11 @@
     setTimeout(() => gameFlash.classList.remove('show'), 220);
     state.game.duckKeyDown = false;
     state.game.jumpAssist = 0;
+    state.game.activeChatters = 1;
     state.game.queuedJumpUntil = 0;
+    state.game.chatterActivity = {};
+    state.game.chatterJumpContribution = {};
+    state.game.lastAssistGainAt = 0;
     setDuck(false);
     resetGameObjects();
     render(`game-over:${reason}`);
@@ -396,6 +453,13 @@
 
     processJump(now);
     updateDuck();
+
+    pruneActiveChatters(Date.now());
+    if (g.jumpAssist > 0 && now - g.lastAssistGainAt > 1200) {
+      g.jumpAssist = Math.max(0, g.jumpAssist - dt * 0.75);
+      renderAssistMeter();
+    }
+
     setRunnerY(g.runnerY);
 
     const worldSpeed = g.speed * (g.shieldTimer > 0 ? 0.95 : 1);
@@ -450,7 +514,11 @@
     state.game.ducking = false;
     state.game.duckKeyDown = false;
     state.game.jumpAssist = 0;
+    state.game.activeChatters = 1;
     state.game.queuedJumpUntil = 0;
+    state.game.chatterActivity = {};
+    state.game.chatterJumpContribution = {};
+    state.game.lastAssistGainAt = 0;
     state.game.runnerState = state.renderedState;
     state.game.spawnIn = 1000;
     state.game.speed = 172;
@@ -466,7 +534,7 @@
     state.game.raf = requestAnimationFrame((now) => gameFrame(now, now));
   }
 
-  function applyMessageTriggers(text, source = 'chat') {
+  function applyMessageTriggers(text, source = 'chat', user = '') {
     resetDebug();
     const raw = String(text || '').trim().toLowerCase();
     const normalizedText = raw.replace(/[^a-z\s]/g, ' ');
@@ -484,8 +552,10 @@
     }
 
     if (state.mode === 'game') {
+      const chatterId = normalizeChatterId(user);
+      markChatterActive(chatterId);
       if (raw === 'jump') {
-        addChatJumpAssist();
+        addChatJumpAssist(chatterId);
         render(`${source}:assist-jump`);
         return;
       }
@@ -578,7 +648,7 @@
     const type = String(payload.type || '').toLowerCase();
     if (type === 'chat' && payload.text) {
       appendChat(payload.user || 'chat', payload.text);
-      applyMessageTriggers(payload.text, 'receive:chat');
+      applyMessageTriggers(payload.text, 'receive:chat', payload.user || 'chat');
     }
     if (type === 'action' && payload.action) action(payload.action);
     if (type === 'setscore') setScore(Number(payload.value ?? 0), 'receive:setScore');
@@ -589,7 +659,7 @@
     const text = String(rawText || '').trim();
     if (!text) return;
     appendChat('you', text);
-    applyMessageTriggers(text, 'local-input');
+    applyMessageTriggers(text, 'local-input', 'you');
   }
 
   function setupTestingInput() {
